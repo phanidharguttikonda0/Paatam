@@ -1,0 +1,32 @@
+{
+  "name": "paatam_backend",
+  "version": "1.0.0",
+  "description": "paatam backend api's",
+  "license": "ISC",
+  "author": "phanidharguttikonda",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "express": "^5.2.1",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "@types/supertest": "^7.2.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.9",
+    "prisma": "^8.0.0-rc.19",
+    "supertest": "^7.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
+  }
+}
