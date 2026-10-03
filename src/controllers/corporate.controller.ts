@@ -17,14 +17,28 @@ export class CorporateController {
   public static async addAdmin(req: Request, res: Response, next: NextFunction) {
     try {
       const { corporateId } = req.params;
+      const { name, email, mobile } = req.body;
+      const user = (req as any).user; // Set by requireAuth middleware
 
-      // we will call the service layer that injects the accounts to corporateAdmin. 
-      // if we want to add extra corporate level admin accounts,
-      // we can do that here.
+      // RBAC Check: Ensure the user is a Corporate Admin for THIS specific corporateId
+      // Optionally allow SUPER_ADMIN to bypass this if you have such a role later
+      if (!user || user.role !== 'CORPORATE_ADMIN' || user.corporateId !== corporateId) {
+        throw new AppError('Forbidden: You do not have permission to add admins to this corporate entity.', 403);
+      }
 
-      res.status(200).json({
+      // TODO: Include OTP Verification token check here before adding the admin.
+      // e.g., await OtpService.verifyPreRegistrationToken(email, mobile, req.body.verificationToken);
+
+      const newAdmin = await CorporateService.addAdmin(BigInt(corporateId), {
+        name,
+        email,
+        mobile,
+      });
+
+      res.status(201).json({
         status: 'success',
-        data: {},
+        message: 'Admin added successfully',
+        data: newAdmin,
       });
     } catch (error) {
       next(error);

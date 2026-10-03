@@ -10,9 +10,13 @@ export class AuthService {
   /**
    * Generates a short-lived JWT Access Token
    */
-  static generateAccessToken(userId: bigint, userType: string): string {
+  static generateAccessToken(userId: bigint, userType: string, corporateId?: bigint): string {
     return jwt.sign(
-      { userId: userId.toString(), role: userType },
+      { 
+        userId: userId.toString(), 
+        role: userType,
+        corporateId: corporateId?.toString() 
+      },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
