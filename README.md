@@ -62,3 +62,43 @@ paatam_backend/
                           # - Mounts the API routes
                           # - Starts the HTTP server
 ```
+
+## Authorization Logic (JWT + Opaque Refresh Token)
+
+This application uses a highly secure **Dual-Token Architecture** to handle authentication and authorization. It utilizes a short-lived **JWT Access Token** paired with a long-lived **Opaque Refresh Token**.
+
+### Why is the JWT Short-Lived?
+JSON Web Tokens (JWT) are **stateless**. This means that once the backend signs and issues a JWT, it does not check the database to verify if the user is still valid on subsequent requests. It only checks the cryptographic signature. 
+* If a JWT were valid for 24 hours, and a user's permissions were revoked (or they were fired), they would still have full access for 24 hours until the token expired.
+* By keeping the JWT short-lived (e.g., 10-15 minutes), we minimize the security window. If a user's permissions are revoked, they will lose access as soon as the token expires in a few minutes, because they will be denied a new one during the refresh process.
+
+### The Authentication & Authorization Flow
+
+1. **Initial Login:**
+   - The user logs in via OTP (Corporate Admins) or Password (Branch Admins, Teachers, Students).
+   - Once verified, the API generates two tokens:
+     - **Access Token:** A JWT containing the `userId` and `role`, valid for ~15 minutes.
+     - **Refresh Token:** A cryptographically random, opaque string (not a JWT) valid for ~30 days. This is saved to the database.
+   - The API sends the **Access Token** in the JSON response body.
+   - The API sends the **Refresh Token** in an `httpOnly` cookie.
+
+2. **Accessing Protected Routes:**
+   - The frontend stores the Access Token in memory (not localStorage).
+   - On every request, it attaches the token: `Authorization: Bearer <accessToken>`.
+   - The backend `auth.middleware.ts` verifies the signature and checks the user's role without touching the database.
+
+3. **When the Access Token Expires (The Refresh Flow):**
+   - After ~15 minutes, the frontend makes an API request and receives a `401 Unauthorized` response.
+   - The frontend catches this error and automatically sends a request to `POST /api/auth/refresh`.
+   - The browser automatically attaches the `httpOnly` cookie containing the Refresh Token.
+   - The backend checks the database to see if the Refresh Token is valid and not expired.
+   - If valid: A new JWT Access Token is generated and sent back to the frontend. The frontend retries the failed request.
+   - If expired/invalid: The API returns an error (e.g., "Refresh token expired"). The frontend clears its state and redirects the user to the login page to authenticate again.
+
+### Why the Refresh Token Cannot Be Stolen Easily
+You might wonder: *If an attacker steals the refresh token, can't they generate access tokens for 30 days?*
+Yes, but we make stealing it exceptionally difficult by using **`httpOnly` cookies**.
+
+- **XSS Protection:** If a hacker injects malicious JavaScript into your website (Cross-Site Scripting), they can read variables, read `localStorage`, and read normal cookies. However, they **cannot** read `httpOnly` cookies. The browser completely hides `httpOnly` cookies from JavaScript.
+- Because the frontend JS can't even see the Refresh Token, a hacker's script cannot steal it and send it to their own servers. The browser only attaches it automatically when making requests to your specific backend domain. 
+- While it is potentially vulnerable to Cross-Site Request Forgery (CSRF), a CSRF attack on the `/refresh` endpoint only causes the server to issue a new Access Token in the response body—which the attacker's script still cannot read due to CORS policies.

@@ -4,10 +4,15 @@ import { logger } from "./src/config/logger";
 import apiRoutes from "./src/routes/index";
 import { errorHandler } from "./src/middlewares/errorHandler";
 
+import cookieParser from "cookie-parser";
+
 const app: Express = express();
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+// Middleware to parse cookies
+app.use(cookieParser());
 
 // Middleware for structured logging of HTTP requests
 app.use(pinoHttp({ logger }));
