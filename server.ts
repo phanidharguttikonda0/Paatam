@@ -1,11 +1,10 @@
 import express, { Express, Request, Response } from "express";
 import pinoHttp from "pino-http";
-import pino from "pino";
+import { logger } from "./src/config/logger";
 import apiRoutes from "./src/routes/index";
 import { errorHandler } from "./src/middlewares/errorHandler";
 
 const app: Express = express();
-const logger = pino();
 
 // Middleware to parse JSON bodies
 app.use(express.json());
