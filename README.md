@@ -102,3 +102,77 @@ Yes, but we make stealing it exceptionally difficult by using **`httpOnly` cooki
 - **XSS Protection:** If a hacker injects malicious JavaScript into your website (Cross-Site Scripting), they can read variables, read `localStorage`, and read normal cookies. However, they **cannot** read `httpOnly` cookies. The browser completely hides `httpOnly` cookies from JavaScript.
 - Because the frontend JS can't even see the Refresh Token, a hacker's script cannot steal it and send it to their own servers. The browser only attaches it automatically when making requests to your specific backend domain. 
 - While it is potentially vulnerable to Cross-Site Request Forgery (CSRF), a CSRF attack on the `/refresh` endpoint only causes the server to issue a new Access Token in the response body—which the attacker's script still cannot read due to CORS policies.
+
+## Pre-Registration OTP Verification Flow
+
+Before creating a new Corporate entity or adding a new Corporate Admin, the system requires cryptographically verifying the user's email and mobile number. This is done using a decoupled "Verification Token" strategy.
+
+### The Flow
+1. **Requesting the OTP (`POST /api/auth/send-otp`)**
+   - The frontend sends the target `email` and `mobile`.
+   - The backend generates a 6-digit numeric OTP.
+   - The backend stores this OTP in the database (`Otp` table) along with the email/mobile and an expiration time (e.g., 10 minutes from now).
+   - The backend dispatches the OTP to the user. *(See AWS SES/SNS details below).*
+
+2. **Verifying the OTP (`POST /api/auth/verify-otp`)**
+   - The frontend sends the `email`, `mobile`, and the user-entered `otp`.
+   - The backend queries the database for an exact match that has **not expired** (`expires_at > now()`).
+   - If a match is found, the OTP is deleted from the database so it cannot be reused.
+   - The backend generates a temporary, short-lived **Verification Token** (a signed JWT valid for ~15 minutes). This token cryptographically proves that the server verified these specific contact details.
+   - The Verification Token is returned to the frontend.
+
+3. **Creating the Resource (`POST /api/corporate/create` or `/addAdmin`)**
+   - The frontend makes the request to create the corporate/admin, passing the `name`, `email`, `mobile`, AND the newly acquired `verificationToken`.
+   - The backend controller decodes the `verificationToken`.
+   - It verifies the signature and checks that the `email` and `mobile` inside the token **exactly match** the data being submitted in the request body.
+   - If they match, the backend safely inserts the new user into the database.
+
+### Dispatching OTPs in Production (AWS SES & SNS)
+Currently, in development mode, the OTPs are simply logged to the server console. For production, the system must integrate with **Amazon Web Services (AWS)** to handle actual delivery:
+
+- **AWS SES (Simple Email Service):** Used for sending the OTP via Email.
+- **AWS SNS (Simple Notification Service):** Used for sending the OTP via SMS to mobile devices.
+
+#### Implementation Logic Outline for `otp.service.ts`
+When moving to production, the `generateAndStoreOtp` function will be updated to include the AWS SDK logic:
+
+```typescript
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+
+// Initialize AWS Clients
+const sesClient = new SESClient({ region: process.env.AWS_REGION });
+const snsClient = new SNSClient({ region: process.env.AWS_REGION });
+
+export class OtpService {
+  public static async generateAndStoreOtp(email?: string, mobile?: string) {
+    // 1. Generate & Store OTP in Database
+    const otp = "..."; 
+    
+    // 2. Dispatch via AWS SES (Email)
+    if (email) {
+      const command = new SendEmailCommand({
+        Destination: { ToAddresses: [email] },
+        Message: {
+          Body: { Text: { Data: `Your Paatam verification code is: ${otp}` } },
+          Subject: { Data: "Your Verification Code" },
+        },
+        Source: process.env.AWS_SES_FROM_EMAIL,
+      });
+      await sesClient.send(command);
+    }
+
+    // 3. Dispatch via AWS SNS (SMS)
+    if (mobile) {
+      // Ensure mobile has country code (e.g., +91)
+      const command = new PublishCommand({
+        Message: `Your Paatam verification code is: ${otp}`,
+        PhoneNumber: mobile, 
+      });
+      await snsClient.send(command);
+    }
+    
+    return otp;
+  }
+}
+```
