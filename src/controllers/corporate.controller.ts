@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CorporateService } from '../services/corporate.service';
+import { UserRole } from '../enums/role.enum';
+import { AppError } from '../exceptions/AppError';
 
 export class CorporateController {
   public static async createCorporate(req: Request, res: Response, next: NextFunction) {
@@ -21,8 +23,9 @@ export class CorporateController {
       const user = (req as any).user; // Set by requireAuth middleware
 
       // RBAC Check: Ensure the user is a Corporate Admin for THIS specific corporateId
+      // Tenancy Check: Ensure the user is adding an admin to their OWN corporate entity
       // Optionally allow SUPER_ADMIN to bypass this if you have such a role later
-      if (!user || user.role !== 'CORPORATE_ADMIN' || user.corporateId !== corporateId) {
+      if (!user || user.corporateId !== corporateId) {
         throw new AppError('Forbidden: You do not have permission to add admins to this corporate entity.', 403);
       }
 
