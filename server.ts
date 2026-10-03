@@ -28,7 +28,7 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-// Global Error Handler must be the last middleware
+// Global Error Handler must be the last middleware, such that it catches all the errors thrown from the routes
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4545;
