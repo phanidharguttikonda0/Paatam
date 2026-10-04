@@ -33,6 +33,10 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 4545;
 
-app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    logger.info(`Server is running on port ${PORT}`);
+  });
+}
+
+export { app };
