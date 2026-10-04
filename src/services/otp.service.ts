@@ -36,10 +36,9 @@ export class OtpService {
   }
 
   /**
-   * Verifies the OTP. If valid, it returns a temporary Verification Token
+   * Validates and consumes the OTP (deletes it from DB). Throws AppError if invalid.
    */
-  public static async verifyOtp(otp: string, email?: string, mobile?: string): Promise<string> {
-    // Look for a valid, non-expired OTP matching the exact criteria
+  public static async validateAndConsumeOtp(otp: string, email?: string, mobile?: string): Promise<boolean> {
     const storedOtp = await prisma.otp.findFirst({
       where: {
         otp,
@@ -56,6 +55,15 @@ export class OtpService {
 
     // OTP is valid. Delete it so it can't be reused.
     await prisma.otp.delete({ where: { id: storedOtp.id } });
+    
+    return true;
+  }
+
+  /**
+   * Verifies the OTP. If valid, it returns a temporary Verification Token (used for registration)
+   */
+  public static async verifyOtp(otp: string, email?: string, mobile?: string): Promise<string> {
+    await this.validateAndConsumeOtp(otp, email, mobile);
 
     // Generate a temporary JWT "Verification Token" valid for 15 minutes
     // This token proves cryptographically that the user verified this email/mobile

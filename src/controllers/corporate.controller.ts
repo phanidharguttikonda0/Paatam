@@ -3,8 +3,34 @@ import { CorporateService } from '../services/corporate.service';
 import { UserRole } from '../enums/role.enum';
 import { AppError } from '../exceptions/AppError';
 import { OtpService } from '../services/otp.service';
+import { prisma } from '../config/prisma';
 
 export class CorporateController {
+  public static async lookupByRegistrationNo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { registrationNo } = req.params;
+
+      const corporate = await prisma.corporate.findUnique({
+        where: { registration_no: registrationNo },
+        select: { id: true, name: true, registration_no: true } // Only return safe fields
+      });
+
+      if (!corporate) {
+        throw new AppError('Corporate entity not found', 404);
+      }
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          corporateId: corporate.id.toString(),
+          name: corporate.name,
+          registration_no: corporate.registration_no
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
   public static async createCorporate(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, registration_no, admin, verificationToken } = req.body;

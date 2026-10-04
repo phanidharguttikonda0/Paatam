@@ -7,6 +7,9 @@ import { UserRole } from '../enums/role.enum';
 
 const router = Router();
 
+// GET /api/corporate/lookup/:registrationNo
+router.get('/lookup/:registrationNo', CorporateController.lookupByRegistrationNo);
+
 // POST /api/corporate/create
 router.post('/create', validate(createCorporateSchema), CorporateController.createCorporate);
 
