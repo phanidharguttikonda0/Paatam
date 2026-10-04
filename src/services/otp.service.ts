@@ -17,8 +17,18 @@ export class OtpService {
     // Generate 6 digit numeric OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Expires in 10 minutes
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    // Expires in 5 minutes
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    // Delete any existing OTP for this email or mobile to prevent row bloat
+    await prisma.otp.deleteMany({
+      where: {
+        OR: [
+          email ? { email: email } : {},
+          mobile ? { mobile: mobile } : {},
+        ].filter(condition => Object.keys(condition).length > 0)
+      }
+    });
 
     await prisma.otp.create({
       data: {
