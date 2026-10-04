@@ -63,6 +63,10 @@ paatam_backend/
                           # - Starts the HTTP server
 ```
 
+## 📖 API Documentation
+
+A comprehensive list of all endpoints, request bodies, response formats, tokens, and error states is maintained in the **[API_DOCS.md](./API_DOCS.md)** file. Please refer to it when integrating with the frontend.
+
 ## Authorization Logic (JWT + Opaque Refresh Token)
 
 This application uses a highly secure **Dual-Token Architecture** to handle authentication and authorization. It utilizes a short-lived **JWT Access Token** paired with a long-lived **Opaque Refresh Token**.
@@ -108,10 +112,11 @@ Yes, but we make stealing it exceptionally difficult by using **`httpOnly` cooki
 Before creating a new Corporate entity or adding a new Corporate Admin, the system requires cryptographically verifying the user's email and mobile number. This is done using a decoupled "Verification Token" strategy.
 
 ### The Flow
-1. **Requesting the OTP (`POST /api/auth/send-otp`)**
-   - The frontend sends the target `email` and `mobile`.
-   - The backend generates a 6-digit numeric OTP.
-   - The backend stores this OTP in the database (`Otp` table) along with the email/mobile and an expiration time (e.g., 10 minutes from now).
+1. **Requesting the OTP (`POST /api/auth/send-otp` or `POST /api/auth/corporate/login`)**
+   - The frontend sends the target `email` and/or `mobile`.
+   - The backend deletes any existing, unused OTP rows for this specific contact to prevent database bloat.
+   - The backend generates a new 6-digit numeric OTP.
+   - The backend stores this OTP in the database (`Otp` table) along with the email/mobile and an expiration time (**5 minutes from now**).
    - The backend dispatches the OTP to the user. *(See AWS SES/SNS details below).*
 
 2. **Verifying the OTP (`POST /api/auth/verify-otp`)**
