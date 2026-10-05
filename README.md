@@ -2,6 +2,40 @@
 
 This repository contains the backend service for the Paatam application.
 
+## Getting Started (Initial Setup)
+
+When you clone this project for the first time, follow these steps to get your local development environment up and running:
+
+1. **Install Dependencies:**
+   Run `npm install` to download all the necessary Node.js packages.
+
+2. **Set up the Database (Docker):**
+   The project requires a PostgreSQL database. A `docker-compose.yml` file is provided for convenience.
+   Run the following command to start the database container in the background:
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Configure Environment Variables:**
+   Ensure your `.env` file at the root of the project contains your database connection string and secret keys:
+   ```env
+   PORT=4545
+   JWT_SECRET=your_super_secret_key_here
+   DATABASE_URL="postgresql://admin:adminpassword@localhost:5432/paatam_dev?schema=public"
+   ```
+
+4. **Initialize the Database Schema (Prisma):**
+   Push the Prisma schema to the database to create the required tables and generate the Prisma Client.
+   ```bash
+   npx prisma migrate dev
+   ```
+
+5. **Start the Development Server:**
+   Launch the backend server with hot-reloading.
+   ```bash
+   npm run dev
+   ```
+
 ## Package Breakdown & Roles
 
 ### 🚀 Production Dependencies (`npm install <package>`)
