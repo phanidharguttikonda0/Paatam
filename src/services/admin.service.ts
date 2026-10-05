@@ -2,6 +2,7 @@ import { prisma } from '../config/prisma';
 import { AppError } from '../exceptions/AppError';
 import bcrypt from 'bcrypt';
 import { AdminRole } from '@prisma/client';
+import { idGenerator } from '../utils/idGenerator';
 
 export class AdminService {
   public static async createAdmin(corporateId: bigint, data: {
@@ -29,6 +30,7 @@ export class AdminService {
 
     const admin = await prisma.admin.create({
       data: {
+        id: idGenerator.nextId(),
         corporate_id: corporateId,
         admin_name: data.admin_name,
         contact_email: data.contact_email,
@@ -65,6 +67,7 @@ export class AdminService {
       if (branchIds.length > 0) {
         await tx.adminBranchAccess.createMany({
           data: branchIds.map(bId => ({
+            id: idGenerator.nextId(),
             admin_id: adminId,
             branch_id: bId
           }))

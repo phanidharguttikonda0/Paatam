@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { prisma } from '../config/prisma';
+import { idGenerator } from '../utils/idGenerator';
 
 // Secret keys (Should be in .env in production)
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_here';
@@ -36,6 +37,7 @@ export class AuthService {
     // Store in Database
     await prisma.refreshToken.create({
       data: {
+        id: idGenerator.nextId(),
         token: refreshToken,
         user_id: userId,
         user_type: userType,

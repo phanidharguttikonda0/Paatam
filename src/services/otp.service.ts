@@ -2,6 +2,7 @@ import { prisma } from '../config/prisma';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../exceptions/AppError';
+import { idGenerator } from '../utils/idGenerator';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_here';
 
@@ -32,6 +33,7 @@ export class OtpService {
 
     await prisma.otp.create({
       data: {
+        id: idGenerator.nextId(),
         email: email || null,
         mobile: mobile || null,
         otp,

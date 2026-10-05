@@ -8,7 +8,7 @@ generator client {
 }
 
 model Corporate {
-  id              BigInt           @id @default(autoincrement())
+  id              BigInt           @id
   name            String           @db.Text
   registration_no String           @unique @db.VarChar
   created_at      DateTime         @default(now()) @db.Timestamptz
@@ -18,7 +18,7 @@ model Corporate {
 }
 
 model CorporateAdmin {
-  id           BigInt    @id @default(autoincrement())
+  id           BigInt    @id
   corporate_id BigInt
   name         String    @db.Text
   email        String    @unique @db.Text
@@ -30,7 +30,7 @@ model CorporateAdmin {
 }
 
 model Branch {
-  id                  BigInt              @id @default(autoincrement())
+  id                  BigInt              @id
   corporate_id        BigInt
   name                String              @db.Text
   pincode             String              @db.VarChar(6)
@@ -53,7 +53,7 @@ enum AdminRole {
 }
 
 model Admin {
-  id                  BigInt              @id @default(autoincrement())
+  id                  BigInt              @id
   corporate_id        BigInt
   admin_name          String              @db.Text
   contact_email       String              @unique @db.Text
@@ -67,7 +67,7 @@ model Admin {
 }
 
 model AdminBranchAccess {
-  id        BigInt @id @default(autoincrement())
+  id        BigInt @id
   admin_id  BigInt
   branch_id BigInt
   Admin     Admin  @relation(fields: [admin_id], references: [id])
@@ -77,7 +77,7 @@ model AdminBranchAccess {
 }
 
 model AcademicYear {
-  id         BigInt  @id @default(autoincrement())
+  id         BigInt  @id
   branch_id  BigInt
   start_year Int
   end_year   Int
@@ -88,7 +88,7 @@ model AcademicYear {
 }
 
 model Class {
-  id               BigInt         @id @default(autoincrement())
+  id               BigInt         @id
   branch_id        BigInt
   academic_year_id BigInt
   class            String         @db.VarChar(10)
@@ -102,7 +102,7 @@ model Class {
 }
 
 model Teacher {
-  id              BigInt           @id @default(autoincrement())
+  id              BigInt           @id
   branch_id       BigInt
   name            String           @db.Text
   teacher_id      String           @db.Text
@@ -117,7 +117,7 @@ model Teacher {
 }
 
 model Section {
-  id               BigInt       @id @default(autoincrement())
+  id               BigInt       @id
   class_id         BigInt
   class_teacher_id BigInt?
   section_name     String       @db.VarChar(20)
@@ -131,7 +131,7 @@ model Section {
 }
 
 model Student {
-  id             BigInt       @id @default(autoincrement())
+  id             BigInt       @id
   section_id     BigInt
   admission_no   String       @unique @db.Text
   name           String       @db.Text
@@ -146,7 +146,7 @@ model Student {
 }
 
 model Subject {
-  id              BigInt           @id @default(autoincrement())
+  id              BigInt           @id
   branch_id       BigInt
   name            String           @db.Text
   description     String?          @db.Text
@@ -156,7 +156,7 @@ model Subject {
 }
 
 model ClassSubject {
-  id         BigInt  @id @default(autoincrement())
+  id         BigInt  @id
   class_id   BigInt
   subject_id BigInt
   Class      Class   @relation(fields: [class_id], references: [id])
@@ -166,7 +166,7 @@ model ClassSubject {
 }
 
 model TeacherSubject {
-  id          BigInt       @id @default(autoincrement())
+  id          BigInt       @id
   teacher_id  BigInt
   subject_id  BigInt
   Teacher     Teacher      @relation(fields: [teacher_id], references: [id])
@@ -177,7 +177,7 @@ model TeacherSubject {
 }
 
 model Assignment {
-  id                 BigInt         @id @default(autoincrement())
+  id                 BigInt         @id
   section_id         BigInt
   teacher_subject_id BigInt
   title              String         @db.Text
@@ -195,7 +195,7 @@ model Assignment {
 }
 
 model Submission {
-  id                    BigInt         @id @default(autoincrement())
+  id                    BigInt         @id
   assignment_id         BigInt?
   student_id            BigInt
   sample_paper_url      String?        @db.Text
@@ -224,7 +224,7 @@ model Submission {
 }
 
 model Notification {
-  id            BigInt      @id @default(autoincrement())
+  id            BigInt      @id
   type          String      @db.Text
   title         String      @db.Text
   message       String      @db.Text
@@ -237,7 +237,7 @@ model Notification {
 }
 
 model RefreshToken {
-  id         BigInt   @id @default(autoincrement())
+  id         BigInt   @id
   token      String   @unique @db.Text
   user_id    BigInt
   user_type  String   @db.VarChar(50) // 'CORPORATE_ADMIN', 'BRANCH_ADMIN', 'TEACHER', 'STUDENT'
@@ -248,7 +248,7 @@ model RefreshToken {
 }
 
 model Otp {
-  id         BigInt   @id @default(autoincrement())
+  id         BigInt   @id
   email      String?  @db.Text
   mobile     String?  @db.VarChar(10)
   otp        String   @db.VarChar(6)

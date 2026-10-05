@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../../server';
 import { prisma } from '../config/prisma';
+import { idGenerator } from '../utils/idGenerator';
 
 describe('Branch and Branch Admin Integration Tests', () => {
   let corporateId = '';
@@ -122,10 +123,10 @@ describe('Branch and Branch Admin Integration Tests', () => {
     it('should fail to assign a branch that belongs to another corporate', async () => {
       // Fake a branch from another corporate
       const fakeCorporate = await prisma.corporate.create({
-        data: { name: 'Fake Corp', registration_no: 'FAKE-123' }
+        data: { id: idGenerator.nextId(), name: 'Fake Corp', registration_no: 'FAKE-123' }
       });
       const fakeBranch = await prisma.branch.create({
-        data: { corporate_id: fakeCorporate.id, name: 'Fake Branch', pincode: '123456', address: 'Fake', branch_contact_mail: 'fake@fake.com', mobile_number: '1234567890' }
+        data: { id: idGenerator.nextId(), corporate_id: fakeCorporate.id, name: 'Fake Branch', pincode: '123456', address: 'Fake', branch_contact_mail: 'fake@fake.com', mobile_number: '1234567890' }
       });
 
       const res = await request(app)

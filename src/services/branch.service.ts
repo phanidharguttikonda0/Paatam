@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma';
 import { AppError } from '../exceptions/AppError';
+import { idGenerator } from '../utils/idGenerator';
 
 export class BranchService {
   public static async createBranch(corporateId: bigint, data: {
@@ -23,6 +24,7 @@ export class BranchService {
 
     const branch = await prisma.branch.create({
       data: {
+        id: idGenerator.nextId(),
         corporate_id: corporateId,
         ...data
       }

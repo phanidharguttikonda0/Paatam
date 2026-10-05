@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma';
 import { AppError } from '../exceptions/AppError';
+import { idGenerator } from '../utils/idGenerator';
 
 export interface CreateCorporateAdminInput {
   name: string;
@@ -30,10 +31,14 @@ export class CorporateService {
       const corporate = await prisma.$transaction(async (tx) => {
         return tx.corporate.create({
           data: {
+            id: idGenerator.nextId(),
             name: data.name,
             registration_no: data.registration_no,
             CorporateAdmins: {
-              create: data.admin, // Prisma will insert this single record
+              create: {
+                ...data.admin,
+                id: idGenerator.nextId()
+              },
             },
           },
           include: {
@@ -67,6 +72,7 @@ export class CorporateService {
     try {
       const admin = await prisma.corporateAdmin.create({
         data: {
+          id: idGenerator.nextId(),
           corporate_id: corporateId,
           name: data.name,
           email: data.email,
