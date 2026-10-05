@@ -155,6 +155,22 @@ Yes, but we make stealing it exceptionally difficult by using **`httpOnly` cooki
 - Because the frontend JS can't even see the Refresh Token, a hacker's script cannot steal it and send it to their own servers. The browser only attaches it automatically when making requests to your specific backend domain. 
 - While it is potentially vulnerable to Cross-Site Request Forgery (CSRF), a CSRF attack on the `/refresh` endpoint only causes the server to issue a new Access Token in the response body—which the attacker's script still cannot read due to CORS policies.
 
+## Password Salt Hashing Strategy
+
+For Branch Admins, Teachers, and Students, authentication relies on a secure password strategy instead of OTPs. To protect user credentials against data breaches and brute-force attacks, we utilize **Salt Hashing** via the `bcrypt` library.
+
+### How it Works:
+1. **Salting**: When a user is created, a unique, random string of characters (a "salt") is generated and appended to their plaintext password.
+2. **Hashing**: The combined string (Password + Salt) is run through the bcrypt hashing algorithm multiple times (the "work factor" or "salt rounds", typically 10). This produces a long, fixed-size, irreversible string known as the `password_hash`.
+3. **Storage**: Both the salt and the hash are safely stored in the database in a single string format (e.g., `$2b$10$abcdefg...`). The plaintext password is **never** saved.
+
+### How Login Verification Happens:
+1. When a user attempts to log in, they send their `identifier` (email or mobile) and their `plaintext password` to the backend.
+2. The server fetches the stored `password_hash` for that user from the database.
+3. The `bcrypt.compare(plainPassword, storedHash)` function is called.
+4. Bcrypt extracts the unique salt from the stored hash, appends it to the incoming plaintext password, and hashes it using the exact same algorithm.
+5. If the resulting new hash exactly matches the stored hash, the password is correct, and the server issues the Access and Refresh tokens.
+
 ## Pre-Registration OTP Verification Flow
 
 Before creating a new Corporate entity or adding a new Corporate Admin, the system requires cryptographically verifying the user's email and mobile number. This is done using a decoupled "Verification Token" strategy.

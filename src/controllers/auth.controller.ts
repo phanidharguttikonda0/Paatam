@@ -137,4 +137,57 @@ export class AuthController {
       next(error);
     }
   }
+
+  // --- Branch Admin Login Flow ---
+
+  public static async adminLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, password } = req.body;
+      
+      const admin = await prisma.admin.findFirst({
+        where: {
+          OR: [
+            { contact_email: identifier },
+            { mobile: identifier }
+          ]
+        }
+      });
+
+      if (!admin) {
+        throw new AppError('Invalid credentials', 401);
+      }
+
+      const isValidPassword = await require('bcrypt').compare(password, admin.password_hash);
+      if (!isValidPassword) {
+        throw new AppError('Invalid credentials', 401);
+      }
+
+      const userRole = admin.role; 
+      const accessToken = AuthService.generateAccessToken(admin.id, userRole);
+      const refreshToken = await AuthService.generateAndStoreRefreshToken(admin.id, userRole);
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Login successful',
+        data: {
+          accessToken,
+          user: {
+            id: admin.id.toString(),
+            name: admin.admin_name,
+            email: admin.contact_email,
+            role: userRole
+          }
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
