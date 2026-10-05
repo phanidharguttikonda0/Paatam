@@ -5,13 +5,19 @@ import { AppError } from '../exceptions/AppError';
 export class AdminController {
   public static async createAdmin(req: Request, res: Response, next: NextFunction) {
     try {
-      const admin = await AdminService.createAdmin(req.body);
+      const user = (req as any).user;
+      if (!user || !user.corporateId) {
+        throw new AppError('Unauthorized: Missing corporate identity', 401);
+      }
+
+      const admin = await AdminService.createAdmin(BigInt(user.corporateId), req.body);
       
       res.status(201).json({
         status: 'success',
         data: {
           ...admin,
-          id: admin.id.toString()
+          id: admin.id.toString(),
+          corporate_id: admin.corporate_id.toString()
         }
       });
     } catch (error) {
@@ -84,6 +90,29 @@ export class AdminController {
           ...b,
           id: b.id.toString(),
           corporate_id: b.corporate_id.toString()
+        }))
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async getAdminsForCorporate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      
+      if (!user || !user.corporateId) {
+        throw new AppError('Unauthorized: Missing corporate identity', 401);
+      }
+
+      const admins = await AdminService.getAdminsForCorporate(BigInt(user.corporateId));
+      
+      res.status(200).json({
+        status: 'success',
+        data: admins.map(a => ({
+          ...a,
+          id: a.id.toString(),
+          corporate_id: a.corporate_id.toString()
         }))
       });
     } catch (error) {

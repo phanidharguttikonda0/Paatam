@@ -14,6 +14,7 @@ model Corporate {
   created_at      DateTime         @default(now()) @db.Timestamptz
   CorporateAdmins CorporateAdmin[]
   Branches        Branch[]
+  Admins          Admin[]
 }
 
 model CorporateAdmin {
@@ -53,12 +54,16 @@ enum AdminRole {
 
 model Admin {
   id                  BigInt              @id @default(autoincrement())
+  corporate_id        BigInt
   admin_name          String              @db.Text
   contact_email       String              @unique @db.Text
   mobile              String              @unique @db.VarChar(10)
   role                AdminRole
   password_hash       String              @db.Text
+  Corporate           Corporate           @relation(fields: [corporate_id], references: [id])
   AdminBranchAccesses AdminBranchAccess[]
+
+  @@index([corporate_id])
 }
 
 model AdminBranchAccess {

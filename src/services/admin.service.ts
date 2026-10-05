@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { AdminRole } from '@prisma/client';
 
 export class AdminService {
-  public static async createAdmin(data: {
+  public static async createAdmin(corporateId: bigint, data: {
     admin_name: string;
     contact_email: string;
     mobile: string;
@@ -29,6 +29,7 @@ export class AdminService {
 
     const admin = await prisma.admin.create({
       data: {
+        corporate_id: corporateId,
         admin_name: data.admin_name,
         contact_email: data.contact_email,
         mobile: data.mobile,
@@ -126,5 +127,20 @@ export class AdminService {
       }
     });
     return accesses.map(a => a.Branch);
+  }
+
+  public static async getAdminsForCorporate(corporateId: bigint) {
+    const admins = await prisma.admin.findMany({
+      where: { corporate_id: corporateId },
+      select: {
+        id: true,
+        corporate_id: true,
+        admin_name: true,
+        contact_email: true,
+        mobile: true,
+        role: true
+      }
+    });
+    return admins;
   }
 }

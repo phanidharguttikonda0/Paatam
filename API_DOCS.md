@@ -214,3 +214,251 @@ Finalizes the login flow by verifying the OTP. Issues an Access Token and sets a
 - **Error Responses:**
   - `400 Bad Request`: "corporateId is required for verification" or "Invalid or expired OTP"
   - `404 Not Found`: "Corporate Admin not found in this corporate entity"
+
+---
+
+## 3. Branch Management
+
+### `POST /api/branch/create`
+Creates a new Branch under the logged-in Corporate entity.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "name": "Main Branch",
+    "pincode": "500081",
+    "address": "HiTech City, Hyderabad",
+    "branch_contact_mail": "contact@mainbranch.com",
+    "mobile_number": "9876543210"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1",
+      "corporate_id": "1",
+      "name": "Main Branch",
+      "pincode": "500081",
+      "address": "HiTech City, Hyderabad",
+      "branch_contact_mail": "contact@mainbranch.com",
+      "mobile_number": "9876543210"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "A branch with this name already exists for your corporate"
+
+---
+
+### `GET /api/branch/:branchId/admins`
+Retrieves a list of Branch Admins who have access to this specific branch.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **URL Params:** `branchId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1",
+        "admin_name": "Alice Admin",
+        "contact_email": "alice@branch.com",
+        "mobile": "1112223334",
+        "role": "PRINCIPAL"
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Branch not found or does not belong to your corporate entity"
+
+---
+
+## 4. Branch Admin Management
+
+### `POST /api/admin/create`
+Creates a new Branch Admin (e.g., Dean, Principal) under the logged-in Corporate entity. Salting and hashing are performed on the password. Does NOT assign them to branches yet.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "admin_name": "Alice Admin",
+    "contact_email": "alice@branch.com",
+    "mobile": "1112223334",
+    "role": "PRINCIPAL",
+    "password": "SecurePassword123"
+  }
+  ```
+- **Success Response (201 Created):**
+  *(Note: `password_hash` is safely omitted from the response)*
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1",
+      "corporate_id": "1",
+      "admin_name": "Alice Admin",
+      "contact_email": "alice@branch.com",
+      "mobile": "1112223334",
+      "role": "PRINCIPAL"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "An admin with this email or mobile already exists"
+
+---
+
+### `POST /api/admin/:adminId/assign-branches`
+Assigns a Branch Admin to one or more branches. Wipes existing branch assignments and replaces them. Validates that the provided branches actually belong to the Corporate Entity.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **URL Params:** `adminId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "branch_ids": ["1", "2"]
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Branches assigned successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "One or more branches are invalid or do not belong to your corporate entity"
+
+---
+
+### `PUT /api/admin/:adminId`
+Updates the basic information of a Branch Admin.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **URL Params:** `adminId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "contact_email": "new.alice@branch.com",
+    "mobile": "9998887776",
+    "role": "DEAN",
+    "admin_name": "Alice Modified"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": { ... }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Email or mobile already in use by another admin"
+
+---
+
+### `DELETE /api/admin/:adminId`
+Deletes a Branch Admin and safely purges their branch access records (`AdminBranchAccess`) in a single transaction.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **URL Params:** `adminId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Admin deleted successfully"
+  }
+  ```
+
+---
+
+### `GET /api/admin/:adminId/branches`
+Fetches a list of Branch details that a specific admin currently has access to.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **URL Params:** `adminId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1",
+        "corporate_id": "1",
+        "name": "Main Branch",
+        "pincode": "500081",
+        ...
+      }
+    ]
+  }
+  ```
+
+---
+
+### `GET /api/admin/corporate/all`
+Fetches all Branch Admins belonging to the currently logged-in Corporate Admin's entity.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1",
+        "corporate_id": "1",
+        "admin_name": "Alice Admin",
+        "contact_email": "alice@branch.com",
+        "mobile": "1112223334",
+        "role": "PRINCIPAL"
+      }
+    ]
+  }
+  ```
+
+---
+
+### `POST /api/auth/admin/login`
+Logs in a Branch Admin using their identifier (email or mobile) and their password.
+
+- **Authentication Required:** No
+- **Request Body:**
+  ```json
+  {
+    "identifier": "alice@branch.com",
+    "password": "SecurePassword123"
+  }
+  ```
+- **Success Response (200 OK):**
+  *Headers:* `Set-Cookie: refreshToken=...; HttpOnly; Max-Age=2592000`
+  ```json
+  {
+    "status": "success",
+    "message": "Login successful",
+    "data": {
+      "accessToken": "eyJhbG...",
+      "user": {
+        "id": "1",
+        "name": "Alice Admin",
+        "email": "alice@branch.com",
+        "role": "PRINCIPAL"
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Invalid credentials"

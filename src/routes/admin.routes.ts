@@ -22,6 +22,9 @@ router.put('/:adminId', validate(updateAdminSchema), AdminController.updateAdmin
 // DELETE /api/admin/:adminId
 router.delete('/:adminId', AdminController.deleteAdmin);
 
+// GET /api/admin/corporate/all
+router.get('/corporate/all', AdminController.getAdminsForCorporate);
+
 // GET /api/admin/:adminId/branches
 router.get('/:adminId/branches', AdminController.getAdminBranches);
 
