@@ -15,7 +15,11 @@ export class BranchController {
       
       res.status(201).json({
         status: 'success',
-        data: branch
+        data: {
+          ...branch,
+          id: branch.id.toString(),
+          corporate_id: branch.corporate_id.toString()
+        }
       });
     } catch (error) {
       next(error);
@@ -36,7 +40,8 @@ export class BranchController {
       // Need to stringify bigints before returning
       const serializedAdmins = admins.map(admin => ({
         ...admin,
-        id: admin.id.toString()
+        id: admin.id.toString(),
+        corporate_id: admin.corporate_id.toString()
       }));
 
       res.status(200).json({

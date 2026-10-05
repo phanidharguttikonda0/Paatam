@@ -47,6 +47,7 @@ export class BranchService {
         Admin: {
           select: {
             id: true,
+            corporate_id: true,
             admin_name: true,
             contact_email: true,
             mobile: true,

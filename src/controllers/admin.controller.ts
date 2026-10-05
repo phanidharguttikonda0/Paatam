@@ -57,7 +57,8 @@ export class AdminController {
         status: 'success',
         data: {
           ...admin,
-          id: admin.id.toString()
+          id: admin.id.toString(),
+          corporate_id: admin.corporate_id.toString()
         }
       });
     } catch (error) {
