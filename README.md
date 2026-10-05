@@ -115,6 +115,25 @@ paatam_backend/
 
 A comprehensive list of all endpoints, request bodies, response formats, tokens, and error states is maintained in the **[API_DOCS.md](./API_DOCS.md)** file. Please refer to it when integrating with the frontend.
 
+## Decentralized ID Generation (Sonyflake)
+
+To ensure maximum scalability and avoid database bottlenecks in our distributed ECS architecture, this application uses **Sonyflake** for ID generation instead of traditional PostgreSQL `autoincrement()`.
+
+### The Problem with Auto-Increment and UUIDs
+- **Auto-Increment (`1, 2, 3...`)**: Relies on a single database sequence. If the application scales to multiple database shards or requires extremely high write-throughput, the central database sequence becomes a massive bottleneck.
+- **UUIDv4 (Random Strings)**: While decentralized, random UUIDs completely destroy database B-Tree index performance. Because they are not sequential, inserting them causes severe index fragmentation and page thrashing.
+
+### The Sonyflake Solution
+Sonyflake is a distributed unique ID generator inspired by Twitter's Snowflake. It generates a **64-bit integer** (`BigInt`) composed of three parts:
+1. **Timestamp (39 bits)**: Ensures that IDs are sequentially sortable by time. This keeps the PostgreSQL B-Tree indexes highly optimized and lightning fast.
+2. **Sequence (8 bits)**: Prevents collisions if a single server generates multiple IDs in the exact same 10-millisecond window.
+3. **Machine ID (16 bits)**: Ensures that two different servers never generate the same ID.
+
+### Handling Machine IDs in AWS ECS
+In a containerized AWS ECS environment, hardcoding a "Worker ID" or "Machine ID" is impossible because containers scale up and down dynamically. 
+To solve this, our Sonyflake implementation derives the 16-bit Machine ID directly from the **Private IP Address** of the ECS container (using the lower 16 bits of the IPv4 address). 
+Since every active container in a VPC has a strictly unique Private IP, ID collisions across horizontally scaled ECS tasks are mathematically impossible without requiring a central Redis coordinator.
+
 ## Authorization Logic (JWT + Opaque Refresh Token)
 
 This application uses a highly secure **Dual-Token Architecture** to handle authentication and authorization. It utilizes a short-lived **JWT Access Token** paired with a long-lived **Opaque Refresh Token**.
