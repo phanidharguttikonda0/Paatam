@@ -36,6 +36,20 @@ When you clone this project for the first time, follow these steps to get your l
    npm run dev
    ```
 
+### How the Database & ORM Initialization Works
+
+To clarify exactly what the setup commands do:
+
+- **`docker compose up -d`**: This **ONLY** downloads the PostgreSQL software and starts an empty database container. It does *not* read `migration.sql` or create any tables on its own.
+- **`npx prisma migrate dev`**: This is the command that actually builds the database and configures your ORM. When you run it, Prisma does two things:
+  - **Database Setup:** It connects to the running Docker database, reads the SQL files inside the `prisma/migrations/` folder, and executes them to build all your tables and columns.
+  - **ORM Initialization:** It reads your `schema.prisma` file and generates the `@prisma/client` code inside your `node_modules`. This is what gives you autocomplete and type-safety in TypeScript when you write queries like `prisma.admin.findUnique(...)`.
+
+So, in short:
+- **Docker** just gives you an empty, running database.
+- **`migration.sql`** builds the physical tables inside that database.
+- **`schema.prisma`** acts as the blueprint to both generate those SQL migrations and generate your TypeScript ORM client.
+
 ## Package Breakdown & Roles
 
 ### 🚀 Production Dependencies (`npm install <package>`)
