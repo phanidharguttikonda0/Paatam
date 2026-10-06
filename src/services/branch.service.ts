@@ -33,7 +33,18 @@ export class BranchService {
     return branch;
   }
 
-  public static async getAdminsForBranch(branchId: bigint, corporateId: bigint) {
+  public static async getAllBranches(corporateId: bigint, cursor?: bigint, limit: number = 10) {
+    const branches = await prisma.branch.findMany({
+      where: { corporate_id: corporateId },
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: { id: 'asc' }
+    });
+    return branches;
+  }
+
+  public static async getAdminsForBranch(branchId: bigint, corporateId: bigint, cursor?: bigint, limit: number = 10) {
     // Ensure the branch belongs to the corporate
     const branch = await prisma.branch.findFirst({
       where: { id: branchId, corporate_id: corporateId }
@@ -45,6 +56,10 @@ export class BranchService {
 
     const accesses = await prisma.adminBranchAccess.findMany({
       where: { branch_id: branchId },
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: { id: 'asc' },
       include: {
         Admin: {
           select: {
@@ -59,6 +74,36 @@ export class BranchService {
       }
     });
 
-    return accesses.map(a => a.Admin);
+    // Keeping id in the return for pagination tracking
+    return accesses.map(a => ({ ...a.Admin, _accessId: a.id }));
+  }
+
+  public static async getTeachersForBranch(branchId: bigint, corporateId: bigint, cursor?: bigint, limit: number = 10) {
+    // Ensure the branch belongs to the corporate
+    const branch = await prisma.branch.findFirst({
+      where: { id: branchId, corporate_id: corporateId }
+    });
+
+    if (!branch) {
+      throw new AppError('Branch not found or does not belong to your corporate entity', 404);
+    }
+
+    const teachers = await prisma.teacher.findMany({
+      where: { branch_id: branchId },
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: { id: 'asc' },
+      select: {
+        id: true,
+        branch_id: true,
+        name: true,
+        teacher_id: true,
+        contact_email: true,
+        contact_mobile: true
+      }
+    });
+
+    return teachers;
   }
 }

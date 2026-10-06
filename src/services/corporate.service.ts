@@ -94,4 +94,33 @@ export class CorporateService {
       throw error;
     }
   }
+
+  public static async getCorporateAdmins(corporateId: bigint, cursor?: bigint, limit: number = 10) {
+    const admins = await prisma.corporateAdmin.findMany({
+      where: { corporate_id: corporateId },
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: { id: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        mobile: true
+      }
+    });
+    return admins;
+  }
+
+  public static async getCorporateAdminProfile(adminId: bigint, corporateId: bigint) {
+    const admin = await prisma.corporateAdmin.findUnique({
+      where: { id: adminId }
+    });
+
+    if (!admin || admin.corporate_id !== corporateId) {
+      throw new AppError('Corporate admin not found or access denied', 403);
+    }
+
+    return admin;
+  }
 }

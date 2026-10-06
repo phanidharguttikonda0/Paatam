@@ -16,4 +16,10 @@ router.post('/create', validate(createCorporateSchema), CorporateController.crea
 // POST /api/corporate/addAdmin/:corporateId
 router.post('/addAdmin/:corporateId', requireAuth, requireRole([UserRole.CORPORATE_ADMIN]), CorporateController.addAdmin);
 
+// GET /api/corporate/admins/all
+router.get('/admins/all', requireAuth, requireRole([UserRole.CORPORATE_ADMIN]), CorporateController.getCorporateAdmins);
+
+// GET /api/corporate/admin-profile/:adminId
+router.get('/admin-profile/:adminId', requireAuth, requireRole([UserRole.CORPORATE_ADMIN]), CorporateController.getCorporateAdminProfile);
+
 export default router;

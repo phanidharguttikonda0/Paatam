@@ -25,6 +25,12 @@ router.delete('/:adminId', AdminController.deleteAdmin);
 // GET /api/admin/corporate/all
 router.get('/corporate/all', AdminController.getAdminsForCorporate);
 
+// GET /api/admin/corporate/search
+router.get('/corporate/search', AdminController.searchBranchAdmins);
+
+// GET /api/admin/profile/:adminId
+router.get('/profile/:adminId', AdminController.getAdminProfile);
+
 // GET /api/admin/:adminId/branches
 router.get('/:adminId/branches', AdminController.getAdminBranches);
 

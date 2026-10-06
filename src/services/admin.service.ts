@@ -78,12 +78,17 @@ export class AdminService {
     return { message: 'Branches assigned successfully' };
   }
 
-  public static async updateAdmin(adminId: bigint, data: {
+  public static async updateAdmin(adminId: bigint, corporateId: bigint, data: {
     admin_name?: string;
     contact_email?: string;
     mobile?: string;
     role?: AdminRole;
   }) {
+    // Tenancy Check
+    const existingAdmin = await prisma.admin.findUnique({ where: { id: adminId }});
+    if (!existingAdmin || existingAdmin.corporate_id !== corporateId) {
+      throw new AppError('Admin not found or access denied', 403);
+    }
     // check uniqueness of email/mobile if provided
     if (data.contact_email || data.mobile) {
       const existing = await prisma.admin.findFirst({
@@ -109,7 +114,13 @@ export class AdminService {
     return safeAdmin;
   }
 
-  public static async deleteAdmin(adminId: bigint) {
+  public static async deleteAdmin(adminId: bigint, corporateId: bigint) {
+    // Tenancy Check
+    const existingAdmin = await prisma.admin.findUnique({ where: { id: adminId }});
+    if (!existingAdmin || existingAdmin.corporate_id !== corporateId) {
+      throw new AppError('Admin not found or access denied', 403);
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.adminBranchAccess.deleteMany({
         where: { admin_id: adminId }
@@ -122,25 +133,88 @@ export class AdminService {
     return { message: 'Admin deleted successfully' };
   }
 
-  public static async getAdminBranches(adminId: bigint) {
+  public static async getAdminBranches(adminId: bigint, cursor?: bigint, limit: number = 10) {
     const accesses = await prisma.adminBranchAccess.findMany({
       where: { admin_id: adminId },
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: { id: 'asc' },
       include: {
         Branch: true
       }
     });
-    return accesses.map(a => a.Branch);
+    return accesses.map((a: any) => ({ ...a.Branch, _accessId: a.id })); // Keeping ID for cursor logic if needed, but returning Branch
   }
 
-  public static async getAdminsForCorporate(corporateId: bigint) {
+  public static async getAdminsForCorporate(corporateId: bigint, cursor?: bigint, limit: number = 10) {
     const admins = await prisma.admin.findMany({
       where: { corporate_id: corporateId },
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: { id: 'asc' },
       select: {
         id: true,
         corporate_id: true,
         admin_name: true,
         contact_email: true,
-        mobile: true,
+        role: true
+      }
+    });
+    return admins;
+  }
+
+  public static async getAdminProfile(adminId: bigint, corporateId: bigint) {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId }
+    });
+    
+    if (!admin || admin.corporate_id !== corporateId) {
+      throw new AppError('Admin not found or access denied', 403);
+    }
+    
+    const { password_hash: _, ...safeAdmin } = admin;
+    return safeAdmin;
+  }
+
+  public static async checkAdminExistsByIdentifier(identifier: string, corporateId: bigint) {
+    const admin = await prisma.admin.findFirst({
+      where: {
+        corporate_id: corporateId,
+        OR: [
+          { contact_email: identifier },
+          { mobile: identifier }
+        ]
+      }
+    });
+
+    if (!admin) {
+      throw new AppError('No branch admin found with that identifier in this corporate entity', 404);
+    }
+
+    return admin;
+  }
+
+  public static async updatePassword(adminId: bigint, newPasswordPlain: string) {
+    const password_hash = await bcrypt.hash(newPasswordPlain, 10);
+    await prisma.admin.update({
+      where: { id: adminId },
+      data: { password_hash }
+    });
+  }
+
+  public static async searchBranchAdmins(corporateId: bigint, query: string) {
+    const admins = await prisma.admin.findMany({
+      where: {
+        corporate_id: corporateId,
+        admin_name: { contains: query, mode: 'insensitive' }
+      },
+      take: 5,
+      select: {
+        id: true,
+        admin_name: true,
+        contact_email: true,
         role: true
       }
     });

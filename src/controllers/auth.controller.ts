@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { OtpService } from '../services/otp.service';
 import { AuthService } from '../services/auth.service';
+import { AdminService } from '../services/admin.service';
 import { prisma } from '../config/prisma';
 import { AppError } from '../exceptions/AppError';
 import { UserRole } from '../enums/role.enum';
@@ -185,6 +186,63 @@ export class AuthController {
             role: userRole
           }
         }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async adminForgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, corporateId } = req.body;
+      
+      if (!corporateId) {
+        throw new AppError('corporateId is required', 400);
+      }
+
+      const admin = await AdminService.checkAdminExistsByIdentifier(identifier, BigInt(corporateId));
+      
+      // Figure out if identifier is email or mobile based on what matched
+      const isEmail = admin.contact_email === identifier;
+      const isMobile = admin.mobile === identifier;
+
+      const otp = await OtpService.generateAndStoreOtp(
+        isEmail ? identifier : undefined,
+        isMobile ? identifier : undefined
+      );
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Password reset OTP sent successfully',
+        data: process.env.NODE_ENV === 'production' ? null : { otp }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async adminResetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, corporateId, otp, new_password } = req.body;
+
+      if (!corporateId) throw new AppError('corporateId is required', 400);
+
+      const admin = await AdminService.checkAdminExistsByIdentifier(identifier, BigInt(corporateId));
+
+      const isEmail = admin.contact_email === identifier;
+      const isMobile = admin.mobile === identifier;
+
+      await OtpService.validateAndConsumeOtp(
+        otp,
+        isEmail ? identifier : undefined,
+        isMobile ? identifier : undefined
+      );
+
+      await AdminService.updatePassword(admin.id, new_password);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Password has been reset successfully'
       });
     } catch (error) {
       next(error);

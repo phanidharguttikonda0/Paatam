@@ -20,4 +20,10 @@ router.post('/corporate/verify', AuthController.corporateLoginVerify);
 // POST /api/auth/admin/login
 router.post('/admin/login', validate(adminLoginSchema), AuthController.adminLogin);
 
+// POST /api/auth/admin/forgot-password
+router.post('/admin/forgot-password', AuthController.adminForgotPassword);
+
+// POST /api/auth/admin/reset-password
+router.post('/admin/reset-password', AuthController.adminResetPassword);
+
 export default router;

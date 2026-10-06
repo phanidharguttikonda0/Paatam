@@ -4,6 +4,7 @@ import { UserRole } from '../enums/role.enum';
 import { AppError } from '../exceptions/AppError';
 import { OtpService } from '../services/otp.service';
 import { prisma } from '../config/prisma';
+import { parseCursorLimit, formatPaginatedResponse } from '../utils/pagination';
 
 export class CorporateController {
   public static async lookupByRegistrationNo(req: Request, res: Response, next: NextFunction) {
@@ -87,6 +88,54 @@ export class CorporateController {
         status: 'success',
         message: 'Admin added successfully',
         data: newAdmin,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async getCorporateAdmins(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      
+      if (!user || !user.corporateId) {
+        throw new AppError('Unauthorized: Missing corporate identity', 401);
+      }
+
+      const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
+      const admins = await CorporateService.getCorporateAdmins(BigInt(user.corporateId), cursor, limit);
+      
+      const safeAdmins = admins.map((a: any) => ({
+        ...a,
+        id: a.id.toString(),
+      }));
+
+      const paginated = formatPaginatedResponse(safeAdmins, limit);
+
+      res.status(200).json({
+        status: 'success',
+        ...paginated
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async getCorporateAdminProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { adminId } = req.params;
+      const user = (req as any).user;
+      if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
+
+      const admin = await CorporateService.getCorporateAdminProfile(BigInt(adminId), BigInt(user.corporateId));
+      
+      res.status(200).json({
+        status: 'success',
+        data: {
+          ...admin,
+          id: admin.id.toString(),
+          corporate_id: admin.corporate_id.toString()
+        }
       });
     } catch (error) {
       next(error);
