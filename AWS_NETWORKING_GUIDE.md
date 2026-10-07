@@ -88,3 +88,40 @@ Because your ECS containers live in a Private Subnet, they have no direct route 
 ### Why do we need a NAT Gateway per AZ in Production?
 In Dev, we place a single NAT Gateway in AZ-A. We tell the subnets in both AZ-A and AZ-B to use it. 
 However, if the physical data center for AZ-A goes offline, the subnets in AZ-B suddenly lose their path to the internet, breaking your app! In **Production**, you deploy one NAT Gateway per AZ so that each data center is fully self-sufficient and highly available.
+
+---
+
+## 5. The Routing & Security Layer (ALB & WAF)
+
+### ALB (Application Load Balancer)
+- **Heavy Loads:** The ALB is a fully managed service by AWS. Unlike ECS where we specify CPU/RAM limits, we specify **absolutely nothing** for the ALB's compute power. AWS automatically and invisibly scales the ALB behind the scenes to handle massive, global-scale traffic (millions of requests per second).
+- **IP Addresses vs DNS Names:** You **cannot** assign a static Elastic IP to an Application Load Balancer. Because AWS constantly scales the ALB, its IP addresses change dynamically. Instead, AWS gives you a permanent **DNS Name** (e.g., `paatam-alb-123.ap-south-2.elb.amazonaws.com`). You use a CNAME or Alias record in your domain registrar to point your website (`api.paatam.com`) to that DNS name.
+- **Routing:** It natively uses a Round Robin algorithm to balance traffic across your healthy ECS containers.
+
+### WAF (Web Application Firewall)
+The WAF sits in front of the ALB acting as a bouncer, dropping malicious requests before they even touch your Node.js code.
+- **In Dev & Prod:** We load the `AWSManagedRulesCommonRuleSet`. This automatically blocks:
+  - **SQL Injection (SQLi):** Malicious database queries injected into input fields.
+  - **Cross-Site Scripting (XSS):** Malicious javascript injected into payloads.
+  - **Bad Inputs & IP Reputation:** Drops exceptionally large requests and traffic from known botnets.
+- **WAF Pricing (Production Considerations):**
+  - WebACL Base Cost: ~$5.00 / month.
+  - AWS Managed Rules: ~$1.00 to $5.00 / month per rule group.
+  - Traffic Cost: ~$0.60 per 1 million requests analyzed.
+  - *In Prod, if you require extreme security, you can add additional managed rules (like Bot Control or AWS Shield Advanced for DDoS protection), but those increase costs significantly.*
+
+---
+
+## 6. Storage & Messaging Layer (S3, SES, SNS)
+
+### S3 (Simple Storage Service)
+- The S3 bucket (`paatam-uploads`) is configured to be strictly private. All public access is blocked at the AWS network level.
+- Your Node.js backend must generate "Pre-Signed URLs" to temporarily allow users to download or upload files securely.
+
+### SES (Simple Email Service)
+- To send emails from your company domain (e.g., `noreply@paatam.com`), we create an **Email Identity** in AWS.
+- AWS will send a physical verification link to that inbox. You must click it to prove ownership. Once verified, your ECS containers can send thousands of OTP emails masquerading as that address.
+
+### SNS (Simple Notification Service)
+- **No Sender Number Required:** Unlike Twilio, AWS SNS does NOT require you to buy or register a dedicated "Sender Mobile Number". AWS routes texts through their own global pool of short-codes (like `555-123`).
+- **Transactional Routing:** We configure the SMS preferences to "Transactional" (bypassing Do Not Disturb lists, which is crucial for OTPs) and set the Sender ID to `"PAATAM"`, meaning users see "PAATAM" on their phone screens instead of a random phone number.
