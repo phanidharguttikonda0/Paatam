@@ -13,3 +13,16 @@ vpc_cidr = "10.1.0.0/16"
 public_subnets   = ["10.1.1.0/24", "10.1.2.0/24", "10.1.3.0/24"]
 private_subnets  = ["10.1.11.0/24", "10.1.12.0/24", "10.1.13.0/24"]
 isolated_subnets = ["10.1.21.0/24", "10.1.22.0/24", "10.1.23.0/24"]
+
+# Prod Database Configuration
+db_instance_class    = "db.t4g.medium" # Better compute
+db_allocated_storage = 100             # 100 GB storage
+db_multi_az          = true            # Highly available (Standby replica in another AZ)
+
+# Prod Compute Configuration
+ecs_task_cpu      = 2048 # 2 vCPU
+ecs_task_memory   = 4096 # 4 GB RAM
+ecs_desired_count = 3    # Run 3 containers by default
+
+# Prod Messaging Configuration
+company_sender_email = "noreply@paatam.com"

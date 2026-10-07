@@ -32,3 +32,47 @@ variable "isolated_subnets" {
   description = "List of CIDR blocks for Isolated Subnets (no internet access)"
   type        = list(string)
 }
+
+# ================================
+# Database Variables
+# ================================
+variable "db_instance_class" {
+  description = "The instance type of the RDS database"
+  type        = string
+}
+
+variable "db_allocated_storage" {
+  description = "The allocated storage in gigabytes"
+  type        = number
+}
+
+variable "db_multi_az" {
+  description = "Whether to deploy the DB across multiple Availability Zones"
+  type        = bool
+}
+
+# ================================
+# Compute Variables (ECS)
+# ================================
+variable "ecs_task_cpu" {
+  description = "CPU units for the ECS task (1024 = 1 vCPU)"
+  type        = number
+}
+
+variable "ecs_task_memory" {
+  description = "Memory for the ECS task (in MiB, e.g., 1024 = 1 GB)"
+  type        = number
+}
+
+variable "ecs_desired_count" {
+  description = "Number of Fargate containers to run"
+  type        = number
+}
+
+# ================================
+# Messaging Variables
+# ================================
+variable "company_sender_email" {
+  description = "The official company email used to send OTPs (e.g., noreply@paatam.com)"
+  type        = string
+}
