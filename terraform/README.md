@@ -137,3 +137,44 @@ We have now successfully designed and written the explicit Terraform Infrastruct
 5. **Storage & Messaging**: S3, SES, SNS (`s3.tf`, `messaging.tf`).
 
 Everything is completely variable-driven via `dev.tfvars` and `prod.tfvars` to ensure maximum cost savings in Dev and high-availability scaling in Prod.
+
+---
+
+## 5. Deployment Guide: AWS CLI & Authentication
+
+Before you can deploy this Terraform code, you must authenticate your machine with AWS.
+
+### Step 1: Install AWS CLI and Terraform
+Since you are using openSUSE, open your terminal and run this command (it will ask for your root password):
+```bash
+sudo zypper refresh && sudo zypper install -y aws-cli terraform
+```
+
+### Step 2: Generate AWS Access Keys
+AWS uses "Access Keys" to authenticate your terminal instead of a traditional password. Here is exactly how to get them:
+
+1. Log into the [AWS Management Console](https://aws.amazon.com/console/).
+2. In the top-right corner, click on your **Account Name** and select **Security Credentials** from the dropdown.
+3. Scroll down to the **Access keys** section.
+4. Click the **Create access key** button.
+5. Select **Command Line Interface (CLI)** as the use case, check the confirmation box, and click **Next**.
+6. (Optional) Give it a description tag like "My local dev machine" and click **Create access key**.
+7. **STOP!** Do not close this page yet. You will see an **Access key ID** and a **Secret access key**. This is the *only* time AWS will ever show you the Secret Key. 
+
+### Step 3: Configure your Terminal
+Now that you have your keys, go back to your terminal in the IDE and run:
+```bash
+aws configure
+```
+It will prompt you for 4 things. Copy and paste them exactly:
+- **AWS Access Key ID**: *(Paste the Access Key ID from AWS)*
+- **AWS Secret Access Key**: *(Paste the Secret Access Key from AWS)*
+- **Default region name**: `ap-south-2`
+- **Default output format**: `json`
+
+### Step 4: Run Terraform
+Once `aws configure` is complete, your terminal is securely logged into AWS. You can now deploy the infrastructure:
+1. `cd terraform/`
+2. `terraform init` (Downloads the AWS plugins)
+3. `terraform plan -var-file="environments/dev.tfvars"` (Shows you what AWS will create)
+4. `terraform apply -var-file="environments/dev.tfvars" -auto-approve` (Actually builds it!)
