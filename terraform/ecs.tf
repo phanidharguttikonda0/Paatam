@@ -86,10 +86,17 @@ resource "aws_ecs_task_definition" "main" {
       protocol      = "tcp"
     }]
     
-    # We pass the RDS Proxy URL as an environment variable to the Node.js app!
+    # We pass the environment securely
     environment = [
-      { name = "DATABASE_HOST", value = aws_db_proxy.main.endpoint },
       { name = "NODE_ENV", value = var.environment }
+    ]
+
+    # This pulls the DATABASE_URL directly from AWS Secrets Manager and injects it as an environment variable!
+    secrets = [
+      {
+        name      = "DATABASE_URL"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:DATABASE_URL::"
+      }
     ]
 
     logConfiguration = {

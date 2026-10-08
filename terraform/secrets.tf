@@ -22,5 +22,27 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
     port                 = aws_db_instance.main.port
     dbname               = aws_db_instance.main.db_name
     dbInstanceIdentifier = aws_db_instance.main.id
+    # Prisma connection URL using the RDS Proxy endpoint for connection pooling!
+    DATABASE_URL         = "postgresql://${aws_db_instance.main.username}:${random_password.db_password.result}@${aws_db_proxy.main.endpoint}:5432/${aws_db_instance.main.db_name}?connection_limit=1"
+  })
+}
+
+# ==========================================
+# 2. ECS Execution Role Permissions
+# ==========================================
+# Allow ECS to read this specific secret so it can inject DATABASE_URL securely!
+resource "aws_iam_role_policy" "ecs_secrets_policy" {
+  name = "paatam-ecs-secrets-policy-${var.environment}"
+  role = aws_iam_role.ecs_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["secretsmanager:GetSecretValue"]
+        Effect   = "Allow"
+        Resource = aws_secretsmanager_secret.db_credentials.arn
+      }
+    ]
   })
 }
