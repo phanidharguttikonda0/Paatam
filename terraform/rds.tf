@@ -77,7 +77,7 @@ resource "aws_db_instance" "main" {
   identifier = "paatam-db-${var.environment}"
   
   engine               = "postgres"
-  engine_version       = "16.3"
+  engine_version       = "16"
   
   # These are dynamically pulled from tfvars (e.g., db.t4g.micro for dev)
   instance_class       = var.db_instance_class
