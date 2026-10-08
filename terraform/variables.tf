@@ -72,7 +72,7 @@ variable "ecs_desired_count" {
 # ================================
 # Messaging Variables
 # ================================
-variable "company_sender_email" {
-  description = "The official company email used to send OTPs (e.g., noreply@paatam.com)"
+variable "company_domain" {
+  description = "The root domain used to verify SES (e.g., paatam.in) so you can send from any address on this domain"
   type        = string
 }

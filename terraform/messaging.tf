@@ -4,8 +4,12 @@
 # To send emails via SES, you MUST verify that you own the email address or domain.
 # This creates the configuration telling AWS: "I want to send emails from this address."
 # AWS will send a verification email to this address, which you must click to approve!
-resource "aws_ses_email_identity" "main" {
-  email = var.company_sender_email
+resource "aws_ses_domain_identity" "main" {
+  domain = var.company_domain
+}
+
+resource "aws_ses_domain_dkim" "main" {
+  domain = aws_ses_domain_identity.main.domain
 }
 
 # ==========================================

@@ -24,4 +24,4 @@ ecs_task_memory   = 1024 # 1 GB RAM
 ecs_desired_count = 2    # Run 2 containers by default
 
 # Dev Messaging Configuration
-company_sender_email = "noreply-dev@paatam.com"
+company_domain = "paatam.in"

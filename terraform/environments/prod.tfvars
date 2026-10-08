@@ -25,4 +25,4 @@ ecs_task_memory   = 4096 # 4 GB RAM
 ecs_desired_count = 3    # Run 3 containers by default
 
 # Prod Messaging Configuration
-company_sender_email = "noreply@paatam.com"
+company_domain = "paatam.in"
