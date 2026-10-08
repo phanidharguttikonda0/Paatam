@@ -3,3 +3,9 @@ node_modules
 dist
 .prisma
 coverage
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
