@@ -264,3 +264,29 @@ export class OtpService {
   }
 }
 ```
+
+## ☁️ AWS Infrastructure & Deployment
+
+The entire infrastructure for this backend is codified using **Terraform** in the `/terraform` folder.
+
+### Architecture Overview
+- **Networking:** Custom VPC with Public subnets (for NAT/ALB) and fully Isolated Private Subnets (for RDS database).
+- **Database:** AWS RDS PostgreSQL protected by **RDS Proxy** (for efficient serverless connection pooling).
+- **Compute:** AWS ECS Fargate (Serverless Docker containers).
+- **Security:** 
+  - AWS WAF (Web Application Firewall) blocking SQL injection and DDoS attacks.
+  - AWS Secrets Manager securely injects the `DATABASE_URL` directly into the Fargate containers at boot time.
+- **Messaging:** AWS SES (Emails) and SNS (SMS OTPs).
+- **Storage:** AWS S3 for profile picture and document uploads.
+
+### How CI/CD Works
+We use **GitHub Actions** (`.github/workflows/deploy.yml`) for automated deployments.
+1. When you push to the `main` branch, GitHub Actions logs into AWS using your Repository Secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
+2. It builds the Docker image and pushes it to **AWS ECR (Elastic Container Registry)**.
+3. It forces **AWS ECS** to deploy the new image.
+4. ECS pulls the new image and spins up the new containers gracefully without downtime.
+
+### How Prisma Migrations run in AWS
+Because our database is completely isolated from the public internet (for maximum security), we cannot run `npx prisma migrate` from our local machines or GitHub Actions. 
+Instead, the **Dockerfile** is configured to automatically run `npx prisma migrate deploy` **inside** the ECS container right before the Node server starts. 
+- *Note: `migrate deploy` is completely safe. It does not wipe data. It simply applies any new SQL migration files that haven't been applied yet. If there are no new migrations, it gracefully skips!*
