@@ -154,9 +154,10 @@ sudo zypper install -y aws-cli wget unzip
 # 2. Download the Terraform binary
 wget https://releases.hashicorp.com/terraform/1.9.0/terraform_1.9.0_linux_amd64.zip
 
-# 3. Unzip it and move it to your system binaries so you can run it anywhere
-unzip terraform_1.9.0_linux_amd64.zip
-sudo mv terraform /usr/local/bin/
+# 3. Safely extract and move it to your system binaries
+unzip -p terraform_1.9.0_linux_amd64.zip terraform > terraform_binary
+chmod +x terraform_binary
+sudo mv terraform_binary /usr/local/bin/terraform
 
 # 4. Clean up the zip file
 rm terraform_1.9.0_linux_amd64.zip
