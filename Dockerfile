@@ -35,8 +35,8 @@ COPY package*.json ./
 # Install ONLY production dependencies (reduces image size significantly)
 RUN npm ci --only=production
 
-# Install Prisma CLI so we can run database migrations
-RUN npm install prisma --save-prod
+# Install Prisma CLI so we can run database migrations (pinned to v6 to match client)
+RUN npm install prisma@^6.4.1 --save-prod
 
 # Copy generated Prisma Client
 COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
