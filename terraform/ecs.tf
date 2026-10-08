@@ -73,6 +73,7 @@ resource "aws_ecs_task_definition" "main" {
   cpu                      = var.ecs_task_cpu
   memory                   = var.ecs_task_memory
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   # The container definition (JSON)
   container_definitions = jsonencode([{
