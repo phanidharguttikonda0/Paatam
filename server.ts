@@ -21,7 +21,7 @@ app.use(pinoHttp({ logger }));
 app.use("/api", apiRoutes);
 
 // Health Endpoint
-app.get("/health", (req: Request, res: Response) => {
+app.get(["/health", "/api/health"], (req: Request, res: Response) => {
   res.status(200).json({
     status: "ok",
     timestamp: new Date().toISOString()
