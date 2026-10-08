@@ -37,7 +37,7 @@ export class BranchController {
       }
 
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const admins = await BranchService.getAdminsForBranch(BigInt(branchId), BigInt(user.corporateId), cursor, limit);
+      const admins = await BranchService.getAdminsForBranch(BigInt(branchId as string), BigInt(user.corporateId), cursor, limit);
       
       const serializedAdmins = admins.map(admin => ({
         ...admin,
@@ -95,7 +95,7 @@ export class BranchController {
       }
 
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const teachers = await BranchService.getTeachersForBranch(BigInt(branchId), BigInt(user.corporateId), cursor, limit);
+      const teachers = await BranchService.getTeachersForBranch(BigInt(branchId as string), BigInt(user.corporateId), cursor, limit);
       
       const serializedTeachers = teachers.map(t => ({
         ...t,

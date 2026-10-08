@@ -38,7 +38,7 @@ export class AdminController {
 
       const branchIdsBigInt = branch_ids.map((id: string | number) => BigInt(id));
       
-      const result = await AdminService.assignBranches(BigInt(adminId), branchIdsBigInt, BigInt(user.corporateId));
+      const result = await AdminService.assignBranches(BigInt(adminId as string), branchIdsBigInt, BigInt(user.corporateId));
       
       res.status(200).json({
         status: 'success',
@@ -55,7 +55,7 @@ export class AdminController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const admin = await AdminService.updateAdmin(BigInt(adminId), BigInt(user.corporateId), req.body);
+      const admin = await AdminService.updateAdmin(BigInt(adminId as string), BigInt(user.corporateId), req.body);
       
       res.status(200).json({
         status: 'success',
@@ -76,7 +76,7 @@ export class AdminController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const result = await AdminService.deleteAdmin(BigInt(adminId), BigInt(user.corporateId));
+      const result = await AdminService.deleteAdmin(BigInt(adminId as string), BigInt(user.corporateId));
       
       res.status(200).json({
         status: 'success',
@@ -91,7 +91,7 @@ export class AdminController {
     try {
       const { adminId } = req.params;
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const branches = await AdminService.getAdminBranches(BigInt(adminId), cursor, limit);
+      const branches = await AdminService.getAdminBranches(BigInt(adminId as string), cursor, limit);
       
       const safeBranches = branches.map(b => ({
         ...b,
@@ -145,7 +145,7 @@ export class AdminController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const admin = await AdminService.getAdminProfile(BigInt(adminId), BigInt(user.corporateId));
+      const admin = await AdminService.getAdminProfile(BigInt(adminId as string), BigInt(user.corporateId));
       
       res.status(200).json({
         status: 'success',

@@ -14,3 +14,12 @@ output "ses_domain_verification_tokens" {
     }
   ]
 }
+
+output "ses_domain_verification_txt_record" {
+  description = "The TXT record for explicit domain verification (optional if DKIM works, but helps speed it up)"
+  value = {
+    type  = "TXT"
+    name  = "_amazonses.${var.company_domain}"
+    value = aws_ses_domain_identity.main.verification_token
+  }
+}

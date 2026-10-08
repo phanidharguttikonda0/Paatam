@@ -12,7 +12,7 @@ export class CorporateController {
       const { registrationNo } = req.params;
 
       const corporate = await prisma.corporate.findUnique({
-        where: { registration_no: registrationNo },
+        where: { registration_no: registrationNo as string },
         select: { id: true, name: true, registration_no: true } // Only return safe fields
       });
 
@@ -78,7 +78,7 @@ export class CorporateController {
         throw new AppError('Invalid or expired verification token. Please verify your email/mobile again.', 401);
       }
 
-      const newAdmin = await CorporateService.addAdmin(BigInt(corporateId), {
+      const newAdmin = await CorporateService.addAdmin(BigInt(corporateId as string), {
         name,
         email,
         mobile,
@@ -127,7 +127,7 @@ export class CorporateController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const admin = await CorporateService.getCorporateAdminProfile(BigInt(adminId), BigInt(user.corporateId));
+      const admin = await CorporateService.getCorporateAdminProfile(BigInt(adminId as string), BigInt(user.corporateId));
       
       res.status(200).json({
         status: 'success',

@@ -28,8 +28,8 @@ function getMachineIdFromIp(): number {
 // Initialize Sonyflake
 const sonyflake = new Sonyflake({
   machineId: getMachineIdFromIp(),
-  // Custom epoch (e.g., Oct 1, 2026) to maximize ID lifespan
-  epoch: Date.UTC(2026, 9, 1),
+  // Custom startTime (e.g., Oct 1, 2026) to maximize ID lifespan
+  startTime: Date.UTC(2026, 9, 1),
 });
 
 export const idGenerator = {
