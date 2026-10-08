@@ -36,11 +36,14 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Install Prisma CLI so we can run database migrations
-RUN npm install prisma
+RUN npm install prisma --save-prod
 
 # Copy generated Prisma Client
 COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /usr/src/app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy prisma schema and migrations for "migrate deploy"
+COPY --from=builder /usr/src/app/prisma /usr/src/app/prisma
 
 # Copy built JavaScript files from the builder stage
 COPY --from=builder /usr/src/app/dist ./dist
@@ -49,4 +52,4 @@ COPY --from=builder /usr/src/app/dist ./dist
 EXPOSE 4545
 
 # Start the application by first running database migrations, then starting the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=/usr/src/app/prisma/schema.prisma && node dist/server.js"]
