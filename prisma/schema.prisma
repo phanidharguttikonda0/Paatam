@@ -37,6 +37,7 @@ model Branch {
   address             String              @db.Text
   branch_contact_mail String              @db.Text
   mobile_number       String              @db.VarChar(10)
+  created_at          DateTime            @default(now()) @db.Timestamptz
   Corporate           Corporate           @relation(fields: [corporate_id], references: [id])
   AdminBranchAccesses AdminBranchAccess[]
   AcademicYears       AcademicYear[]
@@ -60,6 +61,7 @@ model Admin {
   mobile              String              @unique @db.VarChar(10)
   role                AdminRole
   password_hash       String              @db.Text
+  created_at          DateTime            @default(now()) @db.Timestamptz
   Corporate           Corporate           @relation(fields: [corporate_id], references: [id])
   AdminBranchAccesses AdminBranchAccess[]
 
@@ -67,21 +69,24 @@ model Admin {
 }
 
 model AdminBranchAccess {
-  id        BigInt @id
-  admin_id  BigInt
-  branch_id BigInt
-  Admin     Admin  @relation(fields: [admin_id], references: [id])
-  Branch    Branch @relation(fields: [branch_id], references: [id])
+  id         BigInt   @id
+  admin_id   BigInt
+  branch_id  BigInt
+  created_at DateTime @default(now()) @db.Timestamptz
+  Admin      Admin    @relation(fields: [admin_id], references: [id])
+  Branch     Branch   @relation(fields: [branch_id], references: [id])
 
   @@unique([admin_id, branch_id])
 }
 
 model AcademicYear {
-  id         BigInt  @id
+  id         BigInt   @id
   branch_id  BigInt
   start_year Int
   end_year   Int
-  Branch     Branch  @relation(fields: [branch_id], references: [id])
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz
+  Branch     Branch   @relation(fields: [branch_id], references: [id])
   Classes    Class[]
 
   @@unique([branch_id, start_year])
@@ -91,14 +96,15 @@ model Class {
   id               BigInt         @id
   branch_id        BigInt
   academic_year_id BigInt
-  class            String         @db.VarChar(10)
-  class_order      Int?
+  name             String         @db.Text
+  class_order      Int
+  created_at       DateTime       @default(now()) @db.Timestamptz
   Branch           Branch         @relation(fields: [branch_id], references: [id])
   AcademicYear     AcademicYear   @relation(fields: [academic_year_id], references: [id])
   Sections         Section[]
   ClassSubjects    ClassSubject[]
 
-  @@unique([branch_id, academic_year_id, class])
+  @@unique([branch_id, academic_year_id, name])
 }
 
 model Teacher {
@@ -109,6 +115,7 @@ model Teacher {
   password_hash   String           @db.Text
   contact_email   String           @db.Text
   contact_mobile  String           @db.Text
+  created_at      DateTime         @default(now()) @db.Timestamptz
   Branch          Branch           @relation(fields: [branch_id], references: [id])
   Sections        Section[]
   TeacherSubjects TeacherSubject[]
@@ -122,6 +129,7 @@ model Section {
   class_teacher_id BigInt?
   section_name     String       @db.VarChar(20)
   strength         Int
+  created_at       DateTime     @default(now()) @db.Timestamptz
   Class            Class        @relation(fields: [class_id], references: [id])
   Teacher          Teacher?     @relation(fields: [class_teacher_id], references: [id])
   Students         Student[]
@@ -139,6 +147,7 @@ model Student {
   password_hash  String       @db.Text
   contact_email  String?      @db.Text
   contact_mobile String?      @db.Text
+  created_at     DateTime     @default(now()) @db.Timestamptz
   Section        Section      @relation(fields: [section_id], references: [id])
   Submissions    Submission[]
 
@@ -149,18 +158,23 @@ model Subject {
   id              BigInt           @id
   branch_id       BigInt
   name            String           @db.Text
+  code            String?          @db.Text
+  grade           String?          @db.Text
+  board           String?          @db.Text
   description     String?          @db.Text
+  created_at      DateTime         @default(now()) @db.Timestamptz
   Branch          Branch           @relation(fields: [branch_id], references: [id])
   ClassSubjects   ClassSubject[]
   TeacherSubjects TeacherSubject[]
 }
 
 model ClassSubject {
-  id         BigInt  @id
+  id         BigInt   @id
   class_id   BigInt
   subject_id BigInt
-  Class      Class   @relation(fields: [class_id], references: [id])
-  Subject    Subject @relation(fields: [subject_id], references: [id])
+  created_at DateTime @default(now()) @db.Timestamptz
+  Class      Class    @relation(fields: [class_id], references: [id])
+  Subject    Subject  @relation(fields: [subject_id], references: [id])
 
   @@unique([class_id, subject_id])
 }
@@ -169,6 +183,7 @@ model TeacherSubject {
   id          BigInt       @id
   teacher_id  BigInt
   subject_id  BigInt
+  created_at  DateTime     @default(now()) @db.Timestamptz
   Teacher     Teacher      @relation(fields: [teacher_id], references: [id])
   Subject     Subject      @relation(fields: [subject_id], references: [id])
   Assignments Assignment[]
