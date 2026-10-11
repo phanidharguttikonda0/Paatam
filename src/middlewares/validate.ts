@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodObject, ZodError } from 'zod';
+import { ZodType, ZodError } from 'zod';
 import { AppError } from '../exceptions/AppError';
 
-export const validate = (schema: ZodObject) => {
+export const validate = (schema: ZodType<any> | any) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       await schema.parseAsync({
@@ -11,10 +11,12 @@ export const validate = (schema: ZodObject) => {
         params: req.params,
       });
       next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        // Collect all Zod error messages
-        const message = (error as any).errors.map((e: any) => e.message).join(', ');
+    } catch (error: any) {
+      if (error instanceof ZodError || (error && typeof error === 'object' && ('issues' in error || 'errors' in error))) {
+        const issues = error.issues || error.errors || [];
+        const message = Array.isArray(issues) && issues.length > 0
+          ? issues.map((e: any) => e.message).join(', ')
+          : error.message || 'Validation failed';
         return next(new AppError(`Validation failed: ${message}`, 400));
       }
       next(error);

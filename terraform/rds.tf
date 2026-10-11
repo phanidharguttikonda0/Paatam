@@ -94,7 +94,8 @@ resource "aws_db_instance" "main" {
   # Because it is in the isolated subnet, public_ly_accessible MUST be false.
   publicly_accessible    = false
 
-  skip_final_snapshot    = true # Set to false in production to save backups when deleting!
+  skip_final_snapshot       = var.environment == "prod" ? false : true # Saves final backup snapshot in prod
+  final_snapshot_identifier = var.environment == "prod" ? "paatam-db-prod-final-snapshot" : null
 }
 
 # ==========================================

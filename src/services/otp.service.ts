@@ -53,7 +53,7 @@ export class OtpService {
 
     // Note: SMS delivery via Twilio will be integrated later
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (!['production', 'prod'].includes(process.env.NODE_ENV || '')) {
       console.log(`[DEV ONLY] OTP for ${email || mobile} is ${otp}`);
     }
 

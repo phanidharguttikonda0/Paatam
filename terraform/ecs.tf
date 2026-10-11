@@ -86,9 +86,9 @@ resource "aws_ecs_task_definition" "main" {
       protocol      = "tcp"
     }]
     
-    # We pass the environment securely
+    # We pass the environment securely (maps prod to standard Node.js "production")
     environment = [
-      { name = "NODE_ENV", value = var.environment }
+      { name = "NODE_ENV", value = var.environment == "prod" ? "production" : var.environment }
     ]
 
     # This pulls the DATABASE_URL directly from AWS Secrets Manager and injects it as an environment variable!

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BranchService } from '../services/branch.service';
 import { AppError } from '../exceptions/AppError';
 import { parseCursorLimit, formatPaginatedResponse } from '../utils/pagination';
+import { parseBigInt } from '../utils/bigint';
 
 export class BranchController {
   public static async createBranch(req: Request, res: Response, next: NextFunction) {
@@ -12,7 +13,8 @@ export class BranchController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
-      const branch = await BranchService.createBranch(BigInt(user.corporateId), req.body);
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const branch = await BranchService.createBranch(corporateId, req.body);
       
       res.status(201).json({
         status: 'success',
@@ -36,8 +38,11 @@ export class BranchController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
+      const parsedBranchId = parseBigInt(branchId, 'branchId');
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const admins = await BranchService.getAdminsForBranch(BigInt(branchId as string), BigInt(user.corporateId), cursor, limit);
+      const admins = await BranchService.getAdminsForBranch(parsedBranchId, corporateId, cursor, limit);
       
       const serializedAdmins = admins.map(admin => ({
         ...admin,
@@ -65,8 +70,9 @@ export class BranchController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const branches = await BranchService.getAllBranches(BigInt(user.corporateId), cursor, limit);
+      const branches = await BranchService.getAllBranches(corporateId, cursor, limit);
       
       const serializedBranches = branches.map(branch => ({
         ...branch,
@@ -94,8 +100,11 @@ export class BranchController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
+      const parsedBranchId = parseBigInt(branchId, 'branchId');
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const teachers = await BranchService.getTeachersForBranch(BigInt(branchId as string), BigInt(user.corporateId), cursor, limit);
+      const teachers = await BranchService.getTeachersForBranch(parsedBranchId, corporateId, cursor, limit);
       
       const serializedTeachers = teachers.map(t => ({
         ...t,

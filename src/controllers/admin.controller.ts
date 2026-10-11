@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AdminService } from '../services/admin.service';
 import { AppError } from '../exceptions/AppError';
 import { parseCursorLimit, formatPaginatedResponse } from '../utils/pagination';
+import { parseBigInt } from '../utils/bigint';
 
 export class AdminController {
   public static async createAdmin(req: Request, res: Response, next: NextFunction) {
@@ -11,7 +12,8 @@ export class AdminController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
-      const admin = await AdminService.createAdmin(BigInt(user.corporateId), req.body);
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const admin = await AdminService.createAdmin(corporateId, req.body);
       
       res.status(201).json({
         status: 'success',
@@ -36,9 +38,11 @@ export class AdminController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
-      const branchIdsBigInt = branch_ids.map((id: string | number) => BigInt(id));
+      const parsedAdminId = parseBigInt(adminId, 'adminId');
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const branchIdsBigInt = branch_ids.map((id: string | number) => parseBigInt(id, 'branch_id'));
       
-      const result = await AdminService.assignBranches(BigInt(adminId as string), branchIdsBigInt, BigInt(user.corporateId));
+      const result = await AdminService.assignBranches(parsedAdminId, branchIdsBigInt, corporateId);
       
       res.status(200).json({
         status: 'success',
@@ -55,7 +59,9 @@ export class AdminController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const admin = await AdminService.updateAdmin(BigInt(adminId as string), BigInt(user.corporateId), req.body);
+      const parsedAdminId = parseBigInt(adminId, 'adminId');
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const admin = await AdminService.updateAdmin(parsedAdminId, corporateId, req.body);
       
       res.status(200).json({
         status: 'success',
@@ -76,7 +82,9 @@ export class AdminController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const result = await AdminService.deleteAdmin(BigInt(adminId as string), BigInt(user.corporateId));
+      const parsedAdminId = parseBigInt(adminId, 'adminId');
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const result = await AdminService.deleteAdmin(parsedAdminId, corporateId);
       
       res.status(200).json({
         status: 'success',
@@ -90,8 +98,9 @@ export class AdminController {
   public static async getAdminBranches(req: Request, res: Response, next: NextFunction) {
     try {
       const { adminId } = req.params;
+      const parsedAdminId = parseBigInt(adminId, 'adminId');
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const branches = await AdminService.getAdminBranches(BigInt(adminId as string), cursor, limit);
+      const branches = await AdminService.getAdminBranches(parsedAdminId, cursor, limit);
       
       const safeBranches = branches.map(b => ({
         ...b,
@@ -119,8 +128,9 @@ export class AdminController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const admins = await AdminService.getAdminsForCorporate(BigInt(user.corporateId), cursor, limit);
+      const admins = await AdminService.getAdminsForCorporate(corporateId, cursor, limit);
       
       const safeAdmins = admins.map((a: any) => ({
         ...a,
@@ -145,7 +155,9 @@ export class AdminController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const admin = await AdminService.getAdminProfile(BigInt(adminId as string), BigInt(user.corporateId));
+      const parsedAdminId = parseBigInt(adminId, 'adminId');
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const admin = await AdminService.getAdminProfile(parsedAdminId, corporateId);
       
       res.status(200).json({
         status: 'success',
@@ -165,12 +177,13 @@ export class AdminController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
       const query = (req.query.q as string) || '';
       if (!query.trim()) {
         return res.status(200).json({ status: 'success', data: [] });
       }
 
-      const admins = await AdminService.searchBranchAdmins(BigInt(user.corporateId), query);
+      const admins = await AdminService.searchBranchAdmins(corporateId, query);
       
       res.status(200).json({
         status: 'success',

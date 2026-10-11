@@ -5,6 +5,9 @@ import { AdminService } from '../services/admin.service';
 import { prisma } from '../config/prisma';
 import { AppError } from '../exceptions/AppError';
 import { UserRole } from '../enums/role.enum';
+import { parseBigInt } from '../utils/bigint';
+
+const isProduction = ['production', 'prod'].includes(process.env.NODE_ENV || '');
 
 export class AuthController {
   public static async sendOtp(req: Request, res: Response, next: NextFunction) {
@@ -17,7 +20,7 @@ export class AuthController {
         status: 'success',
         message: 'OTP sent successfully',
         // DO NOT SEND OTP IN RESPONSE IN PRODUCTION! This is just for local testing.
-        data: process.env.NODE_ENV === 'production' ? null : { otp } 
+        data: isProduction ? null : { otp } 
       });
     } catch (error) {
       next(error);
@@ -52,10 +55,12 @@ export class AuthController {
         throw new AppError('corporateId is required for login', 400);
       }
 
+      const parsedCorporateId = parseBigInt(corporateId, 'corporateId');
+
       // 1. Check if Corporate Admin exists in THIS corporate entity
       const admin = await prisma.corporateAdmin.findFirst({
         where: {
-          corporate_id: BigInt(corporateId),
+          corporate_id: parsedCorporateId,
           OR: [
             { email: email || undefined },
             { mobile: mobile || undefined }
@@ -73,7 +78,7 @@ export class AuthController {
       res.status(200).json({
         status: 'success',
         message: 'Login OTP sent successfully',
-        data: process.env.NODE_ENV === 'production' ? null : { otp } 
+        data: isProduction ? null : { otp } 
       });
     } catch (error) {
       next(error);
@@ -88,13 +93,15 @@ export class AuthController {
         throw new AppError('corporateId is required for verification', 400);
       }
 
+      const parsedCorporateId = parseBigInt(corporateId, 'corporateId');
+
       // 1. Validate and consume OTP (will throw AppError if invalid)
       await OtpService.validateAndConsumeOtp(otp, email, mobile);
 
       // 2. Fetch the Corporate Admin
       const admin = await prisma.corporateAdmin.findFirst({
         where: {
-          corporate_id: BigInt(corporateId),
+          corporate_id: parsedCorporateId,
           OR: [
             { email: email || undefined },
             { mobile: mobile || undefined }
@@ -114,7 +121,7 @@ export class AuthController {
       // 4. Set Refresh Token as HttpOnly cookie
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'strict',
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       });
@@ -132,6 +139,34 @@ export class AuthController {
             role: userRole,
             corporateId: admin.corporate_id.toString()
           }
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // --- Token Refresh Flow ---
+
+  public static async refreshToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const token = req.cookies?.refreshToken || req.body?.refreshToken;
+
+      if (!token) {
+        throw new AppError('Refresh token required', 401);
+      }
+
+      const newAccessToken = await AuthService.refreshAccessToken(token);
+
+      if (!newAccessToken) {
+        throw new AppError('Invalid or expired refresh token', 401);
+      }
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Access token refreshed successfully',
+        data: {
+          accessToken: newAccessToken
         }
       });
     } catch (error) {
@@ -169,7 +204,7 @@ export class AuthController {
 
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'strict',
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       });
@@ -200,7 +235,8 @@ export class AuthController {
         throw new AppError('corporateId is required', 400);
       }
 
-      const admin = await AdminService.checkAdminExistsByIdentifier(identifier, BigInt(corporateId));
+      const parsedCorporateId = parseBigInt(corporateId, 'corporateId');
+      const admin = await AdminService.checkAdminExistsByIdentifier(identifier, parsedCorporateId);
       
       // Figure out if identifier is email or mobile based on what matched
       const isEmail = admin.contact_email === identifier;
@@ -215,7 +251,7 @@ export class AuthController {
       res.status(200).json({
         status: 'success',
         message: 'Password reset OTP sent successfully',
-        data: process.env.NODE_ENV === 'production' ? null : { otp }
+        data: isProduction ? null : { otp }
       });
     } catch (error) {
       next(error);
@@ -228,7 +264,8 @@ export class AuthController {
 
       if (!corporateId) throw new AppError('corporateId is required', 400);
 
-      const admin = await AdminService.checkAdminExistsByIdentifier(identifier, BigInt(corporateId));
+      const parsedCorporateId = parseBigInt(corporateId, 'corporateId');
+      const admin = await AdminService.checkAdminExistsByIdentifier(identifier, parsedCorporateId);
 
       const isEmail = admin.contact_email === identifier;
       const isMobile = admin.mobile === identifier;

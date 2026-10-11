@@ -32,3 +32,19 @@ export const adminLoginSchema = z.object({
     password: z.string().min(6, "Password is required")
   })
 });
+
+export const adminForgotPasswordSchema = z.object({
+  body: z.object({
+    identifier: z.string().min(3, "Identifier (email or mobile) is required"),
+    corporateId: z.string().min(1, "corporateId is required")
+  })
+});
+
+export const adminResetPasswordSchema = z.object({
+  body: z.object({
+    identifier: z.string().min(3, "Identifier (email or mobile) is required"),
+    corporateId: z.string().min(1, "corporateId is required"),
+    otp: z.string().length(6, "OTP must be exactly 6 digits"),
+    new_password: z.string().min(6, "New password must be at least 6 characters")
+  })
+});

@@ -6,7 +6,7 @@
 resource "aws_secretsmanager_secret" "db_credentials" {
   name                    = "paatam/db/credentials-${var.environment}"
   description             = "PostgreSQL credentials for Paatam ${var.environment}"
-  recovery_window_in_days = 0 # Force deletion immediately when destroying dev env
+  recovery_window_in_days = var.environment == "prod" ? 30 : 0 # 30 days protection in prod, 0 in dev
 }
 
 # This places the actual JSON payload into the secret container.

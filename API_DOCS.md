@@ -282,6 +282,80 @@ Finalizes the login flow by verifying the OTP. Issues an Access Token and sets a
 
 ---
 
+### `POST /api/auth/refresh`
+Refreshes an expired short-lived Access Token using the `refreshToken` HttpOnly cookie or request body.
+
+- **Authentication Required:** No (Uses Refresh Token Cookie or Body)
+- **Request Body (Optional if Cookie is present):**
+  ```json
+  {
+    "refreshToken": "optional-if-sent-via-httponly-cookie"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Access token refreshed successfully",
+    "data": {
+      "accessToken": "eyJhbGciOi..."
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Refresh token required" or "Invalid or expired refresh token"
+
+---
+
+### `POST /api/auth/admin/forgot-password`
+Initiates a password reset for a Branch Admin. Sends an OTP to their registered email/mobile.
+
+- **Authentication Required:** No
+- **Request Body:**
+  ```json
+  {
+    "identifier": "skinner@paatam.in",
+    "corporateId": "1512528182029314"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Password reset OTP sent successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Schema validation failure
+  - `404 Not Found`: Admin not found
+
+---
+
+### `POST /api/auth/admin/reset-password`
+Completes password reset by verifying the OTP and updating the bcrypt password hash.
+
+- **Authentication Required:** No
+- **Request Body:**
+  ```json
+  {
+    "identifier": "skinner@paatam.in",
+    "corporateId": "1512528182029314",
+    "otp": "123456",
+    "new_password": "NewSecurePassword123!"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Password has been reset successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Invalid or expired OTP" or schema validation failure
+
+---
+
 ## 4. Branch Management
 
 ### `GET /api/branch/corporate/all`

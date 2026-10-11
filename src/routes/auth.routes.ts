@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { validate } from '../middlewares/validate';
-import { adminLoginSchema } from '../schemas/admin.schema';
+import { 
+  adminLoginSchema, 
+  adminForgotPasswordSchema, 
+  adminResetPasswordSchema 
+} from '../schemas/admin.schema';
 
 const router = Router();
 
@@ -17,13 +21,16 @@ router.post('/corporate/login', AuthController.corporateLoginRequest);
 // POST /api/auth/corporate/verify
 router.post('/corporate/verify', AuthController.corporateLoginVerify);
 
+// POST /api/auth/refresh
+router.post('/refresh', AuthController.refreshToken);
+
 // POST /api/auth/admin/login
 router.post('/admin/login', validate(adminLoginSchema), AuthController.adminLogin);
 
 // POST /api/auth/admin/forgot-password
-router.post('/admin/forgot-password', AuthController.adminForgotPassword);
+router.post('/admin/forgot-password', validate(adminForgotPasswordSchema), AuthController.adminForgotPassword);
 
 // POST /api/auth/admin/reset-password
-router.post('/admin/reset-password', AuthController.adminResetPassword);
+router.post('/admin/reset-password', validate(adminResetPasswordSchema), AuthController.adminResetPassword);
 
 export default router;

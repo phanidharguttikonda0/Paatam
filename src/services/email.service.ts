@@ -283,7 +283,7 @@ Security Notice: Never share this code with anyone. If you did not request this 
       );
 
       const errorMessage =
-        process.env.NODE_ENV === 'production'
+        ['production', 'prod'].includes(process.env.NODE_ENV || '')
           ? 'Failed to send verification email. Please try again later.'
           : `Failed to send verification email: ${error?.message || 'AWS SES error'}`;
 

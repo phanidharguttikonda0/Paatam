@@ -5,6 +5,7 @@ import { AppError } from '../exceptions/AppError';
 import { OtpService } from '../services/otp.service';
 import { prisma } from '../config/prisma';
 import { parseCursorLimit, formatPaginatedResponse } from '../utils/pagination';
+import { parseBigInt } from '../utils/bigint';
 
 export class CorporateController {
   public static async lookupByRegistrationNo(req: Request, res: Response, next: NextFunction) {
@@ -78,7 +79,8 @@ export class CorporateController {
         throw new AppError('Invalid or expired verification token. Please verify your email/mobile again.', 401);
       }
 
-      const newAdmin = await CorporateService.addAdmin(BigInt(corporateId as string), {
+      const parsedCorporateId = parseBigInt(corporateId, 'corporateId');
+      const newAdmin = await CorporateService.addAdmin(parsedCorporateId, {
         name,
         email,
         mobile,
@@ -102,8 +104,9 @@ export class CorporateController {
         throw new AppError('Unauthorized: Missing corporate identity', 401);
       }
 
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const admins = await CorporateService.getCorporateAdmins(BigInt(user.corporateId), cursor, limit);
+      const admins = await CorporateService.getCorporateAdmins(corporateId, cursor, limit);
       
       const safeAdmins = admins.map((a: any) => ({
         ...a,
@@ -127,7 +130,9 @@ export class CorporateController {
       const user = (req as any).user;
       if (!user || !user.corporateId) throw new AppError('Unauthorized', 401);
 
-      const admin = await CorporateService.getCorporateAdminProfile(BigInt(adminId as string), BigInt(user.corporateId));
+      const parsedAdminId = parseBigInt(adminId, 'adminId');
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const admin = await CorporateService.getCorporateAdminProfile(parsedAdminId, corporateId);
       
       res.status(200).json({
         status: 'success',
