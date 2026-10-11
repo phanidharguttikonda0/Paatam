@@ -3,14 +3,19 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../exceptions/AppError';
 import { idGenerator } from '../utils/idGenerator';
+import { EmailService, OtpEmailPurpose } from './email.service';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_here';
 
 export class OtpService {
   /**
-   * Generates a 6-digit OTP and stores it in the database
+   * Generates a 6-digit OTP, stores it in the database, and dispatches it
    */
-  public static async generateAndStoreOtp(email?: string, mobile?: string): Promise<string> {
+  public static async generateAndStoreOtp(
+    email?: string,
+    mobile?: string,
+    purpose: OtpEmailPurpose = 'verification'
+  ): Promise<string> {
     if (!email && !mobile) {
       throw new AppError('Either email or mobile is required to generate OTP', 400);
     }
@@ -41,8 +46,16 @@ export class OtpService {
       },
     });
 
-    // In a real application, you would integrate AWS SNS, SendGrid, Twilio etc. here
-    console.log(`[DEV ONLY] OTP for ${email || mobile} is ${otp}`);
+    // Dispatch via AWS SES if email is present
+    if (email) {
+      await EmailService.sendOtpEmail(email, otp, purpose);
+    }
+
+    // Note: SMS delivery via Twilio will be integrated later
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV ONLY] OTP for ${email || mobile} is ${otp}`);
+    }
 
     return otp;
   }

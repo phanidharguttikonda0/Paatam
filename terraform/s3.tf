@@ -66,3 +66,29 @@ resource "aws_iam_role_policy" "ecs_s3_policy" {
     ]
   })
 }
+
+# ==========================================
+# 4. ECS Exec Permission (SSM for shell access)
+# ==========================================
+# This allows "aws ecs execute-command" to open a shell into running containers.
+# Useful for connecting to the RDS database in the isolated subnet for debugging.
+resource "aws_iam_role_policy" "ecs_ssm_policy" {
+  name = "paatam-ecs-ssm-policy-${var.environment}"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}

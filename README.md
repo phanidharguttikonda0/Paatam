@@ -215,55 +215,28 @@ Before creating a new Corporate entity or adding a new Corporate Admin, the syst
    - It verifies the signature and checks that the `email` and `mobile` inside the token **exactly match** the data being submitted in the request body.
    - If they match, the backend safely inserts the new user into the database.
 
-### Dispatching OTPs in Production (AWS SES & SNS)
-Currently, in development mode, the OTPs are simply logged to the server console. For production, the system must integrate with **Amazon Web Services (AWS)** to handle actual delivery:
+### Dispatching OTPs (AWS SES)
+The backend is integrated with **Amazon Web Services (AWS SES)** using `@aws-sdk/client-ses` via `EmailService`:
 
-- **AWS SES (Simple Email Service):** Used for sending the OTP via Email.
-- **AWS SNS (Simple Notification Service):** Used for sending the OTP via SMS to mobile devices.
+- **AWS SES (Simple Email Service):** Dispatches OTP verification emails using responsive branded HTML templates with plain-text fallback.
+- **Twilio SMS:** SMS delivery setup for mobile OTPs.
 
-#### Implementation Logic Outline for `otp.service.ts`
-When moving to production, the `generateAndStoreOtp` function will be updated to include the AWS SDK logic:
-
-```typescript
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
-
-// Initialize AWS Clients
-const sesClient = new SESClient({ region: process.env.AWS_REGION });
-const snsClient = new SNSClient({ region: process.env.AWS_REGION });
-
-export class OtpService {
-  public static async generateAndStoreOtp(email?: string, mobile?: string) {
-    // 1. Generate & Store OTP in Database
-    const otp = "..."; 
-    
-    // 2. Dispatch via AWS SES (Email)
-    if (email) {
-      const command = new SendEmailCommand({
-        Destination: { ToAddresses: [email] },
-        Message: {
-          Body: { Text: { Data: `Your Paatam verification code is: ${otp}` } },
-          Subject: { Data: "Your Verification Code" },
-        },
-        Source: process.env.AWS_SES_FROM_EMAIL,
-      });
-      await sesClient.send(command);
-    }
-
-    // 3. Dispatch via AWS SNS (SMS)
-    if (mobile) {
-      // Ensure mobile has country code (e.g., +91)
-      const command = new PublishCommand({
-        Message: `Your Paatam verification code is: ${otp}`,
-        PhoneNumber: mobile, 
-      });
-      await snsClient.send(command);
-    }
-    
-    return otp;
-  }
-}
+#### AWS SES Configuration
+Add the following to your `.env` file (or ECS task environment):
+```env
+AWS_REGION=ap-south-2
+AWS_SES_FROM_EMAIL="Paatam <noreply@paatam.in>"
+# Optional for local development if not using ~/.aws/credentials or IAM role:
+# AWS_ACCESS_KEY_ID=your_access_key
+# AWS_SECRET_ACCESS_KEY=your_secret_key
 ```
+
+#### Architecture Flow in `OtpService` & `EmailService`
+When an OTP is generated (`generateAndStoreOtp`), the system:
+1. Deletes previous unused OTPs for the identifier to avoid bloat.
+2. Generates a 6-digit cryptographic numeric OTP expiring in 5 minutes and persists it to Postgres.
+3. Automatically dispatches the email via `EmailService.sendOtpEmail(email, otp, purpose)`.
+4. Renders a customized, high-contrast, responsive HTML email matching the purpose (`verification`, `login`, or `reset-password`).
 
 ## ☁️ AWS Infrastructure & Deployment
 

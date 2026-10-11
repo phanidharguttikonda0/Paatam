@@ -1,6 +1,11 @@
 import { execSync } from 'child_process';
 import { prisma } from '../config/prisma';
-import { beforeAll, afterAll, beforeEach } from 'vitest';
+import { beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { EmailService } from '../services/email.service';
+
+beforeEach(() => {
+  vi.spyOn(EmailService, 'sendOtpEmail').mockResolvedValue(undefined);
+});
 
 const containerName = 'paatam_test_db_18';
 const port = 5489;

@@ -11,7 +11,7 @@ export class AuthController {
     try {
       const { email, mobile } = req.body;
       
-      const otp = await OtpService.generateAndStoreOtp(email, mobile);
+      const otp = await OtpService.generateAndStoreOtp(email, mobile, 'verification');
 
       res.status(200).json({
         status: 'success',
@@ -68,7 +68,7 @@ export class AuthController {
       }
 
       // 2. Generate and store OTP
-      const otp = await OtpService.generateAndStoreOtp(email, mobile);
+      const otp = await OtpService.generateAndStoreOtp(email, mobile, 'login');
 
       res.status(200).json({
         status: 'success',
@@ -208,7 +208,8 @@ export class AuthController {
 
       const otp = await OtpService.generateAndStoreOtp(
         isEmail ? identifier : undefined,
-        isMobile ? identifier : undefined
+        isMobile ? identifier : undefined,
+        'reset-password'
       );
 
       res.status(200).json({
