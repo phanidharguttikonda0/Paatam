@@ -19,6 +19,7 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "sonyflake": "^2.0.0",
+    "twilio": "^6.2.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {

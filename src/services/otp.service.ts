@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { AppError } from '../exceptions/AppError';
 import { idGenerator } from '../utils/idGenerator';
 import { EmailService, OtpEmailPurpose } from './email.service';
+import { SmsService } from './sms.service';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_here';
 
@@ -51,7 +52,10 @@ export class OtpService {
       await EmailService.sendOtpEmail(email, otp, purpose);
     }
 
-    // Note: SMS delivery via Twilio will be integrated later
+    // Dispatch via Twilio if mobile is present
+    if (mobile) {
+      await SmsService.sendOtpSms(mobile, otp, purpose);
+    }
 
     if (!['production', 'prod'].includes(process.env.NODE_ENV || '')) {
       console.log(`[DEV ONLY] OTP for ${email || mobile} is ${otp}`);

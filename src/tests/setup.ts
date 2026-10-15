@@ -14,9 +14,9 @@ beforeAll(async () => {
   // 1. Clean up any previous dangling container
   try { execSync(`docker rm -f ${containerName}`, { stdio: 'ignore' }); } catch (e) {}
 
-  // 2. Spin up Postgres using raw docker command (Testcontainers bug workaround)
+  // 2. Spin up Postgres using raw docker command (with pgvector support)
   console.log('Starting Postgres container...');
-  execSync(`docker run --name ${containerName} -d -p ${port}:5432 -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=testdb postgres:17-alpine`);
+  execSync(`docker run --name ${containerName} -d -p ${port}:5432 -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=testdb pgvector/pgvector:pg17`);
   
   // Wait 15 seconds for Postgres to be ready
   await new Promise(res => setTimeout(res, 15000));

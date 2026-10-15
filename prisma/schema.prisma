@@ -1,10 +1,12 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 model Corporate {
@@ -113,7 +115,7 @@ model Teacher {
   name            String           @db.Text
   teacher_id      String           @db.Text
   password_hash   String           @db.Text
-  contact_email   String           @db.Text
+  contact_email   String           @unique @db.Text
   contact_mobile  String           @db.Text
   created_at      DateTime         @default(now()) @db.Timestamptz
   Branch          Branch           @relation(fields: [branch_id], references: [id])
@@ -169,12 +171,16 @@ model Subject {
 }
 
 model ClassSubject {
-  id         BigInt   @id
-  class_id   BigInt
-  subject_id BigInt
-  created_at DateTime @default(now()) @db.Timestamptz
-  Class      Class    @relation(fields: [class_id], references: [id])
-  Subject    Subject  @relation(fields: [subject_id], references: [id])
+  id                 BigInt              @id
+  class_id           BigInt
+  subject_id         BigInt
+  created_at         DateTime            @default(now()) @db.Timestamptz
+  Class              Class               @relation(fields: [class_id], references: [id])
+  Subject            Subject             @relation(fields: [subject_id], references: [id])
+  Assignments        Assignment[]
+  CurriculumTopics   CurriculumTopic[]
+  CurriculumChapters CurriculumChapter[]
+  TextbookEmbeddings TextbookEmbedding[]
 
   @@unique([class_id, subject_id])
 }
@@ -194,19 +200,27 @@ model TeacherSubject {
 model Assignment {
   id                 BigInt         @id
   section_id         BigInt
+  class_subject_id   BigInt
   teacher_subject_id BigInt
   title              String         @db.Text
   difficulty         String         @default("Medium") @db.Text
   duration_minutes   Int            @default(60)
   questions_json     Json           @default("[]")
   reasoning_model    String?        @db.Text
+  question_paper_url String         @db.Text
+  answer_key_url     String?        @db.Text
+  answer_key_text    String?        @db.Text
+  due_date           DateTime?      @db.Timestamptz
   status             String         @default("dispatched") @db.Text
   created_at         DateTime       @default(now()) @db.Timestamptz
   Section            Section        @relation(fields: [section_id], references: [id])
+  ClassSubject       ClassSubject   @relation(fields: [class_subject_id], references: [id])
   TeacherSubject     TeacherSubject @relation(fields: [teacher_subject_id], references: [id])
   Submissions        Submission[]
+  BatchJobs          BatchJob[]
 
   @@index([section_id, teacher_subject_id])
+  @@index([class_subject_id])
 }
 
 model Submission {
@@ -239,16 +253,91 @@ model Submission {
 }
 
 model Notification {
-  id            BigInt      @id
-  type          String      @db.Text
-  title         String      @db.Text
-  message       String      @db.Text
-  details_json  Json?
-  timestamp     DateTime    @default(now()) @db.Timestamptz
-  submission_id BigInt?
-  Submission    Submission? @relation(fields: [submission_id], references: [id])
+  id                  BigInt      @id
+  type                String      @db.Text
+  title               String      @db.Text
+  message             String      @db.Text
+  details_json        Json?
+  timestamp           DateTime    @default(now()) @db.Timestamptz
+  submission_id       BigInt?
+  delivery_status     String      @default("pending") @db.Text
+  provider_message_id String?     @db.Text
+  Submission          Submission? @relation(fields: [submission_id], references: [id])
 
   @@index([submission_id])
+}
+
+model BatchJob {
+  id                    BigInt     @id
+  assignment_id         BigInt
+  bulk_mode             String     @default("combined_pdf") @db.Text
+  status                String     @default("queued") @db.Text
+  stage                 String     @default("grading") @db.Text
+  total_files           Int        @default(0)
+  processed_count       Int        @default(0)
+  successful_count      Int        @default(0)
+  failed_count          Int        @default(0)
+  split_progress_json   Json?
+  grading_progress_json Json?
+  status_message        String?    @db.Text
+  errors_json           Json?
+  created_at            DateTime   @default(now()) @db.Timestamptz
+  updated_at            DateTime   @default(now()) @updatedAt @db.Timestamptz
+  Assignment            Assignment @relation(fields: [assignment_id], references: [id], onDelete: Cascade)
+
+  @@index([assignment_id])
+}
+
+model CurriculumTopic {
+  id                   BigInt              @id
+  class_subject_id     BigInt?
+  unit_number          Int                 @default(1)
+  unit_name            String              @db.Text
+  topic_name           String              @db.Text
+  subtopics            Json?
+  prescribed_weightage Int                 @default(0)
+  page_start           Int?
+  page_end             Int?
+  created_at           DateTime            @default(now()) @db.Timestamptz
+  ClassSubject         ClassSubject?       @relation(fields: [class_subject_id], references: [id], onDelete: SetNull)
+  TextbookEmbeddings   TextbookEmbedding[]
+
+  @@index([class_subject_id])
+}
+
+model CurriculumChapter {
+  id                 BigInt              @id
+  class_subject_id   BigInt?
+  chapter_number     Int                 @default(1)
+  chapter_title      String              @db.Text
+  subtopics          Json?
+  pdf_url            String?             @db.Text
+  chunk_count        Int                 @default(0)
+  created_at         DateTime            @default(now()) @db.Timestamptz
+  ClassSubject       ClassSubject?       @relation(fields: [class_subject_id], references: [id], onDelete: SetNull)
+  TextbookEmbeddings TextbookEmbedding[]
+
+  @@index([class_subject_id])
+}
+
+model TextbookEmbedding {
+  id                   BigInt             @id
+  chapter_id           BigInt?
+  class_subject_id     BigInt?
+  topic_id             BigInt?
+  page_number          Int?
+  content_chunk        String             @db.Text
+  subtopics            Json?
+  embedding            Unsupported("vector(1536)")?
+  embedding_dimensions Int                @default(1536)
+  created_at           DateTime           @default(now()) @db.Timestamptz
+  CurriculumChapter    CurriculumChapter? @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+  ClassSubject         ClassSubject?      @relation(fields: [class_subject_id], references: [id], onDelete: SetNull)
+  CurriculumTopic      CurriculumTopic?   @relation(fields: [topic_id], references: [id], onDelete: SetNull)
+
+  @@index([chapter_id])
+  @@index([class_subject_id])
+  @@index([topic_id])
 }
 
 model RefreshToken {

@@ -94,6 +94,9 @@ resource "aws_db_instance" "main" {
   # Because it is in the isolated subnet, public_ly_accessible MUST be false.
   publicly_accessible    = false
 
+  # Export database engine logs (error logs, slow query logs, and upgrade logs) to CloudWatch
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
+
   skip_final_snapshot       = var.environment == "prod" ? false : true # Saves final backup snapshot in prod
   final_snapshot_identifier = var.environment == "prod" ? "paatam-db-prod-final-snapshot" : null
 }

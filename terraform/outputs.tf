@@ -23,3 +23,29 @@ output "ses_domain_verification_txt_record" {
     value = aws_ses_domain_identity.main.verification_token
   }
 }
+
+output "alb_dns_name" {
+  description = "The DNS name of the Application Load Balancer"
+  value       = aws_lb.main.dns_name
+}
+
+output "ecr_repository_url" {
+  description = "The URL of the ECR repository"
+  value       = aws_ecr_repository.main.repository_url
+}
+
+output "rds_endpoint" {
+  description = "The address of the RDS database instance"
+  value       = aws_db_instance.main.address
+}
+
+output "rds_proxy_endpoint" {
+  description = "The endpoint of the RDS Proxy"
+  value       = aws_db_proxy.main.endpoint
+}
+
+output "s3_bucket_name" {
+  description = "The S3 bucket for uploads"
+  value       = aws_s3_bucket.main.bucket
+}
+
