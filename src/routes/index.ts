@@ -6,6 +6,8 @@ import adminRoutes from './admin.routes';
 import branchAdminRoutes from './branchAdmin.routes';
 import academicYearRoutes from './academicYear.routes';
 import classRoutes from './class.routes';
+import sectionRoutes from './section.routes';
+import subjectRoutes from './subject.routes';
 
 const router = Router();
 
@@ -16,5 +18,7 @@ router.use('/admin', adminRoutes);
 router.use('/branch-admin', branchAdminRoutes);
 router.use('/academic-years', academicYearRoutes);
 router.use('/classes', classRoutes);
+router.use('/sections', sectionRoutes);
+router.use('/subjects', subjectRoutes);
 
 export default router;

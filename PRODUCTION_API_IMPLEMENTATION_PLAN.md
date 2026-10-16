@@ -38,7 +38,7 @@ flowchart LR
 | Task # | Task Title | Functional Scope | API Count | Target Status |
 | :---: | :--- | :--- | :---: | :---: |
 | **Task 1** | **Academic Structural Hierarchy** | Branch Extensions, Academic Years & Classes | 13 APIs | `[x] COMPLETED` |
-| **Task 2** | **Sections & Branch Subject Mapping** | Section Management, Class Teachers & Subject Catalog | 15 APIs | `[ ] PENDING` |
+| **Task 2** | **Sections & Branch Subject Mapping** | Section Management, Class Teachers & Subject Catalog | 15 APIs | `[x] COMPLETED` |
 | **Task 3** | **Teacher Directory & Auth Portal** | Teacher Onboarding, Subject Mapping, Login & Dashboard | 15 APIs | `[ ] PENDING` |
 | **Task 4** | **Student Roster & Student Auth** | Student Enrollment (Single/Bulk CSV), Profiles & Student Login | 12 APIs | `[ ] PENDING` |
 | **Task 5** | **Assignment Pipeline & Ingestion** | S3 Pre-signed URLs, Async SQS/Sync Ingestion, Model Routing | 8 APIs | `[ ] PENDING` |
@@ -99,33 +99,35 @@ flowchart LR
 
 ### Task 2: Sections & Branch Subject Catalog Mapping
 **Scope:** Sections 5 and 6 from [Production_Pending_API's.md](file:///home/phani/My/paatam_application/paatam_backend/Production_Pending_API%27s.md)  
-**Status:** `[ ] PENDING`
+**Status:** `[x] COMPLETED`
 
 #### Endpoints to Implement (15 APIs):
 - **Section Management & Class Teacher Allocation:**
-  1. `GET /api/classes/:classId/sections` — List sections in class (`BRANCH_ADMIN`, `TEACHER`).
-  2. `POST /api/classes/:classId/sections` — Add section with capacity & optional class teacher (`BRANCH_ADMIN`).
-  3. `GET /api/sections/:sectionId` — Section details with teacher profile & student count (`BRANCH_ADMIN`, `TEACHER`).
-  4. `PUT /api/sections/:sectionId` — Update section name or capacity strength (`BRANCH_ADMIN`).
-  5. `DELETE /api/sections/:sectionId` — Delete section; blocked if students enrolled (`BRANCH_ADMIN`).
-  6. `PUT /api/sections/:sectionId/class-teacher` — Assign or replace section class teacher (`BRANCH_ADMIN`).
-  7. `DELETE /api/sections/:sectionId/class-teacher` — Remove class teacher from section (`BRANCH_ADMIN`).
-  8. `GET /api/sections/:sectionId/subjects-teachers` — Matrix of class subjects and assigned instructors (`BRANCH_ADMIN`, `TEACHER`).
+  1. `GET /api/classes/:classId/sections` — List sections in class (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
+  2. `POST /api/classes/:classId/sections` — Add section with capacity & optional class teacher (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  3. `GET /api/sections/:sectionId` — Section details with teacher profile & student count (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
+  4. `PUT /api/sections/:sectionId` — Update section name or capacity strength (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  5. `DELETE /api/sections/:sectionId` — Delete section; blocked if students enrolled (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  6. `PUT /api/sections/:sectionId/class-teacher` — Assign or replace section class teacher (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  7. `DELETE /api/sections/:sectionId/class-teacher` — Remove class teacher from section (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  8. `GET /api/sections/:sectionId/subjects-teachers` — Matrix of class subjects and assigned instructors (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
 - **Branch Subject Catalog & Class Mapping:**
-  9. `GET /api/branch/:branchId/subjects` — Get master subject catalog for branch (`BRANCH_ADMIN`, `TEACHER`).
-  10. `POST /api/branch/:branchId/subjects` — Create curriculum subject in branch catalog (`BRANCH_ADMIN`).
-  11. `PUT /api/subjects/:subjectId` — Update subject metadata (`BRANCH_ADMIN`).
-  12. `DELETE /api/subjects/:subjectId` — Delete subject; blocked if attached to classes or teachers (`BRANCH_ADMIN`).
-  13. `GET /api/classes/:classId/subjects` — Get subjects attached to class (`BRANCH_ADMIN`, `TEACHER`).
-  14. `POST /api/classes/:classId/subjects` — Attach subject to class (`ClassSubject`) (`BRANCH_ADMIN`).
-  15. `DELETE /api/classes/:classId/subjects/:classSubjectId` — Remove subject from class; blocked if assignments exist (`BRANCH_ADMIN`).
+  9. `GET /api/branch/:branchId/subjects` — Get master subject catalog for branch (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
+  10. `POST /api/branch/:branchId/subjects` — Create curriculum subject in branch catalog (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  11. `PUT /api/subjects/:subjectId` — Update subject metadata (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  12. `DELETE /api/subjects/:subjectId` — Delete subject; blocked if attached to classes or teachers (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  13. `GET /api/classes/:classId/subjects` — Get subjects attached to class (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
+  14. `POST /api/classes/:classId/subjects` — Attach subject to class (`ClassSubject`) (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  15. `DELETE /api/classes/:classId/subjects/:classSubjectId` — Remove subject from class; blocked if assignments exist (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
 
 #### Task 2 Completion Log
-- **Status:** Pending
-- **Vitest Test Suite:** `src/tests/task2_sections_subjects.test.ts`
-- **Git Commit:** Pending
-- **ECS Deployment:** Pending
-- **Live ALB Test:** Pending
+- **Status:** [x] COMPLETED & VERIFIED (Local Vitest 22/22 Passed, Full Regression 48/48 Passed)
+- **Implemented Endpoints (15 APIs):** All 15 endpoints verified for input validation, RBAC, uniqueness constraints, dependency blockages, and DB transactions.
+- **Vitest Test Suite:** `src/tests/task2_sections_subjects.test.ts` (22/22 passed)
+- **Regression Test Suite:** `src/tests/task1_academic_hierarchy.test.ts` & `src/tests/task2_sections_subjects.test.ts` (48/48 passed)
+- **Git Commit:** Pending Push
+- **ECS Deployment:** In-Flight
+- **Live ALB Test:** Pending Deploy Completion
 
 ---
 

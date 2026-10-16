@@ -1147,3 +1147,425 @@ Deletes a class. Blocked if sections exist.
   - `400 Bad Request`: "Cannot delete class: sections are linked to this class"
   - `404 Not Found`: "Class not found"
 
+---
+
+## 8. Section Management & Class Teacher Allocation
+
+### `GET /api/classes/:classId/sections`
+Lists all sections belonging to a specific class.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`
+- **URL Params:** `classId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "701",
+        "class_id": "601",
+        "section_name": "A",
+        "strength": 42,
+        "class_teacher_id": "801",
+        "class_teacher_name": "Suresh Raina"
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Class not found"
+
+---
+
+### `POST /api/classes/:classId/sections`
+Adds a new section to an existing class.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `classId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "section_name": "C",
+    "strength": 45,
+    "class_teacher_id": "801"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "703",
+      "class_id": "601",
+      "section_name": "C",
+      "strength": 45,
+      "class_teacher_id": "801"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Section name already exists in this class" or "Teacher not found or does not belong to this branch"
+  - `404 Not Found`: "Class not found"
+
+---
+
+### `GET /api/sections/:sectionId`
+Returns complete section details: section name, capacity/strength, class teacher profile, enrolled student count, and class info.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`
+- **URL Params:** `sectionId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "701",
+      "section_name": "A",
+      "strength": 40,
+      "enrolled_students_count": 38,
+      "class": {
+        "id": "601",
+        "name": "Grade 10"
+      },
+      "class_teacher": {
+        "id": "801",
+        "name": "Suresh Raina",
+        "teacher_id": "TCH-001",
+        "contact_email": "suresh@school.edu",
+        "contact_mobile": "9876500000"
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Section not found"
+
+---
+
+### `PUT /api/sections/:sectionId`
+Updates section name or capacity limit.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `sectionId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "section_name": "A-Star",
+    "strength": 45
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "701",
+      "section_name": "A-Star",
+      "strength": 45
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Section name already exists in this class"
+  - `404 Not Found`: "Section not found"
+
+---
+
+### `DELETE /api/sections/:sectionId`
+Deletes a section. Blocked if any students are enrolled in this section.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `sectionId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Section deleted successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot delete section: 38 students are currently enrolled in this section"
+  - `404 Not Found`: "Section not found"
+
+---
+
+### `PUT /api/sections/:sectionId/class-teacher`
+Assigns or re-assigns a teacher as the Section Class Teacher.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `sectionId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "teacher_id": "801"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Class teacher assigned successfully",
+    "data": {
+      "section_id": "701",
+      "class_teacher_id": "801",
+      "teacher_name": "Suresh Raina"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Teacher not found or does not belong to this branch"
+
+---
+
+### `DELETE /api/sections/:sectionId/class-teacher`
+Removes the designated class teacher from a section (sets `class_teacher_id` to null).
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `sectionId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Class teacher unassigned from section"
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Section not found"
+
+---
+
+### `GET /api/sections/:sectionId/subjects-teachers`
+Retrieves a matrix of all subjects attached to the section's class, along with the specific teacher assigned to instruct each subject in this section.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`
+- **URL Params:** `sectionId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "class_subject_id": "1101",
+        "subject_name": "Physics",
+        "subject_code": "PHY-10",
+        "assigned_teacher": {
+          "id": "801",
+          "name": "Suresh Raina",
+          "teacher_id": "TCH-001"
+        }
+      },
+      {
+        "class_subject_id": "1102",
+        "subject_name": "Mathematics",
+        "subject_code": "MTH-10",
+        "assigned_teacher": null
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Section not found"
+
+---
+
+## 9. Branch Subject Catalog & Class-Subject Mapping
+
+### `GET /api/branch/:branchId/subjects`
+Retrieves all curriculum master subjects defined in the branch catalog with cursor pagination.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`, `TEACHER`
+- **URL Params:** `branchId` (string, required)
+- **Query Params:** `cursor`, `limit`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "901",
+        "branch_id": "101",
+        "name": "Physics",
+        "code": "PHY-10",
+        "grade": "Grade 10",
+        "board": "CBSE",
+        "description": "Mechanics, Light, Electricity"
+      }
+    ],
+    "meta": { "nextCursor": null, "hasNextPage": false }
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Branch not found or access denied"
+
+---
+
+### `POST /api/branch/:branchId/subjects`
+Creates a new curriculum subject in the branch catalog.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `branchId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "name": "Chemistry",
+    "code": "CHM-10",
+    "grade": "Grade 10",
+    "board": "CBSE",
+    "description": "Organic, Inorganic and Physical Chemistry"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "902",
+      "branch_id": "101",
+      "name": "Chemistry",
+      "code": "CHM-10",
+      "grade": "Grade 10",
+      "board": "CBSE"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Subject with this name and grade already exists in this branch"
+
+---
+
+### `PUT /api/subjects/:subjectId`
+Updates master subject metadata (name, code, board, description).
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `subjectId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "name": "Advanced Chemistry",
+    "code": "CHM-10-ADV",
+    "description": "Updated syllabus with practical laboratory modules"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "902",
+      "name": "Advanced Chemistry",
+      "code": "CHM-10-ADV"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Subject with this name and grade already exists in this branch"
+  - `404 Not Found`: "Subject not found"
+
+---
+
+### `DELETE /api/subjects/:subjectId`
+Deletes a subject from the branch catalog. Blocked if attached to any classes (`ClassSubject`) or teachers (`TeacherSubject`).
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `subjectId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Subject deleted successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot delete subject: currently attached to 3 classes and 2 teachers. Remove associations first."
+  - `404 Not Found`: "Subject not found"
+
+---
+
+### `GET /api/classes/:classId/subjects`
+Lists all subjects attached to a specific class.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`
+- **URL Params:** `classId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "class_subject_id": "1101",
+        "subject_id": "901",
+        "name": "Physics",
+        "code": "PHY-10",
+        "board": "CBSE"
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Class not found"
+
+---
+
+### `POST /api/classes/:classId/subjects`
+Attaches a branch catalog subject to a class (`ClassSubject`).
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `classId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "subject_id": "901"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Subject attached to class successfully",
+    "data": {
+      "class_subject_id": "1101",
+      "class_id": "601",
+      "subject_id": "901"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Subject does not belong to this branch"
+  - `409 Conflict`: "Subject is already attached to this class"
+
+---
+
+### `DELETE /api/classes/:classId/subjects/:classSubjectId`
+Removes a subject from a class. Blocked if assignments have already been published under this class-subject.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:**
+  - `classId` (string, required)
+  - `classSubjectId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Subject removed from class successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot remove subject: 4 assignments have been created under this class subject"
+  - `404 Not Found`: "Class subject attachment not found"
+
+

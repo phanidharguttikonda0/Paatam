@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { BranchController } from '../controllers/branch.controller';
 import { AcademicYearController } from '../controllers/academicYear.controller';
+import { SubjectController } from '../controllers/subject.controller';
 import { validate } from '../middlewares/validate';
 import { createBranchSchema, searchBranchSchema } from '../schemas/branch.schema';
 import { createAcademicYearSchema } from '../schemas/academicYear.schema';
+import { createSubjectSchema } from '../schemas/subject.schema';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import { UserRole } from '../enums/role.enum';
 
@@ -23,6 +25,20 @@ router.post(
   requireRole([UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]),
   validate(createAcademicYearSchema),
   AcademicYearController.createAcademicYear
+);
+
+// Subject catalog endpoints under branch (allow BRANCH_ADMIN, TEACHER, and CORPORATE_ADMIN for read; BRANCH_ADMIN, CORPORATE_ADMIN for create)
+router.get(
+  '/:branchId/subjects',
+  requireRole([UserRole.BRANCH_ADMIN, UserRole.TEACHER, UserRole.CORPORATE_ADMIN]),
+  SubjectController.getBranchSubjects
+);
+
+router.post(
+  '/:branchId/subjects',
+  requireRole([UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]),
+  validate(createSubjectSchema),
+  SubjectController.createBranchSubject
 );
 
 // Corporate Admin-only branch routes
