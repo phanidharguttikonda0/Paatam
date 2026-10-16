@@ -125,9 +125,9 @@ flowchart LR
 - **Implemented Endpoints (15 APIs):** All 15 endpoints verified for input validation, RBAC, uniqueness constraints, dependency blockages, and DB transactions.
 - **Vitest Test Suite:** `src/tests/task2_sections_subjects.test.ts` (22/22 passed)
 - **Regression Test Suite:** `src/tests/task1_academic_hierarchy.test.ts` & `src/tests/task2_sections_subjects.test.ts` (48/48 passed)
-- **Git Commit:** Pending Push
-- **ECS Deployment:** In-Flight
-- **Live ALB Test:** Pending Deploy Completion
+- **Git Commit:** `a8260b3` (*feat(sections-subjects): implement Task 2 section management and branch subject mapping*)
+- **ECS Deployment:** Workflow run `38853060999` completed successfully with zero downtime
+- **Live ALB Test:** Verified healthy (`/api/health` 200 OK) and all section/subject route protections verified live across ALB (`paatam-alb-dev-320337189.ap-south-2.elb.amazonaws.com`)
 
 ---
 
