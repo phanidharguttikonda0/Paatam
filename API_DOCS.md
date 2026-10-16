@@ -2440,6 +2440,338 @@ Retrieves the logged-in student's full profile and section details.
   - `403 Forbidden`: "Forbidden: Insufficient permissions"
   - `404 Not Found`: "Student not found"
 
+---
+
+## 10. Assignment Pipeline: Ingestion, OCR & Dynamic Routing
+
+### `POST /api/assignments/upload-urls`
+Generates AWS S3 pre-signed `PUT` URLs allowing teachers to upload the Question Paper PDF and optional Answer Key PDF directly to the S3 bucket.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "section_id": "701",
+    "files": [
+      {
+        "file_name": "grade10_physics_midterm.pdf",
+        "file_type": "application/pdf",
+        "purpose": "question_paper"
+      },
+      {
+        "file_name": "physics_midterm_answerkey.pdf",
+        "file_type": "application/pdf",
+        "purpose": "answer_key"
+      }
+    ]
+  }
+  ```
+- **Validations:**
+  - Allowed file types: `application/pdf`, `image/jpeg`, `image/png`, `image/jpg`, `image/webp`
+  - Max file size: 50MB
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "uploads": [
+        {
+          "purpose": "question_paper",
+          "upload_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/question_paper-9a1b-1792151000.pdf?X-Amz-Algorithm=...",
+          "file_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/question_paper-9a1b-1792151000.pdf",
+          "key": "temp/question_paper-9a1b-1792151000.pdf"
+        },
+        {
+          "purpose": "answer_key",
+          "upload_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/answer_key-9a1b-1792151000.pdf?X-Amz-Algorithm=...",
+          "file_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/answer_key-9a1b-1792151000.pdf",
+          "key": "temp/answer_key-9a1b-1792151000.pdf"
+        }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error (invalid file type or missing fields)
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Section not found"
+
+---
+
+### `POST /api/assignments/process-async`
+Enqueues an assignment processing job for async Multimodal Vision OCR extraction and dynamic LLM reasoning model selection.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "section_id": "701",
+    "class_subject_id": "1101",
+    "teacher_subject_id": "1201",
+    "title": "Physics Midterm Exam",
+    "difficulty": "Medium",
+    "duration_minutes": 60,
+    "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/qpaper.pdf",
+    "answer_key_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/anskey.pdf"
+  }
+  ```
+- **Success Response (202 Accepted):**
+  ```json
+  {
+    "status": "success",
+    "message": "Assignment queued for OCR and dynamic model routing",
+    "data": {
+      "assignment_id": "1501",
+      "status": "ocr_processing",
+      "poll_url": "/api/assignments/1501/pipeline-status"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error
+  - `404 Not Found`: "Section or class subject not found"
+
+---
+
+### `GET /api/assignments/:id/pipeline-status`
+Frontend polling endpoint to check the status of async OCR extraction and model selection.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **URL Params:** `id` (string, required)
+- **Success Response (200 OK - In Progress):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "assignment_id": "1501",
+      "pipeline_status": "ocr_processing",
+      "progress_percent": 45,
+      "message": "Extracting questions from uploaded PDF..."
+    }
+  }
+  ```
+- **Success Response (200 OK - Ready):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "assignment_id": "1501",
+      "pipeline_status": "ready",
+      "reasoning_model_selected": "gemini-2.5-flash",
+      "routing_reason": "Standard single-choice and short numerical format detected",
+      "total_questions": 15,
+      "questions_json": [
+        {
+          "question_number": 1,
+          "question": "What is the SI unit of electric potential?",
+          "type": "mcq",
+          "marks": 1,
+          "options": ["Ampere", "Volt", "Ohm", "Joule"]
+        }
+      ],
+      "answer_key_text": "Q1: Option B (Volt) [1 Mark]"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Assignment not found"
+
+---
+
+### `POST /api/assignments/create-sync`
+Synchronous fallback alternative. Immediately generates a draft assignment with inline OCR questions.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "section_id": "701",
+    "class_subject_id": "1101",
+    "teacher_subject_id": "1201",
+    "title": "Physics Quiz 1",
+    "duration_minutes": 45,
+    "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/qpaper.pdf"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1501",
+      "title": "Physics Quiz 1",
+      "status": "draft",
+      "reasoning_model": "gemini-2.5-flash",
+      "questions_json": [
+        {
+          "question_number": 1,
+          "question": "What is the SI unit of electric potential?",
+          "type": "mcq",
+          "marks": 1,
+          "options": ["Ampere", "Volt", "Ohm", "Joule"]
+        }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error
+  - `404 Not Found`: "Section or class subject not found"
+
+---
+
+### `POST /api/assignments`
+Finalizes questions and publishes an assignment to the student roster in the section.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "assignment_id": "1501",
+    "section_id": "701",
+    "class_subject_id": "1101",
+    "teacher_subject_id": "1201",
+    "title": "Physics Midterm Exam",
+    "difficulty": "Medium",
+    "duration_minutes": 60,
+    "due_date": "2026-10-25T18:00:00.000Z",
+    "status": "published",
+    "reasoning_model": "gemini-2.5-flash",
+    "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/qpaper.pdf",
+    "answer_key_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/anskey.pdf",
+    "answer_key_text": "Q1: Option B (Volt)",
+    "questions_json": [
+      {
+        "question_number": 1,
+        "question": "What is the SI unit of electric potential?",
+        "type": "mcq",
+        "marks": 1,
+        "options": ["Ampere", "Volt", "Ohm", "Joule"]
+      }
+    ]
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1501",
+      "title": "Physics Midterm Exam",
+      "status": "published",
+      "created_at": "2026-10-15T09:00:00.000Z"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error
+  - `404 Not Found`: "Section or class subject not found"
+
+---
+
+### `GET /api/assignments`
+Lists assignments. Supports filtering by section and subject with cursor pagination.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Query Params:**
+  - `section_id` (string, optional)
+  - `class_subject_id` (string, optional)
+  - `cursor` (string, optional)
+  - `limit` (number, optional, max 10)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1501",
+        "title": "Physics Midterm Exam",
+        "difficulty": "Medium",
+        "duration_minutes": 60,
+        "status": "published",
+        "total_submissions": 32,
+        "due_date": "2026-10-25T18:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "nextCursor": null,
+      "hasNextPage": false
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+---
+
+### `GET /api/assignments/:id`
+Retrieves a single assignment with full question breakdown, answer key, and attached media URLs.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `STUDENT`
+- **URL Params:** `id` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1501",
+      "section_id": "701",
+      "class_subject_id": "1101",
+      "teacher_subject_id": "1201",
+      "title": "Physics Midterm Exam",
+      "difficulty": "Medium",
+      "duration_minutes": 60,
+      "status": "published",
+      "reasoning_model": "gemini-2.5-flash",
+      "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/qpaper.pdf",
+      "answer_key_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/anskey.pdf",
+      "answer_key_text": "Q1: Option B (Volt)",
+      "questions_json": [ ... ],
+      "due_date": "2026-10-25T18:00:00.000Z",
+      "created_at": "2026-10-15T09:00:00.000Z",
+      "section": {
+        "id": "701",
+        "name": "A"
+      },
+      "class_subject": {
+        "id": "1101",
+        "subject_name": "Physics",
+        "subject_code": "PHY-10"
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Assignment not found"
+
+---
+
+### `DELETE /api/assignments/:id`
+Deletes an assignment and purges related submissions, notifications, and batch jobs.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **URL Params:** `id` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Assignment and associated student submissions deleted successfully"
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Assignment not found"
+
+
 
 
 
