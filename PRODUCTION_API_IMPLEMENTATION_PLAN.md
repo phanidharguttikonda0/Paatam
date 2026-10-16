@@ -190,9 +190,9 @@ flowchart LR
 - **Implemented Endpoints (12 APIs):** All 12 endpoints verified for single & bulk enrollment, admission_no uniqueness, section roll_no uniqueness, search query filters, submission history retrieval, deletion protection on evaluated submissions, student auth with password hashing/OTP reset lifecycle, and RBAC controls.
 - **Vitest Test Suite:** `src/tests/task4_student_enrollment_auth.test.ts` (18/18 passed)
 - **Regression Test Suite:** Tasks 1, 2, 3, and 4 suites combined (86/86 passed with zero failures)
-- **Git Commit:** Pending push & CI/CD deployment
-- **ECS Deployment:** In progress
-- **Live ALB Test:** Pending deployment verification
+- **Git Commit:** `ebdc6be` & `6824f85` (*feat(student-portal): implement Task 4 student roster, enrollment and student auth portal*)
+- **ECS Deployment:** Workflow runs `38897270380` and `38898059397` completed successfully; ECS service reached steady state with zero downtime
+- **Live ALB Test:** Verified healthy (`/api/health` 200 OK) and all student roster, search, enrollment, student auth, and profile routes verified live across ALB (`paatam-alb-dev-320337189.ap-south-2.elb.amazonaws.com`)
 
 ---
 
