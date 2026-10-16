@@ -267,9 +267,9 @@ flowchart LR
   6. `GET /api/submissions/batch/:jobId` — Status polling endpoint for batch paper splitting and evaluation job.
 - **Vitest Test Suite:** `src/tests/task7_grading_bulk_review.test.ts` (28/28 passed)
 - **Regression Test Suite:** Tasks 1 through 7 suites combined (149/149 passed with zero regressions)
-- **Git Commit:** Pending push & CI/CD deployment
-- **ECS Deployment:** In progress
-- **Live ALB Test:** Pending deployment verification
+- **Git Commit:** `d46174f` (*feat(grading): implement Task 7 teacher grading, approvals, score overrides and batch paper uploads*)
+- **ECS Deployment:** GitHub Actions Run ID `38906227252` (Success, ECS service `paatam-service-dev` steady state reached)
+- **Live ALB Test:** Verified healthy (`/api/health` 200 OK) and all 6 Task 7 routes (`/api/assignments/:id/submissions`, `/api/submissions/:id`, `/api/submissions/:id/approve`, `/api/submissions/:id/override`, `/api/submissions/bulk`, `/api/submissions/batch/:jobId`) verified live across ALB (`paatam-alb-dev-320337189.ap-south-2.elb.amazonaws.com`)
 
 ---
 
