@@ -471,6 +471,17 @@ describe('Task 4: Student Roster, Enrollment & Student Auth Portal Integration T
       student1AccessToken = res.body.data.accessToken;
     });
 
+    it('9c. POST /api/auth/student/login - Student login with admission_no field directly', async () => {
+      const res = await request(app).post('/api/auth/student/login').send({
+        admission_no: testStudent1.admission_no,
+        password: testStudent1.password,
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.data).toHaveProperty('accessToken');
+    });
+
     it('9b. POST /api/auth/student/login - Invalid password rejected with 401', async () => {
       const res = await request(app).post('/api/auth/student/login').send({
         identifier: testStudent1.admission_no,

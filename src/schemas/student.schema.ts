@@ -51,10 +51,15 @@ export const updateStudentSchema = z.object({
 });
 
 export const studentLoginSchema = z.object({
-  body: z.object({
-    identifier: z.string().min(1, 'Admission number or Email is required'),
-    password: z.string().min(1, 'Password is required'),
-  }),
+  body: z
+    .object({
+      admission_no: z.string().optional(),
+      identifier: z.string().optional(),
+      password: z.string().min(1, 'Password is required'),
+    })
+    .refine((data) => data.admission_no || data.identifier, {
+      message: 'Admission number or identifier is required',
+    }),
 });
 
 export const studentForgotPasswordSchema = z.object({

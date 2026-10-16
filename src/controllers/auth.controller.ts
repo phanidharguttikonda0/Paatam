@@ -437,7 +437,8 @@ export class AuthController {
 
   public static async studentLogin(req: Request, res: Response, next: NextFunction) {
     try {
-      const { identifier, password } = req.body;
+      const identifier = req.body.admission_no || req.body.identifier;
+      const { password } = req.body;
 
       const student = await prisma.student.findFirst({
         where: {
