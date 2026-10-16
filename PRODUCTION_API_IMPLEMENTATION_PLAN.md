@@ -159,9 +159,9 @@ flowchart LR
 - **Implemented Endpoints (15 APIs):** All 15 endpoints verified for input validation, RBAC (BRANCH_ADMIN, CORPORATE_ADMIN, TEACHER self-check), uniqueness constraints, dependency blockages, and password hashing/OTP reset lifecycle.
 - **Vitest Test Suite:** `src/tests/task3_teacher_directory_portal.test.ts` (20/20 passed)
 - **Regression Test Suite:** Tasks 1, 2, and 3 suites combined (68/68 passed with zero failures)
-- **Git Commit:** Pending push
-- **ECS Deployment:** In progress
-- **Live ALB Test:** Pending deployment verify
+- **Git Commit:** `9236efc` & `2c07ac9` (*feat(teacher-portal): implement Task 3 teacher directory, subject allocation and teacher auth portal*)
+- **ECS Deployment:** Workflow run `38895544443` completed successfully with zero downtime
+- **Live ALB Test:** Verified healthy (`/api/health` 200 OK) and all teacher directory, subject allocation, and auth routes verified live across ALB (`paatam-alb-dev-320337189.ap-south-2.elb.amazonaws.com`)
 
 ---
 
