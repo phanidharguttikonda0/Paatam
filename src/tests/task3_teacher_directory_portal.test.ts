@@ -388,7 +388,10 @@ describe('Task 3: Teacher Directory, Subject Allocation & Teacher Auth Portal In
       expect(res.body.data.user.role).toBe('TEACHER');
       expect(res.body.data.user.branch_id).toBe(branchId);
 
-      const cookieHeader = res.headers['set-cookie']?.join(';') || '';
+      const rawCookie = res.headers['set-cookie'];
+      const cookieHeader = Array.isArray(rawCookie)
+        ? rawCookie.join(';')
+        : String(rawCookie || '');
       expect(cookieHeader).toContain('refreshToken=');
 
       teacher1AccessToken = res.body.data.accessToken;
