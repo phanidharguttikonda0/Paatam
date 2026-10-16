@@ -54,6 +54,20 @@ export class AcademicYearService {
       return branch;
     }
 
+    if (user.role === UserRole.STUDENT) {
+      const studentId = parseBigInt(user.userId, 'userId');
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        include: { Section: { include: { Class: true } } },
+      });
+      if (!student || student.Section.Class.branch_id !== branchId) {
+        throw new AppError('Forbidden: You do not have access to this branch', 403);
+      }
+      const branch = await prisma.branch.findUnique({ where: { id: branchId } });
+      if (!branch) throw new AppError('Branch not found', 404);
+      return branch;
+    }
+
     throw new AppError('Forbidden: Insufficient permissions', 403);
   }
 

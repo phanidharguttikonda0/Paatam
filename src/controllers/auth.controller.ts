@@ -432,4 +432,134 @@ export class AuthController {
       next(error);
     }
   }
+
+  // --- Student Authentication Portal Flow ---
+
+  public static async studentLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, password } = req.body;
+
+      const student = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { admission_no: identifier },
+            { contact_email: identifier },
+            { contact_mobile: identifier },
+          ],
+        },
+      });
+
+      if (!student) {
+        throw new AppError('Invalid credentials', 401);
+      }
+
+      const isValidPassword = await require('bcrypt').compare(password, student.password_hash);
+      if (!isValidPassword) {
+        throw new AppError('Invalid credentials', 401);
+      }
+
+      const userRole = UserRole.STUDENT;
+      const accessToken = AuthService.generateAccessToken(student.id, userRole);
+      const refreshToken = await AuthService.generateAndStoreRefreshToken(student.id, userRole);
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Login successful',
+        data: {
+          accessToken,
+          user: {
+            id: student.id.toString(),
+            name: student.name,
+            admission_no: student.admission_no,
+            roll_no: student.roll_no,
+            role: userRole,
+            section_id: student.section_id.toString(),
+          },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async studentForgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const identifier = req.body.admission_no || req.body.identifier;
+
+      const student = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { admission_no: identifier },
+            { contact_email: identifier },
+            { contact_mobile: identifier },
+          ],
+        },
+      });
+
+      if (!student) {
+        throw new AppError('Student not found', 404);
+      }
+
+      const otp = await OtpService.generateAndStoreOtp(
+        student.contact_email || undefined,
+        student.contact_mobile || undefined,
+        'reset-password'
+      );
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Password reset OTP sent to registered contact',
+        data: isProduction ? null : { otp },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async studentResetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const identifier = req.body.admission_no || req.body.identifier;
+      const { otp, new_password } = req.body;
+
+      const student = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { admission_no: identifier },
+            { contact_email: identifier },
+            { contact_mobile: identifier },
+          ],
+        },
+      });
+
+      if (!student) {
+        throw new AppError('Student not found', 404);
+      }
+
+      await OtpService.validateAndConsumeOtp(
+        otp,
+        student.contact_email || undefined,
+        student.contact_mobile || undefined
+      );
+
+      const hashedPassword = await require('bcrypt').hash(new_password, 10);
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { password_hash: hashedPassword },
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Password reset successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

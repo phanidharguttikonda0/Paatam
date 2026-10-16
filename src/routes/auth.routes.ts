@@ -11,6 +11,11 @@ import {
   teacherForgotPasswordSchema,
   teacherResetPasswordSchema,
 } from '../schemas/teacher.schema';
+import {
+  studentLoginSchema,
+  studentForgotPasswordSchema,
+  studentResetPasswordSchema,
+} from '../schemas/student.schema';
 
 const router = Router();
 
@@ -46,5 +51,14 @@ router.post('/teacher/forgot-password', validate(teacherForgotPasswordSchema), A
 
 // POST /api/auth/teacher/reset-password
 router.post('/teacher/reset-password', validate(teacherResetPasswordSchema), AuthController.teacherResetPassword);
+
+// POST /api/auth/student/login
+router.post('/student/login', validate(studentLoginSchema), AuthController.studentLogin);
+
+// POST /api/auth/student/forgot-password
+router.post('/student/forgot-password', validate(studentForgotPasswordSchema), AuthController.studentForgotPassword);
+
+// POST /api/auth/student/reset-password
+router.post('/student/reset-password', validate(studentResetPasswordSchema), AuthController.studentResetPassword);
 
 export default router;

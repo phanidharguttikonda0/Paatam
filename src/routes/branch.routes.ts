@@ -3,11 +3,13 @@ import { BranchController } from '../controllers/branch.controller';
 import { AcademicYearController } from '../controllers/academicYear.controller';
 import { SubjectController } from '../controllers/subject.controller';
 import { TeacherController } from '../controllers/teacher.controller';
+import { StudentController } from '../controllers/student.controller';
 import { validate } from '../middlewares/validate';
 import { createBranchSchema, searchBranchSchema } from '../schemas/branch.schema';
 import { createAcademicYearSchema } from '../schemas/academicYear.schema';
 import { createSubjectSchema } from '../schemas/subject.schema';
 import { createTeacherSchema, searchTeacherSchema } from '../schemas/teacher.schema';
+import { searchStudentSchema } from '../schemas/student.schema';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import { UserRole } from '../enums/role.enum';
 
@@ -56,6 +58,14 @@ router.get(
   requireRole([UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]),
   validate(searchTeacherSchema),
   TeacherController.searchTeachers
+);
+
+// Student search across branch (allow BRANCH_ADMIN, TEACHER, and CORPORATE_ADMIN)
+router.get(
+  '/:branchId/students/search',
+  requireRole([UserRole.BRANCH_ADMIN, UserRole.TEACHER, UserRole.CORPORATE_ADMIN]),
+  validate(searchStudentSchema),
+  StudentController.searchStudents
 );
 
 // Corporate Admin-only branch routes

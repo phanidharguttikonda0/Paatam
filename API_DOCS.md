@@ -2005,5 +2005,441 @@ Returns the specific subjects that the authenticated teacher teaches in the desi
 - **Error Responses:**
   - `404 Not Found`: "Section not found"
 
+---
+
+## 8. Student Enrollment & Roster Management
+
+### `GET /api/sections/:sectionId/students`
+Retrieves a paginated list of students enrolled in a section. Supports optional `search` query parameter to filter by student name.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`
+- **URL Params:** `sectionId` (string, required)
+- **Query Params:**
+  - `cursor` (string, optional)
+  - `limit` (number, optional, max 10)
+  - `search` (string, optional): Search keyword against student `name`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1401",
+        "admission_no": "ADM-2026-001",
+        "name": "Aarav Sharma",
+        "roll_no": "101",
+        "contact_email": "parent.aarav@example.com",
+        "contact_mobile": "9876543210",
+        "section_id": "701",
+        "created_at": "2026-10-16T10:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "nextCursor": "1401",
+      "hasNextPage": false,
+      "total": 1
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Section not found"
+
+---
+
+### `GET /api/branch/:branchId/students/search`
+Searches for students across all sections within a branch by student name or admission number.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`
+- **URL Params:** `branchId` (string, required)
+- **Query Params:**
+  - `q` (string, required): Search query string (minimum 1 character)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1401",
+        "admission_no": "ADM-2026-001",
+        "name": "Aarav Sharma",
+        "roll_no": "101",
+        "contact_email": "parent.aarav@example.com",
+        "contact_mobile": "9876543210",
+        "section": {
+          "id": "701",
+          "name": "A",
+          "class": {
+            "id": "601",
+            "name": "Grade 10"
+          }
+        }
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Search query parameter 'q' is required"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Branch not found"
+
+---
+
+### `POST /api/sections/:sectionId/students`
+Enrolls a single student into a designated section. Automatically increments section `strength`.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`
+- **URL Params:** `sectionId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "admission_no": "ADM-2026-001",
+    "name": "Aarav Sharma",
+    "roll_no": "101",
+    "contact_email": "parent.aarav@example.com",
+    "contact_mobile": "9876543210",
+    "password": "InitialStudentPassword123!"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1401",
+      "admission_no": "ADM-2026-001",
+      "name": "Aarav Sharma",
+      "roll_no": "101",
+      "contact_email": "parent.aarav@example.com",
+      "contact_mobile": "9876543210",
+      "section_id": "701",
+      "created_at": "2026-10-16T10:00:00.000Z"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Section not found"
+  - `409 Conflict`: "A student with admission number ADM-2026-001 already exists" or "Roll number 101 is already assigned in this section"
+
+---
+
+### `POST /api/sections/:sectionId/students/bulk`
+Bulk enrolls multiple students into a section within an atomic transaction.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`
+- **URL Params:** `sectionId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "students": [
+      {
+        "admission_no": "ADM-2026-002",
+        "name": "Diya Patel",
+        "roll_no": "102",
+        "contact_email": "diya@example.com",
+        "contact_mobile": "9876543211"
+      },
+      {
+        "admission_no": "ADM-2026-003",
+        "name": "Kavya Reddy",
+        "roll_no": "103",
+        "contact_email": "kavya@example.com",
+        "contact_mobile": "9876543212"
+      }
+    ]
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "enrolled_count": 2,
+      "students": [
+        {
+          "id": "1402",
+          "admission_no": "ADM-2026-002",
+          "name": "Diya Patel",
+          "roll_no": "102",
+          "contact_email": "diya@example.com",
+          "contact_mobile": "9876543211",
+          "section_id": "701"
+        },
+        {
+          "id": "1403",
+          "admission_no": "ADM-2026-003",
+          "name": "Kavya Reddy",
+          "roll_no": "103",
+          "contact_email": "kavya@example.com",
+          "contact_mobile": "9876543212",
+          "section_id": "701"
+        }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error (empty array or invalid format)
+  - `409 Conflict`: Duplicate admission number or roll number conflict
+
+---
+
+### `GET /api/students/:studentId`
+Retrieves full profile details for a student, including enrolled class and section info.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `STUDENT`
+- **URL Params:** `studentId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1401",
+      "admission_no": "ADM-2026-001",
+      "name": "Aarav Sharma",
+      "roll_no": "101",
+      "contact_email": "parent.aarav@example.com",
+      "contact_mobile": "9876543210",
+      "section_id": "701",
+      "created_at": "2026-10-16T10:00:00.000Z",
+      "section": {
+        "id": "701",
+        "name": "A",
+        "class": {
+          "id": "601",
+          "name": "Grade 10",
+          "branch_id": "101"
+        }
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Student not found"
+
+---
+
+### `PUT /api/students/:studentId`
+Updates student demographic and parent contact information.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`
+- **URL Params:** `studentId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "name": "Aarav S. Sharma",
+    "roll_no": "101-A",
+    "contact_email": "parent.new@example.com",
+    "contact_mobile": "9998887776"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1401",
+      "admission_no": "ADM-2026-001",
+      "name": "Aarav S. Sharma",
+      "roll_no": "101-A",
+      "contact_email": "parent.new@example.com",
+      "contact_mobile": "9998887776",
+      "section_id": "701"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error
+  - `404 Not Found`: "Student not found"
+  - `409 Conflict`: Roll number already in use within the section
+
+---
+
+### `DELETE /api/students/:studentId`
+Deletes a student record and decrements the section `strength`. Deletion is strictly blocked if any assignment submissions exist for the student.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`
+- **URL Params:** `studentId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Student deleted successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot delete student because test submissions exist on record"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Student not found"
+
+---
+
+### `GET /api/students/:studentId/submissions`
+Retrieves test submission history, scores, and evaluation summaries for a student.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `STUDENT`
+- **URL Params:** `studentId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1501",
+        "assignment_id": "1301",
+        "student_id": "1401",
+        "status": "EVALUATED",
+        "total_score": 45,
+        "submitted_at": "2026-10-16T11:00:00.000Z",
+        "evaluated_at": "2026-10-16T11:30:00.000Z",
+        "assignment": {
+          "id": "1301",
+          "title": "Unit Test 1 - Physics",
+          "total_marks": 50,
+          "class_subject": {
+            "subject": {
+              "id": "901",
+              "name": "Physics",
+              "code": "PHY-10"
+            }
+          }
+        }
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Student not found"
+
+---
+
+## 11. Student Auth Portal
+
+### `POST /api/auth/student/login`
+Authenticates a student using their unique `admission_no` and password. On success, issues a JWT Access Token in the response body and sets an httpOnly `refreshToken` cookie.
+
+- **Authentication Required:** No (Public)
+- **Request Body:**
+  ```json
+  {
+    "admission_no": "ADM-2026-001",
+    "password": "SecureStudentPassword123!"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "accessToken": "eyJhbGciOiJIUzI1NiIsIn...",
+      "user": {
+        "id": "1401",
+        "name": "Aarav Sharma",
+        "admission_no": "ADM-2026-001",
+        "role": "STUDENT",
+        "section_id": "701"
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation error
+  - `401 Unauthorized`: "Invalid admission number or password"
+
+---
+
+### `POST /api/auth/student/forgot-password`
+Initiates a password reset by dispatching a 6-digit OTP to the student's or parent's registered contact email or mobile number.
+
+- **Authentication Required:** No (Public)
+- **Request Body:**
+  ```json
+  {
+    "identifier": "ADM-2026-001"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "OTP sent successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Identifier is required"
+  - `404 Not Found`: "Student not found"
+
+---
+
+### `POST /api/auth/student/reset-password`
+Verifies the dispatched OTP and resets the student's password. Automatically sets the new password, revokes existing sessions, and issues a new access token and refresh cookie.
+
+- **Authentication Required:** No (Public)
+- **Request Body:**
+  ```json
+  {
+    "identifier": "ADM-2026-001",
+    "otp": "123456",
+    "new_password": "NewSecurePassword456!"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Password reset successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Invalid or expired OTP"
+  - `404 Not Found`: "Student not found"
+
+---
+
+### `GET /api/student/profile`
+Retrieves the logged-in student's full profile and section details.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `STUDENT`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1401",
+      "admission_no": "ADM-2026-001",
+      "name": "Aarav Sharma",
+      "roll_no": "101",
+      "contact_email": "parent.aarav@example.com",
+      "contact_mobile": "9876543210",
+      "section_id": "701",
+      "section": {
+        "id": "701",
+        "name": "A",
+        "class": {
+          "id": "601",
+          "name": "Grade 10"
+        }
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Student not found"
+
+
 
 
