@@ -91,9 +91,9 @@ flowchart LR
   13. `DELETE /api/classes/:classId` — Delete class; blocked if sections exist (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
 - **Vitest Test Suite:** `src/tests/task1_academic_hierarchy.test.ts` (26/26 tests passed)
 - **Regression Suite:** All 5 suites (63 tests) passing with 0 failures.
-- **Git Commit:** Pending Push
-- **ECS Deployment:** In-Flight
-- **Live ALB Test:** Pending Deploy Completion
+- **Git Commit:** `308f824` (*feat(academic-hierarchy): implement Task 1 branch extensions, academic years and classes*)
+- **ECS Deployment:** Workflow run `38851136461` completed successfully with zero downtime
+- **Live ALB Test:** Verified healthy (`/api/health` 200 OK) and authenticated route protection verified across live ALB (`paatam-alb-dev-320337189.ap-south-2.elb.amazonaws.com`)
 
 ---
 
