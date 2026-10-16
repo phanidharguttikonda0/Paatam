@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AssignmentController } from '../controllers/assignment.controller';
+import { SubmissionController } from '../controllers/submission.controller';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate';
 import {
@@ -9,6 +10,7 @@ import {
   publishAssignmentSchema,
   listAssignmentsSchema,
 } from '../schemas/assignment.schema';
+import { assignmentSubmissionsQuerySchema } from '../schemas/submission.schema';
 import { UserRole } from '../enums/role.enum';
 
 const router = Router();
@@ -64,6 +66,15 @@ router.get(
   requireRole([UserRole.TEACHER, UserRole.BRANCH_ADMIN]),
   validate(listAssignmentsSchema),
   AssignmentController.listAssignments
+);
+
+// List student submissions for an assignment
+router.get(
+  '/:id/submissions',
+  requireAuth,
+  requireRole([UserRole.TEACHER, UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]),
+  validate(assignmentSubmissionsQuerySchema),
+  SubmissionController.getAssignmentSubmissions
 );
 
 // Get single assignment with question details (accessible to Teacher, Branch Admin & Student)

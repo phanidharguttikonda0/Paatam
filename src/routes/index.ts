@@ -13,6 +13,7 @@ import teacherPortalRoutes from './teacherPortal.routes';
 import studentRoutes from './student.routes';
 import studentPortalRoutes from './studentPortal.routes';
 import assignmentRoutes from './assignment.routes';
+import submissionRoutes from './submission.routes';
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/teacher', teacherPortalRoutes);
 router.use('/students', studentRoutes);
 router.use('/student', studentPortalRoutes);
 router.use('/assignments', assignmentRoutes);
+router.use('/submissions', submissionRoutes);
 
 export default router;

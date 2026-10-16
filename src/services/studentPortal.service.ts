@@ -352,6 +352,7 @@ export class StudentPortalService {
 
     return notifications.map((n: any) => ({
       id: n.id.toString(),
+      type: n.type,
       title: n.title,
       message: n.message,
       timestamp: n.timestamp,

@@ -2972,6 +2972,235 @@ Retrieves the notification feed for the student.
   - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
   - `403 Forbidden`: "Forbidden: Insufficient permissions"
 
+---
+
+## 12. Teacher Grading & Review Workflow
+
+### `GET /api/assignments/:id/submissions`
+Lists all student submissions for a specific assignment, showing submission time, score, and review status with cursor-based pagination.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `id` (string, required) — Assignment ID
+- **Query Params:**
+  - `cursor` (string, optional) — Next cursor for pagination
+  - `limit` (integer, optional, default: 10, max: 10)
+  - `status` (string, optional: `submitted`, `approved`, `pending_review`)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1401",
+        "student_id": "1301",
+        "student_name": "Aarav Sharma",
+        "roll_no": "1001",
+        "score": 34,
+        "max_score": 40,
+        "status": "pending_review",
+        "submitted_at": "2026-10-15T10:15:00.000Z"
+      }
+    ],
+    "meta": { "nextCursor": null, "hasNextPage": false }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions" or "Forbidden: You do not have access to this branch"
+  - `404 Not Found`: "Assignment not found"
+
+---
+
+### `GET /api/submissions/:id`
+Retrieves complete submission inspection data: scanned handwritten paper image URLs, OCR transcript text, question-by-question scoring breakdown, and teacher/AI feedback.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `id` (string, required) — Submission ID
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1401",
+      "assignment_id": "1501",
+      "student": {
+        "id": "1301",
+        "name": "Aarav Sharma",
+        "roll_no": "1001"
+      },
+      "sample_paper_urls": [
+        "https://.../page1.jpg",
+        "https://.../page2.jpg"
+      ],
+      "ocr_text": "Question 1: Electric potential unit is Volt...",
+      "score": 34,
+      "max_score": 40,
+      "feedback": "Clear diagrams and accurate formula usage.",
+      "socratic_hint": "Double check units when multiplying power and time.",
+      "status": "pending_review",
+      "question_breakdown": [
+        {
+          "question_number": 1,
+          "marks_awarded": 1,
+          "max_marks": 1,
+          "verdict": "correct"
+        }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions" or "Forbidden: You do not have access to this branch"
+  - `404 Not Found`: "Submission not found"
+
+---
+
+### `POST /api/submissions/:id/approve`
+Teacher reviews, adjusts feedback/score, and approves the graded paper. Sets status to `approved` and dispatches a notification to the student.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **URL Params:** `id` (string, required) — Submission ID
+- **Request Body:**
+  ```json
+  {
+    "final_score": 36,
+    "final_feedback": "Excellent work. Checked and approved by Subject Teacher.",
+    "final_hint": "Review kinetic friction equation before next unit test."
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Submission approved successfully",
+    "data": {
+      "id": "1401",
+      "status": "approved",
+      "final_score": 36,
+      "final_feedback": "Excellent work. Checked and approved by Subject Teacher."
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Validation error: Final score must be non-negative"
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Submission not found"
+
+---
+
+### `POST /api/submissions/:id/override`
+Teacher overrides the awarded score and evaluation marks directly.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **URL Params:** `id` (string, required) — Submission ID
+- **Request Body:**
+  ```json
+  {
+    "score": 38,
+    "feedback": "Marks adjusted following re-evaluation of Q4 step marks.",
+    "question_breakdown": [
+      {
+        "question_number": 4,
+        "marks_awarded": 5,
+        "max_marks": 5,
+        "verdict": "correct"
+      }
+    ]
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1401",
+      "score": 38,
+      "status": "approved"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Score must be non-negative"
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Submission not found"
+
+---
+
+### `POST /api/submissions/bulk`
+Allows a teacher to upload a batch of student handwritten answer sheets (either as individual PDF files per student, or one combined master PDF). Initiates a background `BatchJob`.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Content-Type:** `application/json` or `multipart/form-data`
+- **Request Body / Form Fields:**
+  ```json
+  {
+    "assignment_id": "1501",
+    "bulk_mode": "combined_pdf",
+    "total_files": 35,
+    "sample_paper_urls": [
+      "https://.../master_stack_35_students.pdf"
+    ]
+  }
+  ```
+- **Success Response (202 Accepted):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "job_id": "1701",
+      "status": "queued",
+      "stage": "splitting",
+      "total_files": 35,
+      "poll_url": "/api/submissions/batch/1701"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "assignment_id is required"
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions" or "Forbidden: You do not have access to this branch"
+  - `404 Not Found`: "Assignment not found"
+
+---
+
+### `GET /api/submissions/batch/:jobId`
+Status polling endpoint for batch paper upload jobs.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **URL Params:** `jobId` (string, required) — Batch Job ID
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "job_id": "1701",
+      "status": "completed",
+      "stage": "completed",
+      "total_files": 35,
+      "processed_count": 35,
+      "successful_count": 35,
+      "failed_count": 0,
+      "created_submissions": [
+        { "submission_id": "1401", "student_name": "Aarav Sharma" }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions" or "Forbidden: You do not have access to this branch"
+  - `404 Not Found`: "Batch job not found"
+
+
 
 
 
