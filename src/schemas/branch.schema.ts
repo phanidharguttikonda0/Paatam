@@ -9,3 +9,9 @@ export const createBranchSchema = z.object({
     mobile_number: z.string().length(10, "Mobile number must be 10 characters")
   })
 });
+
+export const searchBranchSchema = z.object({
+  query: z.object({
+    q: z.string().min(1, "Query parameter 'q' is required")
+  })
+});

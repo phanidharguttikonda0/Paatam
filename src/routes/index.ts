@@ -3,6 +3,9 @@ import corporateRoutes from './corporate.routes';
 import authRoutes from './auth.routes';
 import branchRoutes from './branch.routes';
 import adminRoutes from './admin.routes';
+import branchAdminRoutes from './branchAdmin.routes';
+import academicYearRoutes from './academicYear.routes';
+import classRoutes from './class.routes';
 
 const router = Router();
 
@@ -10,5 +13,8 @@ router.use('/auth', authRoutes);
 router.use('/corporate', corporateRoutes);
 router.use('/branch', branchRoutes);
 router.use('/admin', adminRoutes);
+router.use('/branch-admin', branchAdminRoutes);
+router.use('/academic-years', academicYearRoutes);
+router.use('/classes', classRoutes);
 
 export default router;

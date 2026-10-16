@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
+import { BRANCH_ADMIN_ROLES, UserRole } from '../enums/role.enum';
 
 /**
  * Middleware to protect routes and require a valid JWT Access Token
@@ -34,10 +35,18 @@ export const requireRole = (allowedRoles: string[]) => {
       return res.status(403).json({ message: 'Forbidden: No role found' });
     }
 
-    if (!allowedRoles.includes(user.role)) {
+    const hasPermission = allowedRoles.some((role) => {
+      if (role === UserRole.BRANCH_ADMIN) {
+        return BRANCH_ADMIN_ROLES.includes(user.role);
+      }
+      return role === user.role;
+    });
+
+    if (!hasPermission) {
       return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
     }
 
     next();
   };
 };
+

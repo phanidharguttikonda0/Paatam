@@ -122,4 +122,55 @@ export class BranchController {
       next(error);
     }
   }
+
+  public static async searchBranches(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      if (!user || !user.corporateId) {
+        throw new AppError('Unauthorized: Missing corporate identity', 401);
+      }
+
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const query = (req.query.q as string) || '';
+      const branches = await BranchService.searchBranches(corporateId, query);
+
+      const serializedBranches = branches.map(b => ({
+        ...b,
+        id: b.id.toString(),
+        corporate_id: b.corporate_id.toString()
+      }));
+
+      res.status(200).json({
+        status: 'success',
+        data: serializedBranches
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async removeAdminFromBranch(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { branchId, adminId } = req.params;
+      const user = (req as any).user;
+
+      if (!user || !user.corporateId) {
+        throw new AppError('Unauthorized: Missing corporate identity', 401);
+      }
+
+      const corporateId = parseBigInt(user.corporateId, 'corporateId');
+      const parsedBranchId = parseBigInt(branchId, 'branchId');
+      const parsedAdminId = parseBigInt(adminId, 'adminId');
+
+      const result = await BranchService.removeAdminFromBranch(corporateId, parsedBranchId, parsedAdminId);
+
+      res.status(200).json({
+        status: 'success',
+        message: result.message
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

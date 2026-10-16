@@ -4,3 +4,12 @@ export enum UserRole {
   TEACHER = 'TEACHER',
   STUDENT = 'STUDENT',
 }
+
+export const BRANCH_ADMIN_ROLES = [
+  UserRole.BRANCH_ADMIN,
+  'DEAN',
+  'PRINCIPAL',
+  'VICE_PRINCIPAL',
+  'OTHER',
+];
+

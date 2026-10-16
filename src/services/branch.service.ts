@@ -106,4 +106,73 @@ export class BranchService {
 
     return teachers;
   }
+
+  public static async searchBranches(corporateId: bigint, query: string) {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      throw new AppError("Query parameter 'q' is required", 400);
+    }
+
+    const branches = await prisma.branch.findMany({
+      where: {
+        corporate_id: corporateId,
+        OR: [
+          { name: { contains: trimmed, mode: 'insensitive' } },
+          { address: { contains: trimmed, mode: 'insensitive' } },
+          { pincode: { contains: trimmed } },
+        ],
+      },
+      take: 5,
+      select: {
+        id: true,
+        corporate_id: true,
+        name: true,
+        pincode: true,
+        address: true,
+        branch_contact_mail: true,
+      },
+    });
+
+    return branches;
+  }
+
+  public static async removeAdminFromBranch(corporateId: bigint, branchId: bigint, adminId: bigint) {
+    // 1. Verify branch belongs to corporate entity
+    const branch = await prisma.branch.findFirst({
+      where: { id: branchId, corporate_id: corporateId },
+    });
+    if (!branch) {
+      throw new AppError('Branch or admin not found, or admin is not assigned to this branch', 404);
+    }
+
+    // 2. Verify admin belongs to corporate entity
+    const admin = await prisma.admin.findFirst({
+      where: { id: adminId, corporate_id: corporateId },
+    });
+    if (!admin) {
+      throw new AppError('Branch or admin not found, or admin is not assigned to this branch', 404);
+    }
+
+    // 3. Verify admin currently assigned to this branch
+    const access = await prisma.adminBranchAccess.findUnique({
+      where: {
+        admin_id_branch_id: {
+          admin_id: adminId,
+          branch_id: branchId,
+        },
+      },
+    });
+
+    if (!access) {
+      throw new AppError('Branch or admin not found, or admin is not assigned to this branch', 404);
+    }
+
+    // 4. Delete assignment
+    await prisma.adminBranchAccess.delete({
+      where: { id: access.id },
+    });
+
+    return { message: 'Admin access removed from branch successfully' };
+  }
 }
+
