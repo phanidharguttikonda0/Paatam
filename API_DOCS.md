@@ -2771,6 +2771,208 @@ Deletes an assignment and purges related submissions, notifications, and batch j
   - `403 Forbidden`: "Forbidden: Insufficient permissions"
   - `404 Not Found`: "Assignment not found"
 
+---
+
+## 11. Student Portal & Assignment Submissions
+
+### `GET /api/student/dashboard`
+The primary landing endpoint for the Student Home Page. Returns:
+1. Enrolled class and section name.
+2. Designated Class Teacher name and contact email.
+3. List of active subjects in the class.
+4. Summary counts of pending and completed assignments.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `STUDENT`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "class_name": "Grade 10",
+      "section_name": "A",
+      "class_teacher": {
+        "id": "801",
+        "name": "Suresh Raina",
+        "email": "raina@school.edu"
+      },
+      "subjects": [
+        { "id": "901", "name": "Physics", "code": "PHY-10" },
+        { "id": "902", "name": "Mathematics", "code": "MTH-10" }
+      ],
+      "assignments_summary": {
+        "pending_count": 2,
+        "completed_count": 5
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+---
+
+### `GET /api/student/assignments`
+Returns a list of assignments available for the student's section, with submission status indicators.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `STUDENT`
+- **Query Params:**
+  - `status` (string, optional): `pending` or `completed`
+  - `cursor` (string, optional)
+  - `limit` (number, optional, max 10)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1501",
+        "title": "Physics Midterm Exam",
+        "subject_name": "Physics",
+        "duration_minutes": 60,
+        "due_date": "2026-10-25T18:00:00.000Z",
+        "is_submitted": false,
+        "submission_id": null
+      }
+    ],
+    "meta": {
+      "nextCursor": null,
+      "hasNextPage": false
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+---
+
+### `GET /api/student/assignments/:id`
+Retrieves test details, duration, and question paper for the student to take the exam.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `STUDENT`
+- **URL Params:** `id` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1501",
+      "title": "Physics Midterm Exam",
+      "subject": "Physics",
+      "duration_minutes": 60,
+      "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/qpaper.pdf",
+      "due_date": "2026-10-25T18:00:00.000Z",
+      "questions": [
+        {
+          "question_number": 1,
+          "question": "What is the SI unit of electric potential?",
+          "type": "mcq",
+          "marks": 1,
+          "options": ["Ampere", "Volt", "Ohm", "Joule"]
+        }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Assignment not found"
+
+---
+
+### `POST /api/student/assignments/:id/submit`
+Submits handwritten answer sheet images or scanned PDF documents for automated/teacher grading.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `STUDENT`
+- **URL Params:** `id` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "sample_paper_urls": [
+      "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/sheet1.jpg",
+      "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/sheet2.jpg"
+    ]
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Answer sheets submitted successfully",
+    "data": {
+      "submission_id": "1401",
+      "assignment_id": "1501",
+      "student_id": "1301",
+      "status": "submitted",
+      "submitted_at": "2026-10-16T12:00:00.000Z",
+      "files_uploaded_count": 2
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Assignment not found"
+
+---
+
+### `GET /api/student/submissions/:id`
+Retrieves graded scorecard, rubric marks, teacher feedback, and Socratic learning hints.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `STUDENT` (must own submission)
+- **URL Params:** `id` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1401",
+      "assignment_title": "Physics Midterm Exam",
+      "status": "approved",
+      "score": 34,
+      "max_score": 40,
+      "feedback": "Strong understanding of kinematics with minor algebraic errors in projectile height calculation.",
+      "socratic_hint": "Recall how vertical velocity behaves at the peak of a projectile trajectory.",
+      "submitted_at": "2026-10-16T12:00:00.000Z"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Access denied to this submission"
+  - `404 Not Found`: "Submission not found"
+
+---
+
+### `GET /api/student/notifications`
+Retrieves the notification feed for the student.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `STUDENT`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1601",
+        "title": "Assignment Submitted",
+        "message": "Your answer sheets for \"Physics Midterm Exam\" have been submitted successfully.",
+        "timestamp": "2026-10-16T12:00:00.000Z",
+        "read": false
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+
 
 
 
