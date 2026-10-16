@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/**'
 
 env:
   AWS_REGION: ap-south-2                   # Hyderabad
