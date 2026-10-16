@@ -476,6 +476,54 @@ Retrieves a paginated list of Teachers assigned to this specific branch.
 
 ---
 
+### `GET /api/branch/corporate/search`
+Performs an autocomplete search for branches by name or city across the Corporate entity. Filtered strictly by corporate tenancy and capped at 5 matches.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **Query Params:**
+  - `q` (string, required): Search query term (min 1 character).
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1",
+        "corporate_id": "1",
+        "name": "Whitefield Main Campus",
+        "pincode": "560066",
+        "address": "ITPL Main Road, Bangalore",
+        "branch_contact_mail": "whitefield@school.edu"
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Query parameter 'q' is required"
+
+---
+
+### `DELETE /api/branch/:branchId/admins/:adminId`
+Removes a specific Branch Admin's access to a single branch without modifying other branch assignments.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `CORPORATE_ADMIN`
+- **URL Params:**
+  - `branchId` (string, required): BigInt ID of the branch.
+  - `adminId` (string, required): BigInt ID of the branch admin.
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Admin access removed from branch successfully"
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Branch or admin not found, or admin is not assigned to this branch"
+
+---
+
 ## 5. Branch Admin Management
 
 ### `POST /api/admin/create`
@@ -677,6 +725,65 @@ Performs an auto-complete search for Branch Admins by name within the Corporate 
 
 ---
 
+### `GET /api/branch-admin/my-branches`
+Retrieves all branches linked to the currently logged-in Branch Admin (`AdminBranchAccess`). Called immediately after Branch Admin login to populate the branch selector dashboard.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN` (`PRINCIPAL`, `DEAN`, `VICE_PRINCIPAL`, `OTHER`)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "101",
+        "name": "North Campus",
+        "pincode": "500081",
+        "address": "Madhapur, Hyderabad",
+        "branch_contact_mail": "north@school.edu",
+        "mobile_number": "9876543210",
+        "role_in_branch": "PRINCIPAL",
+        "active_academic_year": {
+          "id": "501",
+          "start_year": 2026,
+          "end_year": 2027
+        }
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing user identity" or "Invalid or expired token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+---
+
+### `GET /api/branch-admin/profile`
+Fetches the current logged-in Branch Admin's own profile and total count of assigned branches.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN` (`PRINCIPAL`, `DEAN`, `VICE_PRINCIPAL`, `OTHER`)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "2",
+      "corporate_id": "1",
+      "admin_name": "Alice Admin",
+      "contact_email": "alice@branch.com",
+      "mobile": "1112223334",
+      "role": "PRINCIPAL",
+      "assigned_branches_count": 2
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing user identity"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+---
+
 ### `POST /api/auth/admin/login`
 Logs in a Branch Admin using their identifier (email or mobile) and their password.
 
@@ -756,3 +863,287 @@ Finalizes the password reset flow by verifying the OTP and updating the Branch A
 - **Error Responses:**
   - `400 Bad Request`: "Invalid or expired OTP"
   - `404 Not Found`: "No branch admin found with that identifier in this corporate entity"
+
+---
+
+## 6. Academic Year Management
+
+### `GET /api/branch/:branchId/academic-years`
+Fetches a cursor-paginated list of academic years for a specific branch. The active/current academic year is returned at the top (`is_active: true`).
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `branchId` (string, required)
+- **Query Params:** `cursor`, `limit`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "501",
+        "branch_id": "101",
+        "start_year": 2026,
+        "end_year": 2027,
+        "is_active": true,
+        "created_at": "2026-03-01T00:00:00.000Z"
+      },
+      {
+        "id": "500",
+        "branch_id": "101",
+        "start_year": 2025,
+        "end_year": 2026,
+        "is_active": false,
+        "created_at": "2025-03-01T00:00:00.000Z"
+      }
+    ],
+    "meta": { "nextCursor": null, "hasNextPage": false }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: You do not have access to this branch"
+  - `404 Not Found`: "Branch not found or access denied"
+
+---
+
+### `POST /api/branch/:branchId/academic-years`
+Creates a new academic year for a branch. If `is_active: true` is passed (default true), automatically and atomically deactivates previous active academic years for that branch.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `branchId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "start_year": 2026,
+    "end_year": 2027,
+    "is_active": true
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Academic year created successfully",
+    "data": {
+      "id": "501",
+      "branch_id": "101",
+      "start_year": 2026,
+      "end_year": 2027,
+      "is_active": true
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "end_year must be start_year + 1"
+  - `409 Conflict`: "Academic year 2026-2027 already exists for this branch"
+
+---
+
+### `PUT /api/academic-years/:id`
+Updates academic year details or sets it as active/inactive. Setting `is_active: true` deactivates any other active year for that branch.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `id` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "is_active": true
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "501",
+      "branch_id": "101",
+      "start_year": 2026,
+      "end_year": 2027,
+      "is_active": true
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "end_year must be start_year + 1"
+  - `404 Not Found`: "Academic year not found"
+
+---
+
+### `DELETE /api/academic-years/:id`
+Deletes an academic year. Blocked if classes are linked to it.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `id` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Academic year deleted successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot delete academic year: active classes are linked to this session"
+  - `404 Not Found`: "Academic year not found"
+
+---
+
+## 7. Class Management
+
+### `GET /api/academic-years/:academicYearId/classes`
+Lists all classes in an academic year, ordered by `class_order`. Includes summary counts of sections and attached subjects.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`, `TEACHER`
+- **URL Params:** `academicYearId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "601",
+        "branch_id": "101",
+        "academic_year_id": "501",
+        "name": "Grade 10",
+        "class_order": 10,
+        "sections_count": 2,
+        "subjects_count": 5
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Academic year not found"
+
+---
+
+### `POST /api/academic-years/:academicYearId/classes`
+Creates a class in an academic year. Supports optional initial sections creation in the same transaction.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `academicYearId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "name": "Grade 10",
+    "class_order": 10,
+    "initial_sections": ["A", "B"]
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "601",
+      "branch_id": "101",
+      "academic_year_id": "501",
+      "name": "Grade 10",
+      "class_order": 10,
+      "sections": [
+        { "id": "701", "section_name": "A", "strength": 0 },
+        { "id": "702", "section_name": "B", "strength": 0 }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Class name already exists in this academic year"
+  - `404 Not Found`: "Academic year not found"
+
+---
+
+### `GET /api/classes/:classId`
+Fetches class details, along with its list of sections, assigned class teachers, and linked subjects.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`
+- **URL Params:** `classId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "601",
+      "name": "Grade 10",
+      "class_order": 10,
+      "academic_year": {
+        "id": "501",
+        "start_year": 2026,
+        "end_year": 2027
+      },
+      "sections": [
+        {
+          "id": "701",
+          "section_name": "A",
+          "strength": 40,
+          "class_teacher": {
+            "id": "801",
+            "name": "Suresh Raina",
+            "teacher_id": "TCH-001"
+          }
+        }
+      ],
+      "subjects": [
+        { "id": "901", "class_subject_id": "1101", "name": "Physics", "code": "PHY-10" }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Class not found"
+
+---
+
+### `PUT /api/classes/:classId`
+Updates class name or ordering index.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `classId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "name": "Grade 10 - ICSE",
+    "class_order": 10
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "601",
+      "name": "Grade 10 - ICSE",
+      "class_order": 10
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Class name already exists in this academic year"
+  - `404 Not Found`: "Class not found"
+
+---
+
+### `DELETE /api/classes/:classId`
+Deletes a class. Blocked if sections exist.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `classId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Class deleted successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot delete class: sections are linked to this class"
+  - `404 Not Found`: "Class not found"
+
