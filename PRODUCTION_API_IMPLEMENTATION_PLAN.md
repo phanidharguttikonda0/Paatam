@@ -215,9 +215,9 @@ flowchart LR
 - **Implemented Endpoints (8 APIs):** Verified pre-signed S3 upload URLs with AWS SigV4 signatures, async OCR queuing, status polling (ocr_processing -> ready with dynamic model metadata), synchronous fallback with inline questions, publishing/finalization, paginated listing with submission count, single assignment retrieval with questions and answer key, and transactional cascade deletion of submissions, notifications, and batch jobs.
 - **Vitest Test Suite:** `src/tests/task5_assignment_pipeline.test.ts` (19/19 passed)
 - **Regression Test Suite:** Tasks 1, 2, 3, 4, and 5 suites combined (all passing with zero regressions)
-- **Git Commit:** Pending push & CI/CD deployment
-- **ECS Deployment:** In progress
-- **Live ALB Test:** Pending deployment verification
+- **Git Commit:** `a3f9006` (*feat(assignments): implement Task 5 assignment pipeline, pre-signed upload URLs and publishing*)
+- **ECS Deployment:** Workflow run `38900291169` completed successfully; ECS service reached steady state with zero downtime
+- **Live ALB Test:** Verified healthy (`/api/health` 200 OK) and all assignment routes (upload-urls, process-async, create-sync, list, get-by-id, delete) verified live across ALB (`paatam-alb-dev-320337189.ap-south-2.elb.amazonaws.com`)
 
 ---
 
