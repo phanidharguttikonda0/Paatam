@@ -39,10 +39,10 @@ flowchart LR
 | :---: | :--- | :--- | :---: | :---: |
 | **Task 1** | **Academic Structural Hierarchy** | Branch Extensions, Academic Years & Classes | 13 APIs | `[x] COMPLETED` |
 | **Task 2** | **Sections & Branch Subject Mapping** | Section Management, Class Teachers & Subject Catalog | 15 APIs | `[x] COMPLETED` |
-| **Task 3** | **Teacher Directory & Auth Portal** | Teacher Onboarding, Subject Mapping, Login & Dashboard | 15 APIs | `[ ] PENDING` |
-| **Task 4** | **Student Roster & Student Auth** | Student Enrollment (Single/Bulk CSV), Profiles & Student Login | 12 APIs | `[ ] PENDING` |
-| **Task 5** | **Assignment Pipeline & Ingestion** | S3 Pre-signed URLs, Async SQS/Sync Ingestion, Model Routing | 8 APIs | `[ ] PENDING` |
-| **Task 6** | **Student Portal & Submissions** | Student Dashboard, Assignments, Answer Sheet Upload & Results | 6 APIs | `[ ] PENDING` |
+| **Task 3** | **Teacher Directory & Auth Portal** | Teacher Onboarding, Subject Mapping, Login & Dashboard | 15 APIs | `[x] COMPLETED` |
+| **Task 4** | **Student Roster & Student Auth** | Student Enrollment (Single/Bulk CSV), Profiles & Student Login | 12 APIs | `[x] COMPLETED` |
+| **Task 5** | **Assignment Pipeline & Ingestion** | S3 Pre-signed URLs, Async SQS/Sync Ingestion, Model Routing | 8 APIs | `[x] COMPLETED` |
+| **Task 6** | **Student Portal & Submissions** | Student Dashboard, Assignments, Answer Sheet Upload & Results | 6 APIs | `[x] COMPLETED` |
 | **Task 7** | **Grading, Overrides & Batch Stacks** | Scorecard Review, Teacher Approvals, Overrides & Class Scans | 6 APIs | `[ ] PENDING` |
 
 ---
@@ -53,7 +53,7 @@ flowchart LR
 
 ### Task 1: Academic Structural Hierarchy (Branch Extensions, Academic Years & Classes)
 **Scope:** Sections 2, 3, and 4 from [Production_Pending_API's.md](file:///home/phani/My/paatam_application/paatam_backend/Production_Pending_API%27s.md)  
-**Status:** `[ ] PENDING`
+**Status:** `[x] COMPLETED & VERIFIED`
 
 #### Endpoints to Implement (13 APIs):
 - **Branch & Admin Extensions:**
@@ -237,10 +237,10 @@ flowchart LR
 - **Status:** [x] COMPLETED & VERIFIED (Local Vitest 15/15 Passed, Full Regression Suite Passed)
 - **Implemented Endpoints (6 APIs):** Verified student home landing dashboard with class teacher and assignment counters, filterable assignments list (status pending/completed), single assignment test questions view, handwritten answer sheet submissions with S3 URLs and confirmation notifications, scorecard view with marks and Socratic hints (with strict cross-student access control 403), and student notification feed.
 - **Vitest Test Suite:** `src/tests/task6_student_submissions.test.ts` (15/15 passed)
-- **Regression Test Suite:** Tasks 1, 2, 3, 4, 5, and 6 suites combined (all passing with zero regressions)
-- **Git Commit:** Pending push & CI/CD deployment
-- **ECS Deployment:** In progress
-- **Live ALB Test:** Pending deployment verification
+- **Regression Test Suite:** Tasks 1, 2, 3, 4, 5, and 6 suites combined (121/121 passing with zero regressions)
+- **Git Commit:** `e65b485` (*feat(student-portal): implement Task 6 student portal, assignments, answer sheet submission and scorecards*)
+- **ECS Deployment:** GitHub Actions Run ID `38902862566` (Success, ECS service `paatam-service-dev` steady state reached)
+- **Live ALB Test:** Verified healthy (`/api/health` 200 OK) and all student routes (`/api/student/dashboard`, `/api/student/assignments`, `/api/student/assignments/:id`, `/api/student/assignments/:id/submit`, `/api/student/submissions/:id`, `/api/student/notifications`) verified live across ALB (`paatam-alb-dev-320337189.ap-south-2.elb.amazonaws.com`)
 
 ---
 
