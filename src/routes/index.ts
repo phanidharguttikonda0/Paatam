@@ -8,6 +8,8 @@ import academicYearRoutes from './academicYear.routes';
 import classRoutes from './class.routes';
 import sectionRoutes from './section.routes';
 import subjectRoutes from './subject.routes';
+import teacherRoutes from './teacher.routes';
+import teacherPortalRoutes from './teacherPortal.routes';
 
 const router = Router();
 
@@ -20,5 +22,7 @@ router.use('/academic-years', academicYearRoutes);
 router.use('/classes', classRoutes);
 router.use('/sections', sectionRoutes);
 router.use('/subjects', subjectRoutes);
+router.use('/teachers', teacherRoutes);
+router.use('/teacher', teacherPortalRoutes);
 
 export default router;

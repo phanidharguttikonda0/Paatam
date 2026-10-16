@@ -1568,4 +1568,442 @@ Removes a subject from a class. Blocked if assignments have already been publish
   - `400 Bad Request`: "Cannot remove subject: 4 assignments have been created under this class subject"
   - `404 Not Found`: "Class subject attachment not found"
 
+---
+
+## 7. Teacher Directory, Subject Mapping & Profiles
+
+### `POST /api/branch/:branchId/teachers`
+Onboards a new Teacher into a branch. Generates salted password hash and stores contact credentials.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `branchId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "name": "Suresh Raina",
+    "teacher_id": "TCH-001",
+    "contact_email": "suresh@school.edu",
+    "contact_mobile": "9876500000",
+    "password": "InitialTeacherPassword123"
+  }
+  ```
+- **Validations:**
+  - `name`: Non-empty string.
+  - `teacher_id`: Unique within branch.
+  - `contact_email` or `contact_mobile`: Must be unique.
+  - `password`: Minimum 8 characters.
+- **Success Response (201 Created):**
+  *(Note: `password_hash` omitted)*
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "801",
+      "branch_id": "101",
+      "name": "Suresh Raina",
+      "teacher_id": "TCH-001",
+      "contact_email": "suresh@school.edu",
+      "contact_mobile": "9876500000"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `409 Conflict`: "Teacher with this teacher_id, email, or mobile already exists"
+
+---
+
+### `GET /api/branch/:branchId/teachers/search`
+Fast auto-complete search for teachers by name or `teacher_id`. Essential for frontend autocomplete dropdowns when allocating teachers to sections or subjects.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `branchId` (string, required)
+- **Query Params:**
+  - `q` (string, required): Search term (min 1 char).
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "801",
+        "name": "Suresh Raina",
+        "teacher_id": "TCH-001",
+        "contact_email": "suresh@school.edu",
+        "is_class_teacher": true
+      }
+    ]
+  }
+  ```
+
+---
+
+### `GET /api/teachers/:teacherId`
+Retrieves full profile for a teacher, including personal details, assigned subjects, and sections where they are Class Teacher.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`, `TEACHER` (self)
+- **URL Params:** `teacherId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "801",
+      "branch_id": "101",
+      "name": "Suresh Raina",
+      "teacher_id": "TCH-001",
+      "contact_email": "suresh@school.edu",
+      "contact_mobile": "9876500000",
+      "assigned_subjects": [
+        { "id": "901", "name": "Physics", "code": "PHY-10" }
+      ],
+      "class_teacher_sections": [
+        { "id": "701", "section_name": "A", "class_name": "Grade 10" }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Teacher not found"
+
+---
+
+### `PUT /api/teachers/:teacherId`
+Updates a teacher's personal and contact details.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `teacherId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "name": "Suresh Raina, M.Sc.",
+    "contact_email": "suresh.raina@school.edu",
+    "contact_mobile": "9876599999"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "801",
+      "branch_id": "101",
+      "name": "Suresh Raina, M.Sc.",
+      "teacher_id": "TCH-001",
+      "contact_email": "suresh.raina@school.edu",
+      "contact_mobile": "9876599999"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Teacher not found"
+  - `409 Conflict`: "Email already in use by another teacher"
+
+---
+
+### `DELETE /api/teachers/:teacherId`
+Deletes a teacher record. Blocked if the teacher has active subject assignments or is currently designated as Class Teacher for any section.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `teacherId` (string, required)
+- **Validations:**
+  - Verifies teacher is not in `Section.class_teacher_id`.
+  - Verifies no active rows in `TeacherSubject`.
+  - Blocked with `400 Bad Request` if dependencies exist.
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Teacher deleted successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot delete teacher: actively assigned as Class Teacher for Grade 10-A and teaches 2 subjects"
+  - `404 Not Found`: "Teacher not found"
+
+---
+
+### `GET /api/teachers/:teacherId/subjects`
+Gets all subjects mapped to a specific teacher.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`, `TEACHER`
+- **URL Params:** `teacherId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "teacher_subject_id": "1201",
+        "subject_id": "901",
+        "subject_name": "Physics",
+        "code": "PHY-10"
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Teacher not found"
+
+---
+
+### `POST /api/teachers/:teacherId/subjects`
+Maps a teacher to a subject (`TeacherSubject`).
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `teacherId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "subject_id": "901"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Subject mapped to teacher successfully",
+    "data": {
+      "id": "1201",
+      "teacher_id": "801",
+      "subject_id": "901"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Subject not found or does not belong to this branch"
+  - `409 Conflict`: "Subject is already mapped to this teacher"
+
+---
+
+### `DELETE /api/teachers/:teacherId/subjects/:subjectId`
+Removes subject assignment from a teacher.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:**
+  - `teacherId` (string, required)
+  - `subjectId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Subject removed from teacher successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Cannot remove subject: active assignments are linked to this teacher-subject mapping"
+  - `404 Not Found`: "Teacher subject mapping not found"
+
+---
+
+### `GET /api/teachers/:teacherId/sections`
+Lists all sections where the teacher is designated as the Class Teacher.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `CORPORATE_ADMIN`, `TEACHER`
+- **URL Params:** `teacherId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "section_id": "701",
+        "section_name": "A",
+        "class_id": "601",
+        "class_name": "Grade 10",
+        "enrolled_count": 38
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Teacher not found"
+
+---
+
+## 9. Teacher Portal & Workflow APIs
+
+### `POST /api/auth/teacher/login`
+Authenticates a Teacher using their identifier (`contact_email` or `teacher_id`) and password.
+
+- **Authentication Required:** No
+- **Request Body:**
+  ```json
+  {
+    "identifier": "suresh@school.edu",
+    "password": "SecurePassword123"
+  }
+  ```
+- **Success Response (200 OK):**
+  *Headers:* `Set-Cookie: refreshToken=...; HttpOnly; Max-Age=2592000`
+  ```json
+  {
+    "status": "success",
+    "message": "Login successful",
+    "data": {
+      "accessToken": "eyJhbGciOi...",
+      "user": {
+        "id": "801",
+        "name": "Suresh Raina",
+        "teacher_id": "TCH-001",
+        "role": "TEACHER",
+        "branch_id": "101"
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `401 Unauthorized`: "Invalid credentials"
+
+---
+
+### `POST /api/auth/teacher/forgot-password`
+Generates and dispatches a password reset OTP to the teacher's registered email or mobile.
+
+- **Authentication Required:** No
+- **Request Body:**
+  ```json
+  {
+    "identifier": "suresh@school.edu",
+    "branch_id": "101"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Password reset OTP sent successfully",
+    "data": null
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Teacher not found"
+
+---
+
+### `POST /api/auth/teacher/reset-password`
+Verifies OTP and resets the teacher's password.
+
+- **Authentication Required:** No
+- **Request Body:**
+  ```json
+  {
+    "identifier": "suresh@school.edu",
+    "branch_id": "101",
+    "otp": "123456",
+    "new_password": "NewSecurePassword456!"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Password reset successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Invalid or expired OTP"
+  - `404 Not Found`: "Teacher not found"
+
+---
+
+### `GET /api/teacher/profile`
+Retrieves the logged-in teacher's profile.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "801",
+      "name": "Suresh Raina",
+      "teacher_id": "TCH-001",
+      "email": "suresh@school.edu",
+      "mobile": "9876500000",
+      "branch_id": "101"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+  - `404 Not Found`: "Teacher not found"
+
+---
+
+### `GET /api/teacher/dashboard`
+The primary landing API for the Teacher Home Page. Returns:
+1. All sections where the teacher conducts classes, grouped by subject.
+2. Any sections where the teacher is designated as the **Class Teacher** (giving them access to student management in that section).
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "teaching_allocations": [
+        {
+          "section_id": "701",
+          "section_name": "A",
+          "class_id": "601",
+          "class_name": "Grade 10",
+          "subject_id": "901",
+          "subject_name": "Physics",
+          "class_subject_id": "1101",
+          "teacher_subject_id": "1201",
+          "students_count": 38
+        }
+      ],
+      "class_teacher_sections": [
+        {
+          "section_id": "701",
+          "section_name": "A",
+          "class_name": "Grade 10",
+          "students_count": 38
+        }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+---
+
+### `GET /api/teacher/sections/:sectionId/subjects`
+Returns the specific subjects that the authenticated teacher teaches in the designated section.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`
+- **URL Params:** `sectionId` (string, required)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "class_subject_id": "1101",
+        "teacher_subject_id": "1201",
+        "subject_name": "Physics",
+        "subject_code": "PHY-10"
+      }
+    ]
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Section not found"
+
+
 

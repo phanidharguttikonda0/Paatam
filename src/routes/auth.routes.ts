@@ -6,6 +6,11 @@ import {
   adminForgotPasswordSchema, 
   adminResetPasswordSchema 
 } from '../schemas/admin.schema';
+import {
+  teacherLoginSchema,
+  teacherForgotPasswordSchema,
+  teacherResetPasswordSchema,
+} from '../schemas/teacher.schema';
 
 const router = Router();
 
@@ -32,5 +37,14 @@ router.post('/admin/forgot-password', validate(adminForgotPasswordSchema), AuthC
 
 // POST /api/auth/admin/reset-password
 router.post('/admin/reset-password', validate(adminResetPasswordSchema), AuthController.adminResetPassword);
+
+// POST /api/auth/teacher/login
+router.post('/teacher/login', validate(teacherLoginSchema), AuthController.teacherLogin);
+
+// POST /api/auth/teacher/forgot-password
+router.post('/teacher/forgot-password', validate(teacherForgotPasswordSchema), AuthController.teacherForgotPassword);
+
+// POST /api/auth/teacher/reset-password
+router.post('/teacher/reset-password', validate(teacherResetPasswordSchema), AuthController.teacherResetPassword);
 
 export default router;

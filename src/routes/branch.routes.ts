@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { BranchController } from '../controllers/branch.controller';
 import { AcademicYearController } from '../controllers/academicYear.controller';
 import { SubjectController } from '../controllers/subject.controller';
+import { TeacherController } from '../controllers/teacher.controller';
 import { validate } from '../middlewares/validate';
 import { createBranchSchema, searchBranchSchema } from '../schemas/branch.schema';
 import { createAcademicYearSchema } from '../schemas/academicYear.schema';
 import { createSubjectSchema } from '../schemas/subject.schema';
+import { createTeacherSchema, searchTeacherSchema } from '../schemas/teacher.schema';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware';
 import { UserRole } from '../enums/role.enum';
 
@@ -39,6 +41,21 @@ router.post(
   requireRole([UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]),
   validate(createSubjectSchema),
   SubjectController.createBranchSubject
+);
+
+// Teacher endpoints under branch (allow BRANCH_ADMIN and CORPORATE_ADMIN)
+router.post(
+  '/:branchId/teachers',
+  requireRole([UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]),
+  validate(createTeacherSchema),
+  TeacherController.createTeacher
+);
+
+router.get(
+  '/:branchId/teachers/search',
+  requireRole([UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]),
+  validate(searchTeacherSchema),
+  TeacherController.searchTeachers
 );
 
 // Corporate Admin-only branch routes

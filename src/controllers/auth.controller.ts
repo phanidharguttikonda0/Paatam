@@ -286,4 +286,150 @@ export class AuthController {
       next(error);
     }
   }
+
+  // --- Teacher Authentication Portal Flow ---
+
+  public static async teacherLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, password } = req.body;
+
+      const teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { contact_email: identifier },
+            { teacher_id: identifier },
+            { contact_mobile: identifier },
+          ],
+        },
+      });
+
+      if (!teacher) {
+        throw new AppError('Invalid credentials', 401);
+      }
+
+      const isValidPassword = await require('bcrypt').compare(password, teacher.password_hash);
+      if (!isValidPassword) {
+        throw new AppError('Invalid credentials', 401);
+      }
+
+      const userRole = UserRole.TEACHER;
+      const accessToken = AuthService.generateAccessToken(teacher.id, userRole);
+      const refreshToken = await AuthService.generateAndStoreRefreshToken(teacher.id, userRole);
+
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Login successful',
+        data: {
+          accessToken,
+          user: {
+            id: teacher.id.toString(),
+            name: teacher.name,
+            teacher_id: teacher.teacher_id,
+            role: userRole,
+            branch_id: teacher.branch_id.toString(),
+          },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async teacherForgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, branch_id } = req.body;
+
+      const whereClause: any = {
+        OR: [
+          { contact_email: identifier },
+          { teacher_id: identifier },
+          { contact_mobile: identifier },
+        ],
+      };
+
+      if (branch_id) {
+        whereClause.branch_id = parseBigInt(branch_id, 'branch_id');
+      }
+
+      const teacher = await prisma.teacher.findFirst({
+        where: whereClause,
+      });
+
+      if (!teacher) {
+        throw new AppError('Teacher not found', 404);
+      }
+
+      const isEmail = teacher.contact_email === identifier;
+      const isMobile = teacher.contact_mobile === identifier;
+
+      const otp = await OtpService.generateAndStoreOtp(
+        isEmail ? identifier : teacher.contact_email,
+        isMobile ? identifier : (teacher.contact_mobile || undefined),
+        'reset-password'
+      );
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Password reset OTP sent successfully',
+        data: isProduction ? null : { otp },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async teacherResetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { identifier, branch_id, otp, new_password } = req.body;
+
+      const whereClause: any = {
+        OR: [
+          { contact_email: identifier },
+          { teacher_id: identifier },
+          { contact_mobile: identifier },
+        ],
+      };
+
+      if (branch_id) {
+        whereClause.branch_id = parseBigInt(branch_id, 'branch_id');
+      }
+
+      const teacher = await prisma.teacher.findFirst({
+        where: whereClause,
+      });
+
+      if (!teacher) {
+        throw new AppError('Teacher not found', 404);
+      }
+
+      const isEmail = teacher.contact_email === identifier;
+      const isMobile = teacher.contact_mobile === identifier;
+
+      await OtpService.validateAndConsumeOtp(
+        otp,
+        isEmail ? identifier : teacher.contact_email,
+        isMobile ? identifier : (teacher.contact_mobile || undefined)
+      );
+
+      const hashedPassword = await require('bcrypt').hash(new_password, 10);
+      await prisma.teacher.update({
+        where: { id: teacher.id },
+        data: { password_hash: hashedPassword },
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Password reset successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

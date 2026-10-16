@@ -133,19 +133,19 @@ flowchart LR
 
 ### Task 3: Teacher Directory, Subject Allocation & Teacher Auth Portal
 **Scope:** Sections 7 and 9 from [Production_Pending_API's.md](file:///home/phani/My/paatam_application/paatam_backend/Production_Pending_API%27s.md)  
-**Status:** `[ ] PENDING`
+**Status:** `[x] COMPLETED`
 
 #### Endpoints to Implement (15 APIs):
 - **Teacher Directory & Subject Mapping:**
-  1. `POST /api/branch/:branchId/teachers` — Onboard teacher with bcrypt salted password (`BRANCH_ADMIN`).
-  2. `GET /api/branch/:branchId/teachers/search` — Autocomplete search teachers by name or `teacher_id` (`BRANCH_ADMIN`).
-  3. `GET /api/teachers/:teacherId` — Teacher full profile with assigned subjects & sections (`BRANCH_ADMIN`, `TEACHER`).
-  4. `PUT /api/teachers/:teacherId` — Update teacher contact/personal details (`BRANCH_ADMIN`).
-  5. `DELETE /api/teachers/:teacherId` — Delete teacher; blocked if designated as class teacher or subject teacher (`BRANCH_ADMIN`).
-  6. `GET /api/teachers/:teacherId/subjects` — Get subjects mapped to teacher (`BRANCH_ADMIN`, `TEACHER`).
-  7. `POST /api/teachers/:teacherId/subjects` — Assign teacher to subject (`TeacherSubject`) (`BRANCH_ADMIN`).
-  8. `DELETE /api/teachers/:teacherId/subjects/:subjectId` — Unassign teacher from subject (`BRANCH_ADMIN`).
-  9. `GET /api/teachers/:teacherId/sections` — List sections where teacher is Class Teacher (`BRANCH_ADMIN`, `TEACHER`).
+  1. `POST /api/branch/:branchId/teachers` — Onboard teacher with bcrypt salted password (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  2. `GET /api/branch/:branchId/teachers/search` — Autocomplete search teachers by name or `teacher_id` (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  3. `GET /api/teachers/:teacherId` — Teacher full profile with assigned subjects & sections (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
+  4. `PUT /api/teachers/:teacherId` — Update teacher contact/personal details (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  5. `DELETE /api/teachers/:teacherId` — Delete teacher; blocked if designated as class teacher or subject teacher (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  6. `GET /api/teachers/:teacherId/subjects` — Get subjects mapped to teacher (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
+  7. `POST /api/teachers/:teacherId/subjects` — Assign teacher to subject (`TeacherSubject`) (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  8. `DELETE /api/teachers/:teacherId/subjects/:subjectId` — Unassign teacher from subject (`BRANCH_ADMIN`, `CORPORATE_ADMIN`).
+  9. `GET /api/teachers/:teacherId/sections` — List sections where teacher is Class Teacher (`BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`).
 - **Teacher Authentication & Workflow Portal:**
   10. `POST /api/auth/teacher/login` — Teacher login with `identifier` + `password`; sets httpOnly refresh token (`Public`).
   11. `POST /api/auth/teacher/forgot-password` — Dispatch reset OTP to registered email/mobile via SES/Twilio (`Public`).
@@ -155,11 +155,13 @@ flowchart LR
   15. `GET /api/teacher/sections/:sectionId/subjects` — Subjects the teacher specifically teaches in a section (`TEACHER`).
 
 #### Task 3 Completion Log
-- **Status:** Pending
-- **Vitest Test Suite:** `src/tests/task3_teacher_directory_portal.test.ts`
-- **Git Commit:** Pending
-- **ECS Deployment:** Pending
-- **Live ALB Test:** Pending
+- **Status:** [x] COMPLETED & VERIFIED (Local Vitest 20/20 Passed, Regression 68/68 Passed)
+- **Implemented Endpoints (15 APIs):** All 15 endpoints verified for input validation, RBAC (BRANCH_ADMIN, CORPORATE_ADMIN, TEACHER self-check), uniqueness constraints, dependency blockages, and password hashing/OTP reset lifecycle.
+- **Vitest Test Suite:** `src/tests/task3_teacher_directory_portal.test.ts` (20/20 passed)
+- **Regression Test Suite:** Tasks 1, 2, and 3 suites combined (68/68 passed with zero failures)
+- **Git Commit:** Pending push
+- **ECS Deployment:** In progress
+- **Live ALB Test:** Pending deployment verify
 
 ---
 
