@@ -13,6 +13,7 @@ on:
       - 'Dockerfile'
       - '.dockerignore'
       - '.github/workflows/**'
+      - 'scripts/**'
 
 env:
   AWS_REGION: ap-south-2                   # Hyderabad

@@ -7,7 +7,11 @@
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "generate:docs": "node scripts/generate_frontend_docs.js",
+    "build:docs": "node scripts/generate_frontend_docs.js && mkdir -p public && cp API_DOCUMENTATION_FOR_FRONTEND.html public/index.html",
+    "test": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.1149.0",

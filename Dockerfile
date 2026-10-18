@@ -17,9 +17,11 @@ RUN npx prisma generate
 # Copy all source files
 COPY . .
 
-# Compile TypeScript to JavaScript (Assuming a tsconfig.json is present)
-# Note: Since tsconfig.json is missing, we will create one before building.
+# Compile TypeScript to JavaScript
 RUN npx tsc
+
+# Generate Frontend Documentation
+RUN node scripts/generate_frontend_docs.js
 
 # Stage 2: Production Stage
 FROM node:24.12.0-alpine
@@ -47,6 +49,9 @@ COPY --from=builder /usr/src/app/prisma /usr/src/app/prisma
 
 # Copy built JavaScript files from the builder stage
 COPY --from=builder /usr/src/app/dist ./dist
+
+# Copy generated frontend API documentation HTML
+COPY --from=builder /usr/src/app/API_DOCUMENTATION_FOR_FRONTEND.html ./API_DOCUMENTATION_FOR_FRONTEND.html
 
 # The default port your Express app binds to
 EXPOSE 4545

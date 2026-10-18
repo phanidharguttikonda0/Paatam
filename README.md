@@ -263,3 +263,158 @@ We use **GitHub Actions** (`.github/workflows/deploy.yml`) for automated deploym
 Because our database is completely isolated from the public internet (for maximum security), we cannot run `npx prisma migrate` from our local machines or GitHub Actions. 
 Instead, the **Dockerfile** is configured to automatically run `npx prisma migrate deploy` **inside** the ECS container right before the Node server starts. 
 - *Note: `migrate deploy` is completely safe. It does not wipe data. It simply applies any new SQL migration files that haven't been applied yet. If there are no new migrations, it gracefully skips!*
+
+---
+
+## 🌐 Live Frontend API Documentation Deployment Strategies
+
+### The Goal & Workflow Automation
+Whenever the backend engineers update API endpoints, schemas, or [scripts/generate_frontend_docs.js](file:///home/phani/My/paatam_application/paatam_backend/scripts/generate_frontend_docs.js), we need the changes to reflect **immediately at a single, persistent public URL** shared with frontend developers.
+
+Instead of manually generating `API_DOCUMENTATION_FOR_FRONTEND.html` and mailing/messaging the file back and forth, any `git push` automatically rebuilds and republishes the interactive docs site.
+
+```mermaid
+flowchart LR
+    A["Developer commits API / doc change"] --> B["git push origin main"]
+    B --> C{"Deployment Strategy"}
+    C -->|Strategy 1| D["Vercel Edge Network<br/>https://paatam-api-docs.vercel.app"]
+    C -->|Strategy 2| E["GitHub Pages<br/>https://phanidharguttikonda0.github.io/Paatam/"]
+    C -->|Strategy 3| F["Backend Express Server (/docs)<br/>https://api.paatam.in/docs"]
+    C -->|Strategy 4| G["Cloudflare Pages / Netlify<br/>https://paatam-docs.pages.dev"]
+    C -->|Strategy 5| H["AWS S3 + CloudFront<br/>https://docs.paatam.in"]
+    D --> I["Frontend Developers Always Have Latest Specs"]
+    E --> I
+    F --> I
+    G --> I
+    H --> I
+```
+
+---
+
+### Comparison of Deployment Approaches
+
+| Feature / Metric | Approach 1: Vercel (Recommended) | Approach 2: GitHub Pages | Approach 3: Express Backend Route | Approach 4: Cloudflare Pages | Approach 5: AWS S3 + CloudFront |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Persistent URL** | `https://paatam-api-docs.vercel.app` | `https://<user>.github.io/<repo>/` | `https://api.paatam.in/docs` | `https://paatam-docs.pages.dev` | `https://docs.paatam.in` |
+| **Cost** | 100% Free (Hobby tier) | 100% Free (Public & Pro repos) | Included in existing ECS | 100% Free | Pennies / Free Tier |
+| **Setup Time** | ~2 minutes | ~1 minute | Built-in (Already Configured) | ~2 minutes | ~10 minutes |
+| **External Account Needed?** | Yes (Vercel) | No (GitHub only) | No (Uses current backend) | Yes (Cloudflare) | No (Uses existing AWS) |
+| **Automatic Updates on Push?** | Automatic (via Vercel Git Hook) | Automatic (via GitHub Actions) | Automatic (via ECS Docker deploy) | Automatic (via Cloudflare Git) | Automatic (via GitHub Actions) |
+| **Pull Request Previews?** | Yes (Instant preview URLs per PR) | No (Deploys main only) | No (Deploys main only) | Yes (Preview URLs per PR) | Manual setup |
+| **Custom Domain Support?** | Free (e.g. `docs.paatam.in`) | Free (e.g. `docs.paatam.in`) | Same as API domain | Free (e.g. `docs.paatam.in`) | Route53 + ACM Certificate |
+
+---
+
+### Strategy 1: Vercel Deployment (Recommended for Frontend Team)
+
+Vercel is the natural platform for frontend assets. It provides blazing-fast edge caching, custom domains, and automatic preview deployments for every pull request.
+
+#### How It Works:
+1. When anyone pushes to `main`, Vercel reads the root [vercel.json](file:///home/phani/My/paatam_application/paatam_backend/vercel.json).
+2. It executes `npm run build:docs`, which runs `scripts/generate_frontend_docs.js` and outputs `public/index.html`.
+3. Vercel serves `public/` globally at your persistent URL.
+
+#### Step-by-Step Setup:
+1. Go to [vercel.com](https://vercel.com) and log in with your GitHub account.
+2. Click **Add New...** → **Project**.
+3. Select and import the repository **`phanidharguttikonda0/Paatam`**.
+4. In the Project Configuration:
+   - **Framework Preset:** `Other`
+   - **Root Directory:** `./`
+   - **Build Command:** `npm run build:docs` *(Pre-configured via `vercel.json`)*
+   - **Output Directory:** `public` *(Pre-configured via `vercel.json`)*
+5. Click **Deploy**.
+6. Within 30 seconds, Vercel gives you a live URL such as:
+   `https://paatam-api-docs.vercel.app`
+7. *(Optional)* Add a custom domain under **Settings → Domains** (e.g., `docs.paatam.in`).
+
+> [!TIP]
+> Every Pull Request submitted to the repository will automatically generate a temporary preview link (e.g., `https://paatam-git-feature-new-api.vercel.app`). Frontend developers can test and review upcoming API specifications before the backend is even merged!
+
+---
+
+### Strategy 2: GitHub Pages via GitHub Actions (Zero 3rd-Party Accounts)
+
+If you do not want to register for external hosting platforms, you can leverage native **GitHub Pages**. This keeps everything inside GitHub and deploys automatically on every push.
+
+#### How It Works:
+We have configured [.github/workflows/deploy-docs.yml](file:///home/phani/My/paatam_application/paatam_backend/.github/workflows/deploy-docs.yml):
+- It watches for changes in `scripts/generate_frontend_docs.js` and `src/**`.
+- It executes `npm run build:docs`.
+- It deploys the resulting `public/index.html` to GitHub Pages.
+
+#### Step-by-Step Setup:
+1. Open the GitHub repository in your browser:
+   `https://github.com/phanidharguttikonda0/Paatam`
+2. Go to **Settings** → **Pages** (under the "Code and automation" section).
+3. Under **Build and deployment**:
+   - Change **Source** from *"Deploy from a branch"* to **"GitHub Actions"**.
+4. Trigger the first build:
+   - Push any commit to `main`, OR
+   - Go to the **Actions** tab → click **Deploy Frontend API Documentation to GitHub Pages** → click **Run workflow**.
+5. Once complete, your live documentation is published at:
+   `https://phanidharguttikonda0.github.io/Paatam/`
+
+---
+
+### Strategy 3: Express Backend Route (`/docs` or `/api/docs`)
+
+If you want the API documentation to live on the exact same server and domain as the backend service itself (e.g. `https://api.paatam.in/docs` or `http://localhost:4545/docs`), this is already configured in the code!
+
+#### How It Works:
+- **Server Endpoint:** [server.ts](file:///home/phani/My/paatam_application/paatam_backend/server.ts) defines:
+  ```typescript
+  app.get(["/docs", "/api/docs"], (req: Request, res: Response) => {
+    const docsPath = path.resolve(process.cwd(), "API_DOCUMENTATION_FOR_FRONTEND.html");
+    if (fs.existsSync(docsPath)) return res.sendFile(docsPath);
+    return res.status(404).send("API Documentation not found. Please run 'npm run generate:docs'.");
+  });
+  ```
+- **Docker Container Build:** [Dockerfile](file:///home/phani/My/paatam_application/paatam_backend/Dockerfile) automatically runs `node scripts/generate_frontend_docs.js` during the builder stage and copies `API_DOCUMENTATION_FOR_FRONTEND.html` into the production container.
+- **CI/CD Synchronization:** Whenever [.github/workflows/deploy.yml](file:///home/phani/My/paatam_application/paatam_backend/.github/workflows/deploy.yml) deploys the new ECS container, `/docs` is guaranteed to be 100% in sync with the live running backend code.
+
+#### Usage:
+- **Local Development:** Run `npm run generate:docs`, then visit `http://localhost:4545/docs`.
+- **Production Server:** Visit `https://<your-ecs-domain>/docs` or `https://<your-ecs-domain>/api/docs`.
+
+---
+
+### Strategy 4: Cloudflare Pages / Netlify
+
+Both Cloudflare Pages and Netlify offer free global CDN static site hosting directly connected to GitHub.
+
+#### How It Works:
+1. Connect your GitHub repository to Cloudflare Pages or Netlify.
+2. Configure the build parameters:
+   - **Build command:** `npm run build:docs`
+   - **Publish directory:** `public`
+3. Click **Save and Deploy**.
+4. Both services rebuild instantly whenever you push new commits to GitHub.
+
+---
+
+### Strategy 5: AWS S3 Static Website + CloudFront
+
+Since the Paatam project already utilizes AWS ECS, VPC, and ECR, you can also host the documentation inside an **Amazon S3 Bucket** served via **CloudFront**:
+
+#### How It Works:
+1. Create an S3 bucket (e.g. `paatam-frontend-api-docs`) enabled for static website hosting.
+2. In [.github/workflows/deploy.yml](file:///home/phani/My/paatam_application/paatam_backend/.github/workflows/deploy.yml), add an extra step after AWS credentials configuration:
+   ```yaml
+   - name: Deploy Docs to S3
+     run: |
+       npm run build:docs
+       aws s3 sync public/ s3://paatam-frontend-api-docs --delete
+   ```
+3. Attach CloudFront and map your Route53 DNS (e.g. `docs.paatam.in`).
+
+---
+
+### Summary & Recommendation
+
+1. **For the fastest, zero-friction setup right now:**
+   - **Vercel (Strategy 1):** Import repo to Vercel. `vercel.json` is already placed in the root directory. You get a public URL in 60 seconds with automatic PR preview links.
+   - **GitHub Pages (Strategy 2):** Go to GitHub repo Settings → Pages → select "GitHub Actions". The `.github/workflows/deploy-docs.yml` handles everything automatically without external accounts.
+2. **For production domain consolidation:**
+   - Use the **Express Endpoint (Strategy 3)** at `https://<your-api-domain>/docs` so developers always find the docs on the same host where they execute API requests.
+
