@@ -552,4 +552,64 @@ export class StudentService {
       section_id: student.section_id.toString(),
     };
   }
+
+  /**
+   * Updates student password by authorized school personnel:
+   * - Branch Admin: Any student in their branch
+   * - Class Teacher: Any student enrolled in their assigned section
+   * - Corporate Admin: Any student in their corporate institution
+   */
+  public static async updateStudentPassword(
+    studentId: bigint,
+    user: any,
+    newPassword: string
+  ) {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        Section: {
+          include: {
+            Class: { select: { id: true, branch_id: true } },
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      throw new AppError('Student not found', 404);
+    }
+
+    if (!user || !user.role) {
+      throw new AppError('Unauthorized', 401);
+    }
+
+    if (user.role === UserRole.TEACHER) {
+      const teacherId = BigInt(user.userId);
+      if (!student.Section.class_teacher_id || student.Section.class_teacher_id !== teacherId) {
+        throw new AppError(
+          "Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student's password",
+          403
+        );
+      }
+    } else if (
+      user.role === UserRole.CORPORATE_ADMIN ||
+      user.role === UserRole.BRANCH_ADMIN ||
+      ['DEAN', 'PRINCIPAL', 'VICE_PRINCIPAL', 'OTHER'].includes(user.role)
+    ) {
+      await AcademicYearService.assertBranchAccess(user, student.Section.Class.branch_id);
+    } else {
+      throw new AppError('Forbidden: Insufficient permissions', 403);
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.student.update({
+      where: { id: studentId },
+      data: { password_hash: hashedPassword },
+    });
+
+    return {
+      message: 'Student password updated successfully',
+    };
+  }
 }
+

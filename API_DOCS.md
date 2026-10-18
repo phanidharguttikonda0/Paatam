@@ -2264,6 +2264,37 @@ Updates student demographic and parent contact information.
 
 ---
 
+### `PUT /api/students/:studentId/password`
+Allows an authorized Branch Admin, Corporate Admin, or the assigned Section Class Teacher to update/reset a student's password directly without requiring student mobile OTP. Essential for K-12 school environments where students do not possess personal mobile phones.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `BRANCH_ADMIN`, `TEACHER`, `CORPORATE_ADMIN`
+- **Permissions & Authorization Rules:**
+  - **Branch Admin:** Can reset password for any student within branches they have administrative access to.
+  - **Class Teacher:** Can ONLY reset password for students enrolled in sections where they are the assigned `class_teacher_id`. Regular subject teachers without Class Teacher assignment for that section receive `403 Forbidden`.
+  - **Corporate Admin:** Can reset password for any student across the corporate institution.
+- **URL Params:** `studentId` (string, required)
+- **Request Body:**
+  ```json
+  {
+    "new_password": "NewStudentPassword123!"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Student password updated successfully"
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "Password must be at least 6 characters"
+  - `401 Unauthorized`: "Unauthorized"
+  - `403 Forbidden`: "Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student's password"
+  - `404 Not Found`: "Student not found"
+
+---
+
 ### `DELETE /api/students/:studentId`
 Deletes a student record and decrements the section `strength`. Deletion is strictly blocked if any assignment submissions exist for the student.
 

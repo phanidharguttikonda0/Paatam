@@ -168,4 +168,24 @@ export class StudentController {
       next(error);
     }
   }
+
+  public static async updateStudentPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const studentId = parseBigInt(req.params.studentId, 'studentId');
+      const { new_password } = req.body;
+
+      const result = await StudentService.updateStudentPassword(
+        studentId,
+        (req as any).user,
+        new_password
+      );
+
+      res.status(200).json({
+        status: 'success',
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

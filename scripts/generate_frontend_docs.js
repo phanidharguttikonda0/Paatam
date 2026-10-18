@@ -203,6 +203,86 @@ const apiCatalog = [
     }
   },
   {
+    id: 'auth-admin-forgot-pwd',
+    title: 'Branch Admin Forgot Password (OTP Request)',
+    method: 'POST',
+    url: '/api/auth/admin/forgot-password',
+    roles: ['PUBLIC', 'BRANCH_ADMIN'],
+    category: 'Authentication',
+    description: 'Initiates a password reset for a Branch Admin (Dean, Principal, Vice Principal). Sends an OTP to their registered email (SES) or mobile (Twilio SMS).',
+    frontendNotes: 'Requires corporateId and the admin\'s email or mobile number.',
+    headers: [{ key: 'Content-Type', value: 'application/json', required: true, desc: 'JSON payload' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      identifier: 'principal.madhapur@school.edu',
+      corporateId: '1512528182029314'
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Reset OTP sent successfully.',
+        body: {
+          status: 'success',
+          message: 'Password reset OTP sent successfully'
+        }
+      },
+      errors: [
+        {
+          code: 400,
+          status: 'Bad Request',
+          desc: 'Missing required identifier or corporateId.',
+          body: { status: 'error', message: 'Validation error: corporateId is required' }
+        },
+        {
+          code: 404,
+          status: 'Not Found',
+          desc: 'Admin not found in this corporate entity.',
+          body: { status: 'error', message: 'Admin not found' }
+        }
+      ]
+    }
+  },
+  {
+    id: 'auth-admin-reset-pwd',
+    title: 'Branch Admin Reset Password',
+    method: 'POST',
+    url: '/api/auth/admin/reset-password',
+    roles: ['PUBLIC', 'BRANCH_ADMIN'],
+    category: 'Authentication',
+    description: 'Completes password reset by verifying the 6-digit OTP and updating the branch admin\'s password.',
+    frontendNotes: 'Requires corporateId, identifier, 6-digit OTP, and new_password (min 6 characters).',
+    headers: [{ key: 'Content-Type', value: 'application/json', required: true, desc: 'JSON payload' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      identifier: 'principal.madhapur@school.edu',
+      corporateId: '1512528182029314',
+      otp: '123456',
+      new_password: 'NewSecurePassword123!'
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Password reset successfully.',
+        body: {
+          status: 'success',
+          message: 'Password has been reset successfully'
+        }
+      },
+      errors: [
+        {
+          code: 400,
+          status: 'Bad Request',
+          desc: 'Invalid or expired OTP code.',
+          body: { status: 'error', message: 'Invalid or expired OTP' }
+        }
+      ]
+    }
+  },
+  {
     id: 'auth-teacher-login',
     title: 'Teacher Password Login',
     method: 'POST',
@@ -1989,6 +2069,39 @@ const apiCatalog = [
         body: { status: 'success', message: 'Student profile updated successfully' }
       },
       errors: []
+    }
+  },
+  {
+    id: 'student-update-password',
+    title: 'Admin / Class Teacher Update Student Password',
+    method: 'PUT',
+    url: '/api/students/:studentId/password',
+    roles: ['BRANCH_ADMIN', 'TEACHER', 'CORPORATE_ADMIN'],
+    category: 'Student Profile',
+    description: 'Allows an authorized Branch Admin, Corporate Admin, or the assigned Section Class Teacher to update/reset a student\'s password directly without requiring student mobile OTP. Specially designed for K-12 school environments where students do not possess personal mobile phones.',
+    frontendNotes: 'Role access rules: Branch Admin can reset password for any student in their branch; Class Teacher can reset password for any student enrolled in their assigned section; Corporate Admin can reset across the entity. Regular subject teachers without Class Teacher assignment for that section receive 403 Forbidden.',
+    headers: [
+      { key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' },
+      { key: 'Content-Type', value: 'application/json', required: true, desc: 'JSON payload' }
+    ],
+    urlParams: [{ key: 'studentId', type: 'string (BigInt)', required: true, desc: 'Student ID' }],
+    queryParams: [],
+    requestBody: {
+      new_password: 'NewStudentPassword123!'
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Student password successfully updated.',
+        body: { status: 'success', message: 'Student password updated successfully' }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Password shorter than 6 characters.', body: { status: 'error', message: 'Password must be at least 6 characters' } },
+        { code: 401, status: 'Unauthorized', desc: 'Missing or invalid token.', body: { status: 'error', message: 'Unauthorized' } },
+        { code: 403, status: 'Forbidden', desc: 'Teacher is not the designated class teacher of this section, or admin lacks branch access.', body: { status: 'error', message: 'Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student\'s password' } },
+        { code: 404, status: 'Not Found', desc: 'Student not found.', body: { status: 'error', message: 'Student not found' } }
+      ]
     }
   },
   {

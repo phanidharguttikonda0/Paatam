@@ -85,3 +85,9 @@ export const studentResetPasswordSchema = z.object({
       message: 'Admission number or identifier is required',
     }),
 });
+
+export const updateStudentPasswordSchema = z.object({
+  body: z.object({
+    new_password: z.string().min(6, 'New password must be at least 6 characters'),
+  }),
+});

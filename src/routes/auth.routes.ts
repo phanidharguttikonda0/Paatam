@@ -25,7 +25,7 @@ router.post('/send-otp', AuthController.sendOtp);
 // POST /api/auth/verify-otp
 router.post('/verify-otp', AuthController.verifyOtp);
 
-// POST /api/auth/corporate/login
+// POST /api/auth/corporate/login (Purely 2FA OTP-based login)
 router.post('/corporate/login', AuthController.corporateLoginRequest);
 
 // POST /api/auth/corporate/verify
@@ -36,12 +36,17 @@ router.post('/refresh', AuthController.refreshToken);
 
 // POST /api/auth/admin/login
 router.post('/admin/login', validate(adminLoginSchema), AuthController.adminLogin);
+router.post('/branch-admin/login', validate(adminLoginSchema), AuthController.adminLogin);
 
-// POST /api/auth/admin/forgot-password
+// POST /api/auth/admin/forgot-password (Branch Admin Password Reset OTP)
 router.post('/admin/forgot-password', validate(adminForgotPasswordSchema), AuthController.adminForgotPassword);
+router.post('/branch-admin/forgot-password', validate(adminForgotPasswordSchema), AuthController.adminForgotPassword);
+router.post('/branch/forgot-password', validate(adminForgotPasswordSchema), AuthController.adminForgotPassword);
 
 // POST /api/auth/admin/reset-password
 router.post('/admin/reset-password', validate(adminResetPasswordSchema), AuthController.adminResetPassword);
+router.post('/branch-admin/reset-password', validate(adminResetPasswordSchema), AuthController.adminResetPassword);
+router.post('/branch/reset-password', validate(adminResetPasswordSchema), AuthController.adminResetPassword);
 
 // POST /api/auth/teacher/login
 router.post('/teacher/login', validate(teacherLoginSchema), AuthController.teacherLogin);

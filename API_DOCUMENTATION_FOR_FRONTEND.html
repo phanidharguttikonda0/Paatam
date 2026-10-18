@@ -682,7 +682,7 @@
       </div>
       <div class="stats-ribbon">
         <div class="stat-pill">
-          <div class="stat-val">86</div>
+          <div class="stat-val">89</div>
           <div class="stat-lbl">Active APIs</div>
         </div>
         <div class="stat-pill">
@@ -738,7 +738,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #64748B;">12</span>
+              <span class="role-count-num" style="color: #64748B;">14</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -953,7 +953,7 @@
         <div class="category-group" data-category="Authentication">
           <div class="category-header">
             <span class="category-title">Authentication</span>
-            <span class="category-count">10 APIs</span>
+            <span class="category-count">12 APIs</span>
           </div>
           
     <div class="api-card" data-roles="PUBLIC CORPORATE_ADMIN" data-search="post /api/auth/corporate/login corporate admin otp login initiation initiates 2-factor otp login for corporate super admins. dispatches a 6-digit otp to the registered corporate email and mobile number. authentication public corporate_admin">
@@ -1316,6 +1316,235 @@
             <pre><code>{
   &quot;status&quot;: &quot;error&quot;,
   &quot;message&quot;: &quot;Invalid email/mobile or password&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="PUBLIC BRANCH_ADMIN" data-search="post /api/auth/admin/forgot-password branch admin forgot password (otp request) initiates a password reset for a branch admin (dean, principal, vice principal). sends an otp to their registered email (ses) or mobile (twilio sms). authentication public branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/auth/admin/forgot-password</span>
+          <span class="api-title">• Branch Admin Forgot Password (OTP Request)</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-PUBLIC">PUBLIC</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Initiates a password reset for a Branch Admin (Dean, Principal, Vice Principal). Sends an OTP to their registered email (SES) or mobile (Twilio SMS).</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Requires corporateId and the admin&#039;s email or mobile number.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Reset OTP sent successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password reset OTP sent successfully&quot;
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password reset OTP sent successfully&quot;
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Missing required identifier or corporateId.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation error: corporateId is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation error: corporateId is required&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Admin not found in this corporate entity.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Admin not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Admin not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="PUBLIC BRANCH_ADMIN" data-search="post /api/auth/admin/reset-password branch admin reset password completes password reset by verifying the 6-digit otp and updating the branch admin&#039;s password. authentication public branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/auth/admin/reset-password</span>
+          <span class="api-title">• Branch Admin Reset Password</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-PUBLIC">PUBLIC</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Completes password reset by verifying the 6-digit OTP and updating the branch admin&#039;s password.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Requires corporateId, identifier, 6-digit OTP, and new_password (min 6 characters).</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;,
+  &quot;otp&quot;: &quot;123456&quot;,
+  &quot;new_password&quot;: &quot;NewSecurePassword123!&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;,
+  &quot;otp&quot;: &quot;123456&quot;,
+  &quot;new_password&quot;: &quot;NewSecurePassword123!&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Password reset successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password has been reset successfully&quot;
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password has been reset successfully&quot;
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid or expired OTP code.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Invalid or expired OTP&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Invalid or expired OTP&quot;
 }</code></pre>
           </div>
         
@@ -2107,7 +2336,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #A855F7;">34</span>
+              <span class="role-count-num" style="color: #A855F7;">35</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -6220,6 +6449,188 @@
         </div>
       
 
+        <div class="category-group" data-category="Student Profile">
+          <div class="category-header">
+            <span class="category-title">Student Profile</span>
+            <span class="category-count">1 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="BRANCH_ADMIN TEACHER CORPORATE_ADMIN" data-search="put /api/students/:studentid/password admin / class teacher update student password allows an authorized branch admin, corporate admin, or the assigned section class teacher to update/reset a student&#039;s password directly without requiring student mobile otp. specially designed for k-12 school environments where students do not possess personal mobile phones. student profile branch_admin teacher corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-PUT">PUT</span>
+          <span class="api-endpoint-url">/api/students/:studentId/password</span>
+          <span class="api-title">• Admin / Class Teacher Update Student Password</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Allows an authorized Branch Admin, Corporate Admin, or the assigned Section Class Teacher to update/reset a student&#039;s password directly without requiring student mobile OTP. Specially designed for K-12 school environments where students do not possess personal mobile phones.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Role access rules: Branch Admin can reset password for any student in their branch; Class Teacher can reset password for any student enrolled in their assigned section; Corporate Admin can reset across the entity. Regular subject teachers without Class Teacher assignment for that section receive 403 Forbidden.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">URL Path Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">:studentId</td>
+              <td class="param-type">string (BigInt)</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Student ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;new_password&quot;: &quot;NewStudentPassword123!&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;new_password&quot;: &quot;NewStudentPassword123!&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Student password successfully updated.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Student password updated successfully&quot;
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Student password updated successfully&quot;
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Password shorter than 6 characters.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Password must be at least 6 characters&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Password must be at least 6 characters&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Teacher is not the designated class teacher of this section, or admin lacks branch access.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student&#039;s password&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student&#039;s password&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Student not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
+
         <div class="category-group" data-category="Grading &amp; Review">
           <div class="category-header">
             <span class="category-title">Grading &amp; Review</span>
@@ -6596,7 +7007,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #06B6D4;">58</span>
+              <span class="role-count-num" style="color: #06B6D4;">61</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -6605,7 +7016,7 @@
         <div class="category-group" data-category="Authentication">
           <div class="category-header">
             <span class="category-title">Authentication</span>
-            <span class="category-count">2 APIs</span>
+            <span class="category-count">4 APIs</span>
           </div>
           
     <div class="api-card" data-roles="PUBLIC BRANCH_ADMIN" data-search="post /api/auth/admin/login branch admin (dean / principal / vp) password login password authentication for branch administrators (deans, principals, vice principals). returns a jwt access token and sets an httponly refresh token cookie. authentication public branch_admin">
@@ -6719,6 +7130,235 @@
             <pre><code>{
   &quot;status&quot;: &quot;error&quot;,
   &quot;message&quot;: &quot;Invalid email/mobile or password&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="PUBLIC BRANCH_ADMIN" data-search="post /api/auth/admin/forgot-password branch admin forgot password (otp request) initiates a password reset for a branch admin (dean, principal, vice principal). sends an otp to their registered email (ses) or mobile (twilio sms). authentication public branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/auth/admin/forgot-password</span>
+          <span class="api-title">• Branch Admin Forgot Password (OTP Request)</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-PUBLIC">PUBLIC</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Initiates a password reset for a Branch Admin (Dean, Principal, Vice Principal). Sends an OTP to their registered email (SES) or mobile (Twilio SMS).</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Requires corporateId and the admin&#039;s email or mobile number.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Reset OTP sent successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password reset OTP sent successfully&quot;
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password reset OTP sent successfully&quot;
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Missing required identifier or corporateId.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation error: corporateId is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation error: corporateId is required&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Admin not found in this corporate entity.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Admin not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Admin not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="PUBLIC BRANCH_ADMIN" data-search="post /api/auth/admin/reset-password branch admin reset password completes password reset by verifying the 6-digit otp and updating the branch admin&#039;s password. authentication public branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/auth/admin/reset-password</span>
+          <span class="api-title">• Branch Admin Reset Password</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-PUBLIC">PUBLIC</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Completes password reset by verifying the 6-digit OTP and updating the branch admin&#039;s password.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Requires corporateId, identifier, 6-digit OTP, and new_password (min 6 characters).</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;,
+  &quot;otp&quot;: &quot;123456&quot;,
+  &quot;new_password&quot;: &quot;NewSecurePassword123!&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;identifier&quot;: &quot;principal.madhapur@school.edu&quot;,
+  &quot;corporateId&quot;: &quot;1512528182029314&quot;,
+  &quot;otp&quot;: &quot;123456&quot;,
+  &quot;new_password&quot;: &quot;NewSecurePassword123!&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Password reset successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password has been reset successfully&quot;
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Password has been reset successfully&quot;
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid or expired OTP code.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Invalid or expired OTP&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Invalid or expired OTP&quot;
 }</code></pre>
           </div>
         
@@ -11652,7 +12292,7 @@
         <div class="category-group" data-category="Student Profile">
           <div class="category-header">
             <span class="category-title">Student Profile</span>
-            <span class="category-count">3 APIs</span>
+            <span class="category-count">4 APIs</span>
           </div>
           
     <div class="api-card" data-roles="BRANCH_ADMIN TEACHER STUDENT" data-search="get /api/students/:studentid get student full profile details retrieves complete student dossier: academic enrollment, roll number, contact info, and parent details. student profile branch_admin teacher student">
@@ -11894,6 +12534,180 @@
         </div>
 
         <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="BRANCH_ADMIN TEACHER CORPORATE_ADMIN" data-search="put /api/students/:studentid/password admin / class teacher update student password allows an authorized branch admin, corporate admin, or the assigned section class teacher to update/reset a student&#039;s password directly without requiring student mobile otp. specially designed for k-12 school environments where students do not possess personal mobile phones. student profile branch_admin teacher corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-PUT">PUT</span>
+          <span class="api-endpoint-url">/api/students/:studentId/password</span>
+          <span class="api-title">• Admin / Class Teacher Update Student Password</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Allows an authorized Branch Admin, Corporate Admin, or the assigned Section Class Teacher to update/reset a student&#039;s password directly without requiring student mobile OTP. Specially designed for K-12 school environments where students do not possess personal mobile phones.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Role access rules: Branch Admin can reset password for any student in their branch; Class Teacher can reset password for any student enrolled in their assigned section; Corporate Admin can reset across the entity. Regular subject teachers without Class Teacher assignment for that section receive 403 Forbidden.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">URL Path Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">:studentId</td>
+              <td class="param-type">string (BigInt)</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Student ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;new_password&quot;: &quot;NewStudentPassword123!&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;new_password&quot;: &quot;NewStudentPassword123!&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Student password successfully updated.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Student password updated successfully&quot;
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Student password updated successfully&quot;
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Password shorter than 6 characters.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Password must be at least 6 characters&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Password must be at least 6 characters&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Teacher is not the designated class teacher of this section, or admin lacks branch access.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student&#039;s password&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student&#039;s password&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Student not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student not found&quot;
+}</code></pre>
+          </div>
         
       </div>
     </div>
@@ -14018,7 +14832,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #F97316;">35</span>
+              <span class="role-count-num" style="color: #F97316;">36</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -15946,7 +16760,7 @@
         <div class="category-group" data-category="Student Profile">
           <div class="category-header">
             <span class="category-title">Student Profile</span>
-            <span class="category-count">2 APIs</span>
+            <span class="category-count">3 APIs</span>
           </div>
           
     <div class="api-card" data-roles="BRANCH_ADMIN TEACHER STUDENT" data-search="get /api/students/:studentid get student full profile details retrieves complete student dossier: academic enrollment, roll number, contact info, and parent details. student profile branch_admin teacher student">
@@ -16188,6 +17002,180 @@
         </div>
 
         <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="BRANCH_ADMIN TEACHER CORPORATE_ADMIN" data-search="put /api/students/:studentid/password admin / class teacher update student password allows an authorized branch admin, corporate admin, or the assigned section class teacher to update/reset a student&#039;s password directly without requiring student mobile otp. specially designed for k-12 school environments where students do not possess personal mobile phones. student profile branch_admin teacher corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-PUT">PUT</span>
+          <span class="api-endpoint-url">/api/students/:studentId/password</span>
+          <span class="api-title">• Admin / Class Teacher Update Student Password</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Allows an authorized Branch Admin, Corporate Admin, or the assigned Section Class Teacher to update/reset a student&#039;s password directly without requiring student mobile OTP. Specially designed for K-12 school environments where students do not possess personal mobile phones.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Role access rules: Branch Admin can reset password for any student in their branch; Class Teacher can reset password for any student enrolled in their assigned section; Corporate Admin can reset across the entity. Regular subject teachers without Class Teacher assignment for that section receive 403 Forbidden.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">URL Path Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">:studentId</td>
+              <td class="param-type">string (BigInt)</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Student ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;new_password&quot;: &quot;NewStudentPassword123!&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;new_password&quot;: &quot;NewStudentPassword123!&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Student password successfully updated.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Student password updated successfully&quot;
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Student password updated successfully&quot;
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Password shorter than 6 characters.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Password must be at least 6 characters&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Password must be at least 6 characters&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Teacher is not the designated class teacher of this section, or admin lacks branch access.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student&#039;s password&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Forbidden: Only the assigned class teacher of this section or a branch administrator can update this student&#039;s password&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Student not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student not found&quot;
+}</code></pre>
+          </div>
         
       </div>
     </div>
