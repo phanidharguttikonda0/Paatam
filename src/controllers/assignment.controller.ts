@@ -117,4 +117,42 @@ export class AssignmentController {
       next(error);
     }
   }
+
+  public static async generateExam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const result = await AssignmentService.generateExam(user, req.body);
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async regenerateQuestion(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const result = await AssignmentService.regenerateQuestion(user, req.body);
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async generateDiagram(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await AssignmentService.generateDiagram((req as any).user, req.body);
+      res.status(200).json({
+        status: 'success',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

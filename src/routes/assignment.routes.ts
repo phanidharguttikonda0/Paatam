@@ -9,6 +9,9 @@ import {
   createSyncSchema,
   publishAssignmentSchema,
   listAssignmentsSchema,
+  generateExamSchema,
+  regenerateQuestionSchema,
+  generateDiagramSchema,
 } from '../schemas/assignment.schema';
 import { assignmentSubmissionsQuerySchema } from '../schemas/submission.schema';
 import { UserRole } from '../enums/role.enum';
@@ -48,6 +51,33 @@ router.post(
   requireRole([UserRole.TEACHER, UserRole.BRANCH_ADMIN]),
   validate(createSyncSchema),
   AssignmentController.createSync
+);
+
+// AI Question Paper Generator from blueprint and topics
+router.post(
+  '/generate',
+  requireAuth,
+  requireRole([UserRole.TEACHER, UserRole.BRANCH_ADMIN]),
+  validate(generateExamSchema),
+  AssignmentController.generateExam
+);
+
+// AI Single Question Replacement
+router.post(
+  '/regenerate-question',
+  requireAuth,
+  requireRole([UserRole.TEACHER, UserRole.BRANCH_ADMIN]),
+  validate(regenerateQuestionSchema),
+  AssignmentController.regenerateQuestion
+);
+
+// AI Technical Diagram Generator
+router.post(
+  '/generate-diagram',
+  requireAuth,
+  requireRole([UserRole.TEACHER, UserRole.BRANCH_ADMIN]),
+  validate(generateDiagramSchema),
+  AssignmentController.generateDiagram
 );
 
 // Finalize and publish assignment
