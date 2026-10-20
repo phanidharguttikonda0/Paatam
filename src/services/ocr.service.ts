@@ -1,4 +1,5 @@
 import { AiGatewayService } from './aiGateway.service';
+import { SarvamService } from './sarvam.service';
 
 export const HANDWRITING_OCR_PROMPT = `Perform high-precision OCR on this handwritten student answer-sheet page.
 Transcribe all printed text, student handwriting, tables, and diagrams line by line.
@@ -44,6 +45,25 @@ export class OcrService {
     );
 
     const langCode = isIndic ? 'indic' : 'en';
+
+    if (SarvamService.shouldRouteOcrToSarvam(languageName, subject)) {
+      try {
+        const sarvamText = await SarvamService.performSarvamVisionOcr(
+          buffers,
+          'image/jpeg',
+          languageName
+        );
+        if (sarvamText && sarvamText.trim()) {
+          return {
+            ocrText: sarvamText.trim(),
+            confidence: 0.98,
+            langCode,
+          };
+        }
+      } catch (err: any) {
+        console.warn('⚠️ [OCR SERVICE] Sarvam multi-page OCR failed; falling back to Gemini Vision:', err.message);
+      }
+    }
 
     // Call Gemini Multimodal Vision API across buffers
     const pageOcrResults: string[] = [];

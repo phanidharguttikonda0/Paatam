@@ -3080,6 +3080,312 @@ const apiCatalog = [
       },
       errors: []
     }
+  },
+  {
+    id: 'assignment-ai-generate',
+    title: 'Generate Question Paper with AI Blueprint',
+    method: 'POST',
+    url: '/api/assignments/generate',
+    roles: ['TEACHER', 'BRANCH_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Generates a complete, structured CBSE/ICSE exam question paper with section headings, MCQs, short, and descriptive questions based on syllabus topics or textbook chapters.',
+    frontendNotes: 'Used in the Paper Creation Wizard when the teacher selects "Generate with AI". Provides a complete questions preview for review before publishing.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      exam_title: 'Class 10 CBSE Midterm Science Examination',
+      target_marks: 40,
+      language: 'English',
+      difficulty: 'Medium',
+      chapter_titles: ['Acids, Bases and Salts', 'Chemical Reactions'],
+      subtopics: ['Neutralisation reactions', 'pH scale', 'Types of chemical reactions'],
+      question_counts: {
+        mcqCount: 10,
+        veryShortCount: 5,
+        shortCount: 3,
+        descriptiveCount: 2
+      }
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'AI exam paper generated successfully.',
+        body: {
+          status: 'success',
+          message: 'AI Exam Paper generated successfully',
+          data: {
+            exam_title: 'Class 10 CBSE Midterm Science Examination',
+            target_marks: 40,
+            total_marks: 40,
+            questions_count: 20,
+            questions: [
+              {
+                id: 'q1',
+                questionNo: '1',
+                section: 'Section A',
+                type: 'mcq',
+                text: 'Which of the following turns blue litmus red?',
+                marks: 1,
+                options: ['Dilute HCl', 'Sodium hydroxide', 'Distilled water', 'Baking soda'],
+                correctAnswer: 'Dilute HCl',
+                hasVisual: false
+              }
+            ]
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Invalid payload.', body: { status: 'error', message: 'Validation failed' } },
+        { code: 403, status: 'Forbidden', desc: 'Branch access denied.', body: { message: 'Forbidden: You do not have access to this branch' } }
+      ]
+    }
+  },
+  {
+    id: 'assignment-ai-regenerate-question',
+    title: 'Regenerate Single Alternative Question',
+    method: 'POST',
+    url: '/api/assignments/regenerate-question',
+    roles: ['TEACHER', 'BRANCH_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Generates a single alternative question targeting the same subtopic and marks weightage while avoiding rejected or duplicate questions.',
+    frontendNotes: 'Add a "Shuffle / Regenerate" button next to each question on the paper review step.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      question_to_replace: {
+        id: 'q1',
+        questionNo: '1',
+        section: 'Section A',
+        type: 'mcq',
+        text: 'What is the pH of pure water at 25°C?',
+        marks: 1,
+        options: ['7', '1', '14', '0'],
+        correctAnswer: '7'
+      },
+      chapter_title: 'Acids, Bases and Salts',
+      subtopic: 'pH scale',
+      difficulty: 'Medium',
+      language: 'English',
+      avoid_texts: ['What is the pH of pure water at 25°C?']
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Alternative question generated.',
+        body: {
+          status: 'success',
+          message: 'Alternative question generated successfully',
+          data: {
+            question: {
+              id: 'q1-alt-1',
+              questionNo: '1',
+              section: 'Section A',
+              type: 'mcq',
+              text: 'Which of the following substances has a pH value strictly greater than 7?',
+              marks: 1,
+              options: ['Milk of Magnesia', 'Lemon juice', 'Tomato juice', 'Gastric juice'],
+              correctAnswer: 'Milk of Magnesia',
+              hasVisual: false
+            }
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Invalid payload.', body: { status: 'error', message: 'Validation failed' } }
+      ]
+    }
+  },
+  {
+    id: 'assignment-ai-generate-diagram',
+    title: 'Generate Technical STEM Question Diagram',
+    method: 'POST',
+    url: '/api/assignments/generate-diagram',
+    roles: ['TEACHER', 'BRANCH_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Generates high-resolution diagrams, geometric figures, or circuit schematics for STEM questions using AI image rendering with SVG vector fallback.',
+    frontendNotes: 'Allows teachers to auto-generate illustrations for questions that require visual diagrams.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      question_text: 'Draw a ray diagram illustrating the formation of image by a concave mirror when object is placed at centre of curvature.',
+      subject: 'Physics'
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Diagram generated successfully.',
+        body: {
+          status: 'success',
+          message: 'Technical diagram generated successfully',
+          data: {
+            image_url: 'https://s3.amazonaws.com/paatam/diagrams/diagram-17610283.png',
+            diagram_svg: '<svg width="100%" height="auto">...</svg>',
+            type: 'image'
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'question_text is required.', body: { status: 'error', message: 'Validation failed' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-chapter-ingest',
+    title: 'Ingest Textbook Chapter Document (RAG)',
+    method: 'POST',
+    url: '/api/curriculum/chapters/ingest',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.',
+    frontendNotes: 'Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      chapter_title: 'Acids, Bases and Salts',
+      chapter_number: 2,
+      chapter_text: 'Acids have sour taste and turn blue litmus red...',
+      pdf_url: 'https://s3.amazonaws.com/paatam/curriculum/ch2.pdf',
+      file_name: 'science_ch2.pdf'
+    },
+    responses: {
+      success: {
+        code: 201,
+        status: 'Created',
+        desc: 'Chapter indexed and vectorized.',
+        body: {
+          status: 'success',
+          message: 'Chapter indexed into curriculum and vectorized into vector store',
+          data: {
+            chapter_id: '102',
+            chapter_number: 2,
+            chapter_title: 'Acids, Bases and Salts',
+            subtopics: ['Properties of Acids', 'Bases', 'pH Scale', 'Salts'],
+            chunk_count: 14
+          }
+        }
+      },
+      errors: [
+        { code: 404, status: 'Not Found', desc: 'ClassSubject not found.', body: { status: 'error', message: 'ClassSubject not found' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-chapter-list',
+    title: 'List Indexed Textbook Chapters',
+    method: 'GET',
+    url: '/api/curriculum/chapters',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject.',
+    frontendNotes: 'Populates the multi-select chapter filter in the AI Question Paper generator.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [{ key: 'class_subject_id', type: 'string', required: true, desc: 'ClassSubject ID' }],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'List of chapters.',
+        body: {
+          status: 'success',
+          data: [
+            {
+              id: '102',
+              chapter_number: 2,
+              chapter_title: 'Acids, Bases and Salts',
+              subtopics: ['Properties of Acids', 'Bases', 'pH Scale', 'Salts'],
+              chunk_count: 14,
+              pdf_url: 'https://s3.amazonaws.com/paatam/curriculum/ch2.pdf'
+            }
+          ]
+        }
+      },
+      errors: [
+        { code: 404, status: 'Not Found', desc: 'ClassSubject not found.', body: { status: 'error', message: 'ClassSubject not found' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-syllabus-ingest',
+    title: 'Ingest Syllabus Structure & Weightage',
+    method: 'POST',
+    url: '/api/curriculum/syllabus/ingest',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Extracts curriculum units, syllabus topics, and exam marks weightages using AI.',
+    frontendNotes: 'Allows importing the official board syllabus breakdown for blueprint alignment.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      syllabus_text: 'Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...'
+    },
+    responses: {
+      success: {
+        code: 201,
+        status: 'Created',
+        desc: 'Syllabus indexed.',
+        body: {
+          status: 'success',
+          message: 'Syllabus topics parsed and indexed successfully',
+          data: {
+            topics_count: 5,
+            topics: [{ name: 'Chemical Substances - Nature and Behaviour', marks: 25, unit: 'Unit I' }]
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Invalid input.', body: { status: 'error', message: 'Validation failed' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-topics-list',
+    title: 'List Syllabus Topics & Marks Weightage',
+    method: 'GET',
+    url: '/api/curriculum/topics',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Lists all curriculum syllabus topics and marks weightage breakdown for a class subject.',
+    frontendNotes: 'Displays unit weightage bars and topic checklist in the exam generator UI.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [{ key: 'class_subject_id', type: 'string', required: true, desc: 'ClassSubject ID' }],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'List of syllabus topics.',
+        body: {
+          status: 'success',
+          data: [
+            {
+              id: '501',
+              topic_name: 'Chemical Substances - Nature and Behaviour',
+              subtopics: ['Chemical reactions', 'Acids, bases and salts'],
+              weightage: 25,
+              unit: 'Unit I'
+            }
+          ]
+        }
+      },
+      errors: [
+        { code: 404, status: 'Not Found', desc: 'ClassSubject not found.', body: { status: 'error', message: 'ClassSubject not found' } }
+      ]
+    }
   }
 ];
 

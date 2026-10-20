@@ -1,5 +1,6 @@
 import { parseJsonValue } from '../utils/jsonParser';
 import { AiGatewayService } from './aiGateway.service';
+import { SarvamService } from './sarvam.service';
 import { S3Service } from './s3.service';
 
 export interface QuestionStimulus {
@@ -195,8 +196,28 @@ export class QuestionPaperService {
     const isHindi = language.toLowerCase().includes('hindi') || subject.toLowerCase().includes('hindi');
     const prompt = isHindi ? HINDI_DEVANAGARI_QP_PROMPT : ENGLISH_STEM_QP_PROMPT;
 
-    // Call Gemini Multimodal Vision API
-    const rawOcr = await AiGatewayService.callGeminiVision(prompt, [paperBuffer], 'application/pdf');
+    let rawOcr = '';
+
+    // If Indic language and Sarvam is configured, try Sarvam Document AI first
+    if (SarvamService.shouldRouteOcrToSarvam(language, subject)) {
+      try {
+        const sarvamText = await SarvamService.performSarvamVisionOcr(
+          paperBuffer,
+          'application/pdf',
+          language
+        );
+        if (sarvamText && sarvamText.trim()) {
+          rawOcr = sarvamText.trim();
+        }
+      } catch (err: any) {
+        console.warn('⚠️ [QUESTION PAPER] Sarvam DocAI extraction failed; falling back to Gemini Vision:', err.message);
+      }
+    }
+
+    if (!rawOcr) {
+      // Call Gemini Multimodal Vision API
+      rawOcr = await AiGatewayService.callGeminiVision(prompt, [paperBuffer], 'application/pdf');
+    }
 
     const questions = this.normalizeQuestionPaper(rawOcr) || [];
 
@@ -216,8 +237,24 @@ export class QuestionPaperService {
    */
   public static async extractAnswerKey(
     keyBuffer: Buffer,
-    subject: string = 'General'
+    subject: string = 'General',
+    language: string = 'English'
   ): Promise<string> {
+    if (SarvamService.shouldRouteOcrToSarvam(language, subject)) {
+      try {
+        const sarvamText = await SarvamService.performSarvamVisionOcr(
+          keyBuffer,
+          'application/pdf',
+          language
+        );
+        if (sarvamText && sarvamText.trim()) {
+          return sarvamText.trim();
+        }
+      } catch (err: any) {
+        console.warn('⚠️ [ANSWER KEY] Sarvam DocAI extraction failed; falling back to Gemini Vision:', err.message);
+      }
+    }
+
     const prompt = `This is a printed teacher answer key / marking scheme document in ${subject}. Perform high-precision OCR and return ONLY the transcribed text, preserving question numbers, benchmark answers, and marks allocation exactly as printed.`;
     return await AiGatewayService.callGeminiVision(prompt, [keyBuffer], 'application/pdf');
   }

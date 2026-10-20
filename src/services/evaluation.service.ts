@@ -1,4 +1,5 @@
 import { AiGatewayService } from './aiGateway.service';
+import { SarvamService } from './sarvam.service';
 import { parseJsonValue } from '../utils/jsonParser';
 
 export interface QuestionEvaluation {
@@ -165,7 +166,55 @@ Return valid JSON with NO markdown formatting:
   ]
 }`;
 
-    const rawResponse = await AiGatewayService.callGeminiText(prompt, reasoningModel);
+    let rawResponse: string | null = null;
+    if (reasoningModel === 'sarvam') {
+      const sarvamSchema = {
+        type: 'json_schema',
+        json_schema: {
+          name: 'answer_sheet_evaluation',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              excelledAreas: { type: 'array', items: { type: 'string' } },
+              knowledgeGaps: { type: 'array', items: { type: 'string' } },
+              feedback: { type: 'string' },
+              socraticHint: { type: 'string' },
+              questionEvaluations: {
+                type: 'array',
+                minItems: assignedQuestions.length,
+                maxItems: assignedQuestions.length,
+                items: {
+                  type: 'object',
+                  properties: {
+                    questionNo: { type: 'string' },
+                    studentAnswerSnippet: { type: 'string' },
+                    scorePercent: { type: 'number' },
+                    reasoning: {
+                      type: 'string',
+                      description:
+                        'Detailed, question-specific explanation of marks awarded or deducted. Specifically state what the student wrote and why it satisfies or misses the benchmark criteria.',
+                    },
+                    feedback: { type: 'string' },
+                  },
+                  required: ['questionNo', 'studentAnswerSnippet', 'scorePercent', 'reasoning', 'feedback'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['excelledAreas', 'knowledgeGaps', 'feedback', 'socraticHint', 'questionEvaluations'],
+            additionalProperties: false,
+          },
+        },
+      };
+
+      rawResponse = await SarvamService.callSarvamChatApi(prompt, 2, {
+        responseFormat: sarvamSchema,
+        temperature: 0.1,
+      });
+    } else {
+      rawResponse = await AiGatewayService.callGeminiText(prompt, reasoningModel);
+    }
     const parsed = parseJsonValue<any>(rawResponse);
 
     const rawEvaluations: any[] = Array.isArray(parsed?.questionEvaluations)

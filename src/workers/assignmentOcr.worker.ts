@@ -32,7 +32,8 @@ export async function processAssignmentOcrJob(payload: AssignmentOcrMessagePaylo
       const keyBuffer = await S3Service.downloadBuffer(payload.answer_key_url);
       answerKeyText = await QuestionPaperService.extractAnswerKey(
         keyBuffer,
-        payload.subject_name || 'General'
+        payload.subject_name || 'General',
+        payload.language || 'English'
       );
     } catch (err: any) {
       console.warn(`⚠️ [ASSIGNMENT OCR WORKER] Failed to extract answer key:`, err.message);
