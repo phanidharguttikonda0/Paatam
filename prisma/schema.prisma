@@ -212,6 +212,7 @@ model Assignment {
   answer_key_text    String?        @db.Text
   due_date           DateTime?      @db.Timestamptz
   status             String         @default("dispatched") @db.Text
+  submission_mode    String         @default("STUDENT_UPLOAD") @db.Text
   created_at         DateTime       @default(now()) @db.Timestamptz
   Section            Section        @relation(fields: [section_id], references: [id])
   ClassSubject       ClassSubject   @relation(fields: [class_subject_id], references: [id])

@@ -5,10 +5,22 @@ import apiRoutes from "./src/routes/index";
 import { errorHandler } from "./src/middlewares/errorHandler";
 
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import path from "path";
 import fs from "fs";
 
 const app: Express = express();
+
+// Configure CORS for frontend cross-origin requests & credentials
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allows localhost (Vite/Next/React) and custom frontend domains
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
+}));
 
 // Middleware to parse JSON bodies
 app.use(express.json());

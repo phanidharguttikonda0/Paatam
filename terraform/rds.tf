@@ -97,8 +97,29 @@ resource "aws_db_instance" "main" {
   # Export database engine logs (error logs, slow query logs, and upgrade logs) to CloudWatch
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
+  parameter_group_name   = aws_db_parameter_group.main.name
+
   skip_final_snapshot       = var.environment == "prod" ? false : true # Saves final backup snapshot in prod
   final_snapshot_identifier = var.environment == "prod" ? "paatam-db-prod-final-snapshot" : null
+}
+
+# ==========================================
+# 4b. RDS PostgreSQL Parameter Group (pgvector support)
+# ==========================================
+resource "aws_db_parameter_group" "main" {
+  name        = "paatam-pg16-params-${var.environment}"
+  family      = "postgres16"
+  description = "Parameter group for PostgreSQL 16 enabling native pgvector extension and optimizations"
+
+  parameter {
+    name  = "rds.force_ssl"
+    value = "1"
+  }
+
+  tags = {
+    Name        = "paatam-pg16-params-${var.environment}"
+    Description = "PostgreSQL 16 with pgvector support"
+  }
 }
 
 # ==========================================

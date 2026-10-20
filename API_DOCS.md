@@ -3230,10 +3230,262 @@ Status polling endpoint for batch paper upload jobs.
   - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
   - `403 Forbidden`: "Forbidden: Insufficient permissions" or "Forbidden: You do not have access to this branch"
   - `404 Not Found`: "Batch job not found"
+---
 
+## 13. AI Question Paper Generation, Diagram Engine & Curriculum RAG
 
+### `POST /api/assignments/generate`
+Generates a complete, structured CBSE/ICSE-aligned question paper dynamically using AI based on selected syllabus topics, chapters, question counts, and marks weightage.
 
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "class_subject_id": "1001",
+    "exam_title": "Class 10 CBSE Midterm Science Examination",
+    "target_marks": 40,
+    "language": "English",
+    "difficulty": "Medium",
+    "chapter_titles": ["Acids, Bases and Salts", "Chemical Reactions"],
+    "subtopics": ["Neutralisation reactions", "pH scale", "Types of chemical reactions"],
+    "question_counts": {
+      "mcqCount": 10,
+      "veryShortCount": 5,
+      "shortCount": 3,
+      "descriptiveCount": 2
+    }
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "AI Exam Paper generated successfully",
+    "data": {
+      "exam_title": "Class 10 CBSE Midterm Science Examination",
+      "target_marks": 40,
+      "total_marks": 40,
+      "questions_count": 20,
+      "questions": [
+        {
+          "id": "q1",
+          "questionNo": "1",
+          "section": "Section A",
+          "type": "mcq",
+          "text": "Which of the following turns blue litmus red?",
+          "marks": 1,
+          "options": ["Dilute HCl", "Sodium hydroxide", "Distilled water", "Baking soda"],
+          "correctAnswer": "Dilute HCl",
+          "hasVisual": false
+        }
+      ]
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "class_subject_id and exam_title are required"
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions" or "Forbidden: You do not have access to this branch"
 
+---
+
+### `POST /api/assignments/regenerate-question`
+Generates a fresh, single alternative question targeting the same subtopic, difficulty, and marks distribution while avoiding repetition of unwanted or rejected questions.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "class_subject_id": "1001",
+    "question_to_replace": {
+      "id": "q1",
+      "questionNo": "1",
+      "section": "Section A",
+      "type": "mcq",
+      "text": "What is the pH of pure water at 25°C?",
+      "marks": 1,
+      "options": ["7", "1", "14", "0"],
+      "correctAnswer": "7"
+    },
+    "chapter_title": "Acids, Bases and Salts",
+    "subtopic": "pH scale",
+    "difficulty": "Medium",
+    "language": "English",
+    "avoid_texts": ["What is the pH of pure water at 25°C?"]
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Alternative question generated successfully",
+    "data": {
+      "question": {
+        "id": "q1-alt-1",
+        "questionNo": "1",
+        "section": "Section A",
+        "type": "mcq",
+        "text": "Which of the following substances has a pH value strictly greater than 7?",
+        "marks": 1,
+        "options": ["Milk of Magnesia", "Lemon juice", "Tomato juice", "Gastric juice"],
+        "correctAnswer": "Milk of Magnesia",
+        "hasVisual": false
+      }
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "class_subject_id and question_to_replace are required"
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `403 Forbidden`: "Forbidden: Insufficient permissions"
+
+---
+
+### `POST /api/assignments/generate-diagram`
+Generates educational STEM diagrams, science illustrations, or geometric vector figures for exam questions. Tries high-resolution PNG generation (stored directly in S3) with SVG fallback.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "question_text": "Draw a ray diagram illustrating the formation of image by a concave mirror when object is placed at centre of curvature.",
+    "subject": "Physics"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Technical diagram generated successfully",
+    "data": {
+      "image_url": "https://s3.amazonaws.com/paatam/diagrams/diagram-17610283.png",
+      "diagram_svg": "<svg width=\"100%\" height=\"auto\">...</svg>",
+      "type": "image"
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "question_text is required"
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+
+---
+
+### `POST /api/curriculum/chapters/ingest`
+Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "class_subject_id": "1001",
+    "chapter_title": "Acids, Bases and Salts",
+    "chapter_number": 2,
+    "chapter_text": "Detailed chapter textbook text or OCR extraction...",
+    "pdf_url": "https://s3.amazonaws.com/paatam/curriculum/ch2.pdf",
+    "file_name": "science_ch2.pdf"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Chapter indexed into curriculum and vectorized into vector store",
+    "data": {
+      "chapter_id": "102",
+      "chapter_number": 2,
+      "chapter_title": "Acids, Bases and Salts",
+      "subtopics": ["Properties of Acids", "Bases", "pH Scale", "Salts"],
+      "chunk_count": 14
+    }
+  }
+  ```
+- **Error Responses:**
+  - `400 Bad Request`: "class_subject_id and chapter_text are required"
+  - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
+  - `404 Not Found`: "ClassSubject not found"
+
+---
+
+### `GET /api/curriculum/chapters`
+Lists indexed chapters and subtopics for a given subject.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Query Parameters:**
+  - `class_subject_id` (string, required): ClassSubject ID
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "102",
+        "chapter_number": 2,
+        "chapter_title": "Acids, Bases and Salts",
+        "subtopics": ["Properties of Acids", "Bases", "pH Scale", "Salts"],
+        "chunk_count": 14,
+        "pdf_url": "https://s3.amazonaws.com/paatam/curriculum/ch2.pdf"
+      }
+    ]
+  }
+  ```
+
+---
+
+### `POST /api/curriculum/syllabus/ingest`
+Ingests master syllabus documents, extracts units, topics, and exam marks weightages.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "class_subject_id": "1001",
+    "syllabus_text": "Unit I: Chemical Substances - Nature and Behaviour (25 Marks)..."
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Syllabus topics parsed and indexed successfully",
+    "data": {
+      "topics_count": 5,
+      "topics": [
+        { "name": "Chemical Substances - Nature and Behaviour", "marks": 25, "unit": "Unit I" }
+      ]
+    }
+  }
+  ```
+
+---
+
+### `GET /api/curriculum/topics`
+Lists syllabus topics and weightage distribution for a class subject.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Query Parameters:**
+  - `class_subject_id` (string, required): ClassSubject ID
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "501",
+        "topic_name": "Chemical Substances - Nature and Behaviour",
+        "subtopics": ["Chemical reactions", "Acids, bases and salts"],
+        "weightage": 25,
+        "unit": "Unit I"
+      }
+    ]
+  }
+  ```
 
 
 

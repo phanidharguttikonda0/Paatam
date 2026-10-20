@@ -3,6 +3,8 @@ import { AppError } from '../exceptions/AppError';
 import { parseBigInt } from '../utils/bigint';
 import { idGenerator } from '../utils/idGenerator';
 import { AcademicYearService } from './academicYear.service';
+import { S3Service } from './s3.service';
+import { SqsService } from './sqs.service';
 
 export interface AssignmentSubmissionsQuery {
   status?: string;
@@ -379,6 +381,21 @@ export class SubmissionService {
         failed_count: 0,
         status_message: 'Batch paper stack queued for splitting and evaluation',
       },
+    });
+
+    const masterPdfUrl =
+      Array.isArray(rawFiles) && rawFiles.length > 0
+        ? String(rawFiles[0])
+        : `https://${S3Service.getBucketName()}.s3.${S3Service.getRegion()}.amazonaws.com/bulk-uploads/${jobId.toString()}/master-stack.pdf`;
+
+    // Enqueue to SQS for Bulk Splitter Lambda
+    await SqsService.dispatchBulkSplit({
+      job_id: batchJob.id.toString(),
+      assignment_id: assignmentId.toString(),
+      section_id: assignment.section_id.toString(),
+      master_pdf_url: masterPdfUrl,
+      bulk_mode: batchJob.bulk_mode,
+      timestamp: Date.now(),
     });
 
     return {

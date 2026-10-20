@@ -224,6 +224,83 @@
       letter-spacing: 0.05em;
     }
 
+    /* Async Processing & Real-Time Sync Guide Styles */
+    .async-guide-card {
+      background: linear-gradient(135deg, rgba(19, 26, 43, 0.95), rgba(14, 20, 34, 0.98));
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .async-guide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
+    }
+
+    .async-guide-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #60A5FA;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .async-flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .async-flow-box {
+      background: var(--bg-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .async-flow-box h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .async-step-list {
+      list-style: none;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      line-height: 1.5;
+    }
+
+    .async-step-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-queued { background: rgba(148, 163, 184, 0.2); color: #CBD5E1; }
+    .badge-processing { background: rgba(59, 130, 246, 0.2); color: #60A5FA; }
+    .badge-ready { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+    .badge-evaluating { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+
     /* Role Filter Tabs */
     .role-tabs {
       display: flex;
@@ -682,7 +759,7 @@
       </div>
       <div class="stats-ribbon">
         <div class="stat-pill">
-          <div class="stat-val">89</div>
+          <div class="stat-val">96</div>
           <div class="stat-lbl">Active APIs</div>
         </div>
         <div class="stat-pill">
@@ -692,6 +769,58 @@
         <div class="stat-pill">
           <div class="stat-val">100%</div>
           <div class="stat-lbl">Live on ALB</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Async Processing & Real-time State Synchronization Guide -->
+    <div class="async-guide-card">
+      <div class="async-guide-header">
+        <div class="async-guide-title">
+          <span>⚡</span>
+          <span>Asynchronous Workflows &amp; Frontend State Synchronization Guide</span>
+        </div>
+        <div style="font-size: 12px; color: #94A3B8;">
+          AWS SQS + Lambda Serverless Architecture (No Timeout Latency)
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6;">
+        All heavy AI tasks (PDF OCR, Question Paper Extraction, Bulk Stack Slicing, and Rubric Grading) run asynchronously in the background via dedicated AWS SQS queues and Lambda workers. The REST API responds instantly (&lt;100ms) with tracking IDs. Follow the status transitions below to implement real-time progress bars and automated polling in the frontend.
+      </p>
+      <div class="async-flow-grid">
+        <!-- Flow 1 -->
+        <div class="async-flow-box">
+          <h4><span>📄</span> Assignment Paper &amp; Key Ingestion</h4>
+          <ul class="async-step-list">
+            <li><strong>Trigger:</strong> <code style="color:#60A5FA;">POST /api/assignments/process-async</code></li>
+            <li><strong>State 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda runs Vision OCR (Sarvam/Gemini) to extract hierarchical questions &amp; rubric keys. Render a progress bar at 45%.</li>
+            <li><strong>State 2:</strong> <span class="async-step-badge badge-ready">ready</span> &mdash; Extraction complete. Questions &amp; answer key text are populated. Progress hits 100%.</li>
+            <li><strong>Polling:</strong> Poll <code style="color:#60A5FA;">GET /api/assignments/:id/pipeline-status</code> every <strong>3 seconds</strong> until ready.</li>
+          </ul>
+        </div>
+
+        <!-- Flow 2 -->
+        <div class="async-flow-box">
+          <h4><span>📦</span> Bulk Class Stack Splitting</h4>
+          <ul class="async-step-list">
+            <li><strong>Trigger:</strong> <code style="color:#60A5FA;">POST /api/submissions/bulk</code> (35-student PDF)</li>
+            <li><strong>State 1:</strong> <span class="async-step-badge badge-queued">queued</span> &rarr; <span class="async-step-badge badge-processing">splitting</span> &mdash; Lambda scans page headers, names, and QR codes to slice the multi-page stack into individual student PDFs.</li>
+            <li><strong>State 2:</strong> <span class="async-step-badge badge-evaluating">grading</span> &mdash; Sliced papers are enqueued to the OCR and Evaluation workers. Submissions start appearing in the review table.</li>
+            <li><strong>State 3:</strong> <span class="async-step-badge badge-ready">completed</span> &mdash; All student submissions generated.</li>
+            <li><strong>Polling:</strong> Poll <code style="color:#60A5FA;">GET /api/submissions/batch/:jobId</code> every <strong>5 seconds</strong>.</li>
+          </ul>
+        </div>
+
+        <!-- Flow 3 -->
+        <div class="async-flow-box">
+          <h4><span>✍️</span> Student Paper Evaluation &amp; Grading</h4>
+          <ul class="async-step-list">
+            <li><strong>Trigger:</strong> Student upload or Bulk Stack slice</li>
+            <li><strong>Stage 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda transcribes handwritten answers line-by-line (Indic via Sarvam DocAI, STEM via Gemini).</li>
+            <li><strong>Stage 2:</strong> <span class="async-step-badge badge-evaluating">evaluating</span> &mdash; Rubric scoring, ground truth comparison, and Socratic hint synthesis via LLM reasoning.</li>
+            <li><strong>Terminal:</strong> <span class="async-step-badge badge-ready">graded</span> / <code>pending_review</code> &mdash; Marks &amp; feedback published. Student receives scorecard notification.</li>
+            <li><strong>Polling:</strong> Poll <code style="color:#60A5FA;">GET /api/submissions/:id</code> every <strong>4 seconds</strong>.</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -2336,7 +2465,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #A855F7;">35</span>
+              <span class="role-count-num" style="color: #A855F7;">39</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -6992,6 +7121,540 @@
   
         </div>
       
+
+        <div class="category-group" data-category="AI Question Generator &amp; Curriculum RAG">
+          <div class="category-header">
+            <span class="category-title">AI Question Generator &amp; Curriculum RAG</span>
+            <span class="category-count">4 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag) ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in postgresql pgvector. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/curriculum/chapters/ingest</span>
+          <span class="api-title">• Ingest Textbook Chapter Document (RAG)</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;chapter_number&quot;: 2,
+  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
+  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
+  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;chapter_number&quot;: 2,
+  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
+  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
+  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Chapter indexed and vectorized.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
+  &quot;data&quot;: {
+    &quot;chapter_id&quot;: &quot;102&quot;,
+    &quot;chapter_number&quot;: 2,
+    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;subtopics&quot;: [
+      &quot;Properties of Acids&quot;,
+      &quot;Bases&quot;,
+      &quot;pH Scale&quot;,
+      &quot;Salts&quot;
+    ],
+    &quot;chunk_count&quot;: 14
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
+  &quot;data&quot;: {
+    &quot;chapter_id&quot;: &quot;102&quot;,
+    &quot;chapter_number&quot;: 2,
+    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;subtopics&quot;: [
+      &quot;Properties of Acids&quot;,
+      &quot;Bases&quot;,
+      &quot;pH Scale&quot;,
+      &quot;Salts&quot;
+    ],
+    &quot;chunk_count&quot;: 14
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/curriculum/chapters list indexed textbook chapters retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/curriculum/chapters</span>
+          <span class="api-title">• List Indexed Textbook Chapters</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Populates the multi-select chapter filter in the AI Question Paper generator.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>ClassSubject ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">List of chapters.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;102&quot;,
+      &quot;chapter_number&quot;: 2,
+      &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Properties of Acids&quot;,
+        &quot;Bases&quot;,
+        &quot;pH Scale&quot;,
+        &quot;Salts&quot;
+      ],
+      &quot;chunk_count&quot;: 14,
+      &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;
+    }
+  ]
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;102&quot;,
+      &quot;chapter_number&quot;: 2,
+      &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Properties of Acids&quot;,
+        &quot;Bases&quot;,
+        &quot;pH Scale&quot;,
+        &quot;Salts&quot;
+      ],
+      &quot;chunk_count&quot;: 14,
+      &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/syllabus/ingest ingest syllabus structure &amp; weightage extracts curriculum units, syllabus topics, and exam marks weightages using ai. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/curriculum/syllabus/ingest</span>
+          <span class="api-title">• Ingest Syllabus Structure &amp; Weightage</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Extracts curriculum units, syllabus topics, and exam marks weightages using AI.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Allows importing the official board syllabus breakdown for blueprint alignment.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;syllabus_text&quot;: &quot;Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;syllabus_text&quot;: &quot;Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Syllabus indexed.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Syllabus topics parsed and indexed successfully&quot;,
+  &quot;data&quot;: {
+    &quot;topics_count&quot;: 5,
+    &quot;topics&quot;: [
+      {
+        &quot;name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+        &quot;marks&quot;: 25,
+        &quot;unit&quot;: &quot;Unit I&quot;
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Syllabus topics parsed and indexed successfully&quot;,
+  &quot;data&quot;: {
+    &quot;topics_count&quot;: 5,
+    &quot;topics&quot;: [
+      {
+        &quot;name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+        &quot;marks&quot;: 25,
+        &quot;unit&quot;: &quot;Unit I&quot;
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid input.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/curriculum/topics list syllabus topics &amp; marks weightage lists all curriculum syllabus topics and marks weightage breakdown for a class subject. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/curriculum/topics</span>
+          <span class="api-title">• List Syllabus Topics &amp; Marks Weightage</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Lists all curriculum syllabus topics and marks weightage breakdown for a class subject.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Displays unit weightage bars and topic checklist in the exam generator UI.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>ClassSubject ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">List of syllabus topics.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;501&quot;,
+      &quot;topic_name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Chemical reactions&quot;,
+        &quot;Acids, bases and salts&quot;
+      ],
+      &quot;weightage&quot;: 25,
+      &quot;unit&quot;: &quot;Unit I&quot;
+    }
+  ]
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;501&quot;,
+      &quot;topic_name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Chemical reactions&quot;,
+        &quot;Acids, bases and salts&quot;
+      ],
+      &quot;weightage&quot;: 25,
+      &quot;unit&quot;: &quot;Unit I&quot;
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
       </section>
     
 
@@ -7007,7 +7670,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #06B6D4;">61</span>
+              <span class="role-count-num" style="color: #06B6D4;">68</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -14817,6 +15480,1040 @@
   
         </div>
       
+
+        <div class="category-group" data-category="AI Question Generator &amp; Curriculum RAG">
+          <div class="category-header">
+            <span class="category-title">AI Question Generator &amp; Curriculum RAG</span>
+            <span class="category-count">7 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/assignments/generate generate question paper with ai blueprint generates a complete, structured cbse/icse exam question paper with section headings, mcqs, short, and descriptive questions based on syllabus topics or textbook chapters. ai question generator &amp; curriculum rag teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/assignments/generate</span>
+          <span class="api-title">• Generate Question Paper with AI Blueprint</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Generates a complete, structured CBSE/ICSE exam question paper with section headings, MCQs, short, and descriptive questions based on syllabus topics or textbook chapters.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in the Paper Creation Wizard when the teacher selects &quot;Generate with AI&quot;. Provides a complete questions preview for review before publishing.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+  &quot;target_marks&quot;: 40,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;chapter_titles&quot;: [
+    &quot;Acids, Bases and Salts&quot;,
+    &quot;Chemical Reactions&quot;
+  ],
+  &quot;subtopics&quot;: [
+    &quot;Neutralisation reactions&quot;,
+    &quot;pH scale&quot;,
+    &quot;Types of chemical reactions&quot;
+  ],
+  &quot;question_counts&quot;: {
+    &quot;mcqCount&quot;: 10,
+    &quot;veryShortCount&quot;: 5,
+    &quot;shortCount&quot;: 3,
+    &quot;descriptiveCount&quot;: 2
+  }
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+  &quot;target_marks&quot;: 40,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;chapter_titles&quot;: [
+    &quot;Acids, Bases and Salts&quot;,
+    &quot;Chemical Reactions&quot;
+  ],
+  &quot;subtopics&quot;: [
+    &quot;Neutralisation reactions&quot;,
+    &quot;pH scale&quot;,
+    &quot;Types of chemical reactions&quot;
+  ],
+  &quot;question_counts&quot;: {
+    &quot;mcqCount&quot;: 10,
+    &quot;veryShortCount&quot;: 5,
+    &quot;shortCount&quot;: 3,
+    &quot;descriptiveCount&quot;: 2
+  }
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">AI exam paper generated successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;AI Exam Paper generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+    &quot;target_marks&quot;: 40,
+    &quot;total_marks&quot;: 40,
+    &quot;questions_count&quot;: 20,
+    &quot;questions&quot;: [
+      {
+        &quot;id&quot;: &quot;q1&quot;,
+        &quot;questionNo&quot;: &quot;1&quot;,
+        &quot;section&quot;: &quot;Section A&quot;,
+        &quot;type&quot;: &quot;mcq&quot;,
+        &quot;text&quot;: &quot;Which of the following turns blue litmus red?&quot;,
+        &quot;marks&quot;: 1,
+        &quot;options&quot;: [
+          &quot;Dilute HCl&quot;,
+          &quot;Sodium hydroxide&quot;,
+          &quot;Distilled water&quot;,
+          &quot;Baking soda&quot;
+        ],
+        &quot;correctAnswer&quot;: &quot;Dilute HCl&quot;,
+        &quot;hasVisual&quot;: false
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;AI Exam Paper generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+    &quot;target_marks&quot;: 40,
+    &quot;total_marks&quot;: 40,
+    &quot;questions_count&quot;: 20,
+    &quot;questions&quot;: [
+      {
+        &quot;id&quot;: &quot;q1&quot;,
+        &quot;questionNo&quot;: &quot;1&quot;,
+        &quot;section&quot;: &quot;Section A&quot;,
+        &quot;type&quot;: &quot;mcq&quot;,
+        &quot;text&quot;: &quot;Which of the following turns blue litmus red?&quot;,
+        &quot;marks&quot;: 1,
+        &quot;options&quot;: [
+          &quot;Dilute HCl&quot;,
+          &quot;Sodium hydroxide&quot;,
+          &quot;Distilled water&quot;,
+          &quot;Baking soda&quot;
+        ],
+        &quot;correctAnswer&quot;: &quot;Dilute HCl&quot;,
+        &quot;hasVisual&quot;: false
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid payload.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Branch access denied.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Forbidden: You do not have access to this branch&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Forbidden: You do not have access to this branch&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/assignments/regenerate-question regenerate single alternative question generates a single alternative question targeting the same subtopic and marks weightage while avoiding rejected or duplicate questions. ai question generator &amp; curriculum rag teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/assignments/regenerate-question</span>
+          <span class="api-title">• Regenerate Single Alternative Question</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Generates a single alternative question targeting the same subtopic and marks weightage while avoiding rejected or duplicate questions.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Add a &quot;Shuffle / Regenerate&quot; button next to each question on the paper review step.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;question_to_replace&quot;: {
+    &quot;id&quot;: &quot;q1&quot;,
+    &quot;questionNo&quot;: &quot;1&quot;,
+    &quot;section&quot;: &quot;Section A&quot;,
+    &quot;type&quot;: &quot;mcq&quot;,
+    &quot;text&quot;: &quot;What is the pH of pure water at 25°C?&quot;,
+    &quot;marks&quot;: 1,
+    &quot;options&quot;: [
+      &quot;7&quot;,
+      &quot;1&quot;,
+      &quot;14&quot;,
+      &quot;0&quot;
+    ],
+    &quot;correctAnswer&quot;: &quot;7&quot;
+  },
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;subtopic&quot;: &quot;pH scale&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;avoid_texts&quot;: [
+    &quot;What is the pH of pure water at 25°C?&quot;
+  ]
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;question_to_replace&quot;: {
+    &quot;id&quot;: &quot;q1&quot;,
+    &quot;questionNo&quot;: &quot;1&quot;,
+    &quot;section&quot;: &quot;Section A&quot;,
+    &quot;type&quot;: &quot;mcq&quot;,
+    &quot;text&quot;: &quot;What is the pH of pure water at 25°C?&quot;,
+    &quot;marks&quot;: 1,
+    &quot;options&quot;: [
+      &quot;7&quot;,
+      &quot;1&quot;,
+      &quot;14&quot;,
+      &quot;0&quot;
+    ],
+    &quot;correctAnswer&quot;: &quot;7&quot;
+  },
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;subtopic&quot;: &quot;pH scale&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;avoid_texts&quot;: [
+    &quot;What is the pH of pure water at 25°C?&quot;
+  ]
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Alternative question generated.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Alternative question generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;question&quot;: {
+      &quot;id&quot;: &quot;q1-alt-1&quot;,
+      &quot;questionNo&quot;: &quot;1&quot;,
+      &quot;section&quot;: &quot;Section A&quot;,
+      &quot;type&quot;: &quot;mcq&quot;,
+      &quot;text&quot;: &quot;Which of the following substances has a pH value strictly greater than 7?&quot;,
+      &quot;marks&quot;: 1,
+      &quot;options&quot;: [
+        &quot;Milk of Magnesia&quot;,
+        &quot;Lemon juice&quot;,
+        &quot;Tomato juice&quot;,
+        &quot;Gastric juice&quot;
+      ],
+      &quot;correctAnswer&quot;: &quot;Milk of Magnesia&quot;,
+      &quot;hasVisual&quot;: false
+    }
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Alternative question generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;question&quot;: {
+      &quot;id&quot;: &quot;q1-alt-1&quot;,
+      &quot;questionNo&quot;: &quot;1&quot;,
+      &quot;section&quot;: &quot;Section A&quot;,
+      &quot;type&quot;: &quot;mcq&quot;,
+      &quot;text&quot;: &quot;Which of the following substances has a pH value strictly greater than 7?&quot;,
+      &quot;marks&quot;: 1,
+      &quot;options&quot;: [
+        &quot;Milk of Magnesia&quot;,
+        &quot;Lemon juice&quot;,
+        &quot;Tomato juice&quot;,
+        &quot;Gastric juice&quot;
+      ],
+      &quot;correctAnswer&quot;: &quot;Milk of Magnesia&quot;,
+      &quot;hasVisual&quot;: false
+    }
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid payload.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/assignments/generate-diagram generate technical stem question diagram generates high-resolution diagrams, geometric figures, or circuit schematics for stem questions using ai image rendering with svg vector fallback. ai question generator &amp; curriculum rag teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/assignments/generate-diagram</span>
+          <span class="api-title">• Generate Technical STEM Question Diagram</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Generates high-resolution diagrams, geometric figures, or circuit schematics for STEM questions using AI image rendering with SVG vector fallback.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Allows teachers to auto-generate illustrations for questions that require visual diagrams.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;question_text&quot;: &quot;Draw a ray diagram illustrating the formation of image by a concave mirror when object is placed at centre of curvature.&quot;,
+  &quot;subject&quot;: &quot;Physics&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;question_text&quot;: &quot;Draw a ray diagram illustrating the formation of image by a concave mirror when object is placed at centre of curvature.&quot;,
+  &quot;subject&quot;: &quot;Physics&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Diagram generated successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Technical diagram generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;image_url&quot;: &quot;https://s3.amazonaws.com/paatam/diagrams/diagram-17610283.png&quot;,
+    &quot;diagram_svg&quot;: &quot;&lt;svg width=\&quot;100%\&quot; height=\&quot;auto\&quot;&gt;...&lt;/svg&gt;&quot;,
+    &quot;type&quot;: &quot;image&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Technical diagram generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;image_url&quot;: &quot;https://s3.amazonaws.com/paatam/diagrams/diagram-17610283.png&quot;,
+    &quot;diagram_svg&quot;: &quot;&lt;svg width=\&quot;100%\&quot; height=\&quot;auto\&quot;&gt;...&lt;/svg&gt;&quot;,
+    &quot;type&quot;: &quot;image&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">question_text is required.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag) ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in postgresql pgvector. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/curriculum/chapters/ingest</span>
+          <span class="api-title">• Ingest Textbook Chapter Document (RAG)</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;chapter_number&quot;: 2,
+  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
+  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
+  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;chapter_number&quot;: 2,
+  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
+  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
+  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Chapter indexed and vectorized.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
+  &quot;data&quot;: {
+    &quot;chapter_id&quot;: &quot;102&quot;,
+    &quot;chapter_number&quot;: 2,
+    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;subtopics&quot;: [
+      &quot;Properties of Acids&quot;,
+      &quot;Bases&quot;,
+      &quot;pH Scale&quot;,
+      &quot;Salts&quot;
+    ],
+    &quot;chunk_count&quot;: 14
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
+  &quot;data&quot;: {
+    &quot;chapter_id&quot;: &quot;102&quot;,
+    &quot;chapter_number&quot;: 2,
+    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;subtopics&quot;: [
+      &quot;Properties of Acids&quot;,
+      &quot;Bases&quot;,
+      &quot;pH Scale&quot;,
+      &quot;Salts&quot;
+    ],
+    &quot;chunk_count&quot;: 14
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/curriculum/chapters list indexed textbook chapters retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/curriculum/chapters</span>
+          <span class="api-title">• List Indexed Textbook Chapters</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Populates the multi-select chapter filter in the AI Question Paper generator.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>ClassSubject ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">List of chapters.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;102&quot;,
+      &quot;chapter_number&quot;: 2,
+      &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Properties of Acids&quot;,
+        &quot;Bases&quot;,
+        &quot;pH Scale&quot;,
+        &quot;Salts&quot;
+      ],
+      &quot;chunk_count&quot;: 14,
+      &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;
+    }
+  ]
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;102&quot;,
+      &quot;chapter_number&quot;: 2,
+      &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Properties of Acids&quot;,
+        &quot;Bases&quot;,
+        &quot;pH Scale&quot;,
+        &quot;Salts&quot;
+      ],
+      &quot;chunk_count&quot;: 14,
+      &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/syllabus/ingest ingest syllabus structure &amp; weightage extracts curriculum units, syllabus topics, and exam marks weightages using ai. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/curriculum/syllabus/ingest</span>
+          <span class="api-title">• Ingest Syllabus Structure &amp; Weightage</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Extracts curriculum units, syllabus topics, and exam marks weightages using AI.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Allows importing the official board syllabus breakdown for blueprint alignment.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;syllabus_text&quot;: &quot;Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;syllabus_text&quot;: &quot;Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Syllabus indexed.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Syllabus topics parsed and indexed successfully&quot;,
+  &quot;data&quot;: {
+    &quot;topics_count&quot;: 5,
+    &quot;topics&quot;: [
+      {
+        &quot;name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+        &quot;marks&quot;: 25,
+        &quot;unit&quot;: &quot;Unit I&quot;
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Syllabus topics parsed and indexed successfully&quot;,
+  &quot;data&quot;: {
+    &quot;topics_count&quot;: 5,
+    &quot;topics&quot;: [
+      {
+        &quot;name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+        &quot;marks&quot;: 25,
+        &quot;unit&quot;: &quot;Unit I&quot;
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid input.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/curriculum/topics list syllabus topics &amp; marks weightage lists all curriculum syllabus topics and marks weightage breakdown for a class subject. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/curriculum/topics</span>
+          <span class="api-title">• List Syllabus Topics &amp; Marks Weightage</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Lists all curriculum syllabus topics and marks weightage breakdown for a class subject.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Displays unit weightage bars and topic checklist in the exam generator UI.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>ClassSubject ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">List of syllabus topics.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;501&quot;,
+      &quot;topic_name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Chemical reactions&quot;,
+        &quot;Acids, bases and salts&quot;
+      ],
+      &quot;weightage&quot;: 25,
+      &quot;unit&quot;: &quot;Unit I&quot;
+    }
+  ]
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;501&quot;,
+      &quot;topic_name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Chemical reactions&quot;,
+        &quot;Acids, bases and salts&quot;
+      ],
+      &quot;weightage&quot;: 25,
+      &quot;unit&quot;: &quot;Unit I&quot;
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
       </section>
     
 
@@ -14832,7 +16529,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #F97316;">36</span>
+              <span class="role-count-num" style="color: #F97316;">43</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -19479,6 +21176,1040 @@
             <pre><code>{
   &quot;status&quot;: &quot;error&quot;,
   &quot;message&quot;: &quot;Batch job not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
+
+        <div class="category-group" data-category="AI Question Generator &amp; Curriculum RAG">
+          <div class="category-header">
+            <span class="category-title">AI Question Generator &amp; Curriculum RAG</span>
+            <span class="category-count">7 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/assignments/generate generate question paper with ai blueprint generates a complete, structured cbse/icse exam question paper with section headings, mcqs, short, and descriptive questions based on syllabus topics or textbook chapters. ai question generator &amp; curriculum rag teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/assignments/generate</span>
+          <span class="api-title">• Generate Question Paper with AI Blueprint</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Generates a complete, structured CBSE/ICSE exam question paper with section headings, MCQs, short, and descriptive questions based on syllabus topics or textbook chapters.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in the Paper Creation Wizard when the teacher selects &quot;Generate with AI&quot;. Provides a complete questions preview for review before publishing.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+  &quot;target_marks&quot;: 40,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;chapter_titles&quot;: [
+    &quot;Acids, Bases and Salts&quot;,
+    &quot;Chemical Reactions&quot;
+  ],
+  &quot;subtopics&quot;: [
+    &quot;Neutralisation reactions&quot;,
+    &quot;pH scale&quot;,
+    &quot;Types of chemical reactions&quot;
+  ],
+  &quot;question_counts&quot;: {
+    &quot;mcqCount&quot;: 10,
+    &quot;veryShortCount&quot;: 5,
+    &quot;shortCount&quot;: 3,
+    &quot;descriptiveCount&quot;: 2
+  }
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+  &quot;target_marks&quot;: 40,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;chapter_titles&quot;: [
+    &quot;Acids, Bases and Salts&quot;,
+    &quot;Chemical Reactions&quot;
+  ],
+  &quot;subtopics&quot;: [
+    &quot;Neutralisation reactions&quot;,
+    &quot;pH scale&quot;,
+    &quot;Types of chemical reactions&quot;
+  ],
+  &quot;question_counts&quot;: {
+    &quot;mcqCount&quot;: 10,
+    &quot;veryShortCount&quot;: 5,
+    &quot;shortCount&quot;: 3,
+    &quot;descriptiveCount&quot;: 2
+  }
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">AI exam paper generated successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;AI Exam Paper generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+    &quot;target_marks&quot;: 40,
+    &quot;total_marks&quot;: 40,
+    &quot;questions_count&quot;: 20,
+    &quot;questions&quot;: [
+      {
+        &quot;id&quot;: &quot;q1&quot;,
+        &quot;questionNo&quot;: &quot;1&quot;,
+        &quot;section&quot;: &quot;Section A&quot;,
+        &quot;type&quot;: &quot;mcq&quot;,
+        &quot;text&quot;: &quot;Which of the following turns blue litmus red?&quot;,
+        &quot;marks&quot;: 1,
+        &quot;options&quot;: [
+          &quot;Dilute HCl&quot;,
+          &quot;Sodium hydroxide&quot;,
+          &quot;Distilled water&quot;,
+          &quot;Baking soda&quot;
+        ],
+        &quot;correctAnswer&quot;: &quot;Dilute HCl&quot;,
+        &quot;hasVisual&quot;: false
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;AI Exam Paper generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;exam_title&quot;: &quot;Class 10 CBSE Midterm Science Examination&quot;,
+    &quot;target_marks&quot;: 40,
+    &quot;total_marks&quot;: 40,
+    &quot;questions_count&quot;: 20,
+    &quot;questions&quot;: [
+      {
+        &quot;id&quot;: &quot;q1&quot;,
+        &quot;questionNo&quot;: &quot;1&quot;,
+        &quot;section&quot;: &quot;Section A&quot;,
+        &quot;type&quot;: &quot;mcq&quot;,
+        &quot;text&quot;: &quot;Which of the following turns blue litmus red?&quot;,
+        &quot;marks&quot;: 1,
+        &quot;options&quot;: [
+          &quot;Dilute HCl&quot;,
+          &quot;Sodium hydroxide&quot;,
+          &quot;Distilled water&quot;,
+          &quot;Baking soda&quot;
+        ],
+        &quot;correctAnswer&quot;: &quot;Dilute HCl&quot;,
+        &quot;hasVisual&quot;: false
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid payload.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Branch access denied.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Forbidden: You do not have access to this branch&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Forbidden: You do not have access to this branch&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/assignments/regenerate-question regenerate single alternative question generates a single alternative question targeting the same subtopic and marks weightage while avoiding rejected or duplicate questions. ai question generator &amp; curriculum rag teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/assignments/regenerate-question</span>
+          <span class="api-title">• Regenerate Single Alternative Question</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Generates a single alternative question targeting the same subtopic and marks weightage while avoiding rejected or duplicate questions.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Add a &quot;Shuffle / Regenerate&quot; button next to each question on the paper review step.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;question_to_replace&quot;: {
+    &quot;id&quot;: &quot;q1&quot;,
+    &quot;questionNo&quot;: &quot;1&quot;,
+    &quot;section&quot;: &quot;Section A&quot;,
+    &quot;type&quot;: &quot;mcq&quot;,
+    &quot;text&quot;: &quot;What is the pH of pure water at 25°C?&quot;,
+    &quot;marks&quot;: 1,
+    &quot;options&quot;: [
+      &quot;7&quot;,
+      &quot;1&quot;,
+      &quot;14&quot;,
+      &quot;0&quot;
+    ],
+    &quot;correctAnswer&quot;: &quot;7&quot;
+  },
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;subtopic&quot;: &quot;pH scale&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;avoid_texts&quot;: [
+    &quot;What is the pH of pure water at 25°C?&quot;
+  ]
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;question_to_replace&quot;: {
+    &quot;id&quot;: &quot;q1&quot;,
+    &quot;questionNo&quot;: &quot;1&quot;,
+    &quot;section&quot;: &quot;Section A&quot;,
+    &quot;type&quot;: &quot;mcq&quot;,
+    &quot;text&quot;: &quot;What is the pH of pure water at 25°C?&quot;,
+    &quot;marks&quot;: 1,
+    &quot;options&quot;: [
+      &quot;7&quot;,
+      &quot;1&quot;,
+      &quot;14&quot;,
+      &quot;0&quot;
+    ],
+    &quot;correctAnswer&quot;: &quot;7&quot;
+  },
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;subtopic&quot;: &quot;pH scale&quot;,
+  &quot;difficulty&quot;: &quot;Medium&quot;,
+  &quot;language&quot;: &quot;English&quot;,
+  &quot;avoid_texts&quot;: [
+    &quot;What is the pH of pure water at 25°C?&quot;
+  ]
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Alternative question generated.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Alternative question generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;question&quot;: {
+      &quot;id&quot;: &quot;q1-alt-1&quot;,
+      &quot;questionNo&quot;: &quot;1&quot;,
+      &quot;section&quot;: &quot;Section A&quot;,
+      &quot;type&quot;: &quot;mcq&quot;,
+      &quot;text&quot;: &quot;Which of the following substances has a pH value strictly greater than 7?&quot;,
+      &quot;marks&quot;: 1,
+      &quot;options&quot;: [
+        &quot;Milk of Magnesia&quot;,
+        &quot;Lemon juice&quot;,
+        &quot;Tomato juice&quot;,
+        &quot;Gastric juice&quot;
+      ],
+      &quot;correctAnswer&quot;: &quot;Milk of Magnesia&quot;,
+      &quot;hasVisual&quot;: false
+    }
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Alternative question generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;question&quot;: {
+      &quot;id&quot;: &quot;q1-alt-1&quot;,
+      &quot;questionNo&quot;: &quot;1&quot;,
+      &quot;section&quot;: &quot;Section A&quot;,
+      &quot;type&quot;: &quot;mcq&quot;,
+      &quot;text&quot;: &quot;Which of the following substances has a pH value strictly greater than 7?&quot;,
+      &quot;marks&quot;: 1,
+      &quot;options&quot;: [
+        &quot;Milk of Magnesia&quot;,
+        &quot;Lemon juice&quot;,
+        &quot;Tomato juice&quot;,
+        &quot;Gastric juice&quot;
+      ],
+      &quot;correctAnswer&quot;: &quot;Milk of Magnesia&quot;,
+      &quot;hasVisual&quot;: false
+    }
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid payload.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/assignments/generate-diagram generate technical stem question diagram generates high-resolution diagrams, geometric figures, or circuit schematics for stem questions using ai image rendering with svg vector fallback. ai question generator &amp; curriculum rag teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/assignments/generate-diagram</span>
+          <span class="api-title">• Generate Technical STEM Question Diagram</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Generates high-resolution diagrams, geometric figures, or circuit schematics for STEM questions using AI image rendering with SVG vector fallback.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Allows teachers to auto-generate illustrations for questions that require visual diagrams.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;question_text&quot;: &quot;Draw a ray diagram illustrating the formation of image by a concave mirror when object is placed at centre of curvature.&quot;,
+  &quot;subject&quot;: &quot;Physics&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;question_text&quot;: &quot;Draw a ray diagram illustrating the formation of image by a concave mirror when object is placed at centre of curvature.&quot;,
+  &quot;subject&quot;: &quot;Physics&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Diagram generated successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Technical diagram generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;image_url&quot;: &quot;https://s3.amazonaws.com/paatam/diagrams/diagram-17610283.png&quot;,
+    &quot;diagram_svg&quot;: &quot;&lt;svg width=\&quot;100%\&quot; height=\&quot;auto\&quot;&gt;...&lt;/svg&gt;&quot;,
+    &quot;type&quot;: &quot;image&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Technical diagram generated successfully&quot;,
+  &quot;data&quot;: {
+    &quot;image_url&quot;: &quot;https://s3.amazonaws.com/paatam/diagrams/diagram-17610283.png&quot;,
+    &quot;diagram_svg&quot;: &quot;&lt;svg width=\&quot;100%\&quot; height=\&quot;auto\&quot;&gt;...&lt;/svg&gt;&quot;,
+    &quot;type&quot;: &quot;image&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">question_text is required.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag) ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in postgresql pgvector. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/curriculum/chapters/ingest</span>
+          <span class="api-title">• Ingest Textbook Chapter Document (RAG)</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;chapter_number&quot;: 2,
+  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
+  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
+  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+  &quot;chapter_number&quot;: 2,
+  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
+  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
+  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Chapter indexed and vectorized.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
+  &quot;data&quot;: {
+    &quot;chapter_id&quot;: &quot;102&quot;,
+    &quot;chapter_number&quot;: 2,
+    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;subtopics&quot;: [
+      &quot;Properties of Acids&quot;,
+      &quot;Bases&quot;,
+      &quot;pH Scale&quot;,
+      &quot;Salts&quot;
+    ],
+    &quot;chunk_count&quot;: 14
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
+  &quot;data&quot;: {
+    &quot;chapter_id&quot;: &quot;102&quot;,
+    &quot;chapter_number&quot;: 2,
+    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;subtopics&quot;: [
+      &quot;Properties of Acids&quot;,
+      &quot;Bases&quot;,
+      &quot;pH Scale&quot;,
+      &quot;Salts&quot;
+    ],
+    &quot;chunk_count&quot;: 14
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/curriculum/chapters list indexed textbook chapters retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/curriculum/chapters</span>
+          <span class="api-title">• List Indexed Textbook Chapters</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Populates the multi-select chapter filter in the AI Question Paper generator.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>ClassSubject ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">List of chapters.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;102&quot;,
+      &quot;chapter_number&quot;: 2,
+      &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Properties of Acids&quot;,
+        &quot;Bases&quot;,
+        &quot;pH Scale&quot;,
+        &quot;Salts&quot;
+      ],
+      &quot;chunk_count&quot;: 14,
+      &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;
+    }
+  ]
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;102&quot;,
+      &quot;chapter_number&quot;: 2,
+      &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Properties of Acids&quot;,
+        &quot;Bases&quot;,
+        &quot;pH Scale&quot;,
+        &quot;Salts&quot;
+      ],
+      &quot;chunk_count&quot;: 14,
+      &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/syllabus/ingest ingest syllabus structure &amp; weightage extracts curriculum units, syllabus topics, and exam marks weightages using ai. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/curriculum/syllabus/ingest</span>
+          <span class="api-title">• Ingest Syllabus Structure &amp; Weightage</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Extracts curriculum units, syllabus topics, and exam marks weightages using AI.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Allows importing the official board syllabus breakdown for blueprint alignment.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;syllabus_text&quot;: &quot;Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;class_subject_id&quot;: &quot;1001&quot;,
+  &quot;syllabus_text&quot;: &quot;Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Syllabus indexed.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Syllabus topics parsed and indexed successfully&quot;,
+  &quot;data&quot;: {
+    &quot;topics_count&quot;: 5,
+    &quot;topics&quot;: [
+      {
+        &quot;name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+        &quot;marks&quot;: 25,
+        &quot;unit&quot;: &quot;Unit I&quot;
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Syllabus topics parsed and indexed successfully&quot;,
+  &quot;data&quot;: {
+    &quot;topics_count&quot;: 5,
+    &quot;topics&quot;: [
+      {
+        &quot;name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+        &quot;marks&quot;: 25,
+        &quot;unit&quot;: &quot;Unit I&quot;
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid input.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Validation failed&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/curriculum/topics list syllabus topics &amp; marks weightage lists all curriculum syllabus topics and marks weightage breakdown for a class subject. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/curriculum/topics</span>
+          <span class="api-title">• List Syllabus Topics &amp; Marks Weightage</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Lists all curriculum syllabus topics and marks weightage breakdown for a class subject.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Displays unit weightage bars and topic checklist in the exam generator UI.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>ClassSubject ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">List of syllabus topics.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;501&quot;,
+      &quot;topic_name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Chemical reactions&quot;,
+        &quot;Acids, bases and salts&quot;
+      ],
+      &quot;weightage&quot;: 25,
+      &quot;unit&quot;: &quot;Unit I&quot;
+    }
+  ]
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;501&quot;,
+      &quot;topic_name&quot;: &quot;Chemical Substances - Nature and Behaviour&quot;,
+      &quot;subtopics&quot;: [
+        &quot;Chemical reactions&quot;,
+        &quot;Acids, bases and salts&quot;
+      ],
+      &quot;weightage&quot;: 25,
+      &quot;unit&quot;: &quot;Unit I&quot;
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">ClassSubject not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;ClassSubject not found&quot;
 }</code></pre>
           </div>
         

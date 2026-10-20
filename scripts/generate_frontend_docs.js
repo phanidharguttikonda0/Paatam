@@ -3080,6 +3080,312 @@ const apiCatalog = [
       },
       errors: []
     }
+  },
+  {
+    id: 'assignment-ai-generate',
+    title: 'Generate Question Paper with AI Blueprint',
+    method: 'POST',
+    url: '/api/assignments/generate',
+    roles: ['TEACHER', 'BRANCH_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Generates a complete, structured CBSE/ICSE exam question paper with section headings, MCQs, short, and descriptive questions based on syllabus topics or textbook chapters.',
+    frontendNotes: 'Used in the Paper Creation Wizard when the teacher selects "Generate with AI". Provides a complete questions preview for review before publishing.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      exam_title: 'Class 10 CBSE Midterm Science Examination',
+      target_marks: 40,
+      language: 'English',
+      difficulty: 'Medium',
+      chapter_titles: ['Acids, Bases and Salts', 'Chemical Reactions'],
+      subtopics: ['Neutralisation reactions', 'pH scale', 'Types of chemical reactions'],
+      question_counts: {
+        mcqCount: 10,
+        veryShortCount: 5,
+        shortCount: 3,
+        descriptiveCount: 2
+      }
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'AI exam paper generated successfully.',
+        body: {
+          status: 'success',
+          message: 'AI Exam Paper generated successfully',
+          data: {
+            exam_title: 'Class 10 CBSE Midterm Science Examination',
+            target_marks: 40,
+            total_marks: 40,
+            questions_count: 20,
+            questions: [
+              {
+                id: 'q1',
+                questionNo: '1',
+                section: 'Section A',
+                type: 'mcq',
+                text: 'Which of the following turns blue litmus red?',
+                marks: 1,
+                options: ['Dilute HCl', 'Sodium hydroxide', 'Distilled water', 'Baking soda'],
+                correctAnswer: 'Dilute HCl',
+                hasVisual: false
+              }
+            ]
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Invalid payload.', body: { status: 'error', message: 'Validation failed' } },
+        { code: 403, status: 'Forbidden', desc: 'Branch access denied.', body: { message: 'Forbidden: You do not have access to this branch' } }
+      ]
+    }
+  },
+  {
+    id: 'assignment-ai-regenerate-question',
+    title: 'Regenerate Single Alternative Question',
+    method: 'POST',
+    url: '/api/assignments/regenerate-question',
+    roles: ['TEACHER', 'BRANCH_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Generates a single alternative question targeting the same subtopic and marks weightage while avoiding rejected or duplicate questions.',
+    frontendNotes: 'Add a "Shuffle / Regenerate" button next to each question on the paper review step.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      question_to_replace: {
+        id: 'q1',
+        questionNo: '1',
+        section: 'Section A',
+        type: 'mcq',
+        text: 'What is the pH of pure water at 25°C?',
+        marks: 1,
+        options: ['7', '1', '14', '0'],
+        correctAnswer: '7'
+      },
+      chapter_title: 'Acids, Bases and Salts',
+      subtopic: 'pH scale',
+      difficulty: 'Medium',
+      language: 'English',
+      avoid_texts: ['What is the pH of pure water at 25°C?']
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Alternative question generated.',
+        body: {
+          status: 'success',
+          message: 'Alternative question generated successfully',
+          data: {
+            question: {
+              id: 'q1-alt-1',
+              questionNo: '1',
+              section: 'Section A',
+              type: 'mcq',
+              text: 'Which of the following substances has a pH value strictly greater than 7?',
+              marks: 1,
+              options: ['Milk of Magnesia', 'Lemon juice', 'Tomato juice', 'Gastric juice'],
+              correctAnswer: 'Milk of Magnesia',
+              hasVisual: false
+            }
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Invalid payload.', body: { status: 'error', message: 'Validation failed' } }
+      ]
+    }
+  },
+  {
+    id: 'assignment-ai-generate-diagram',
+    title: 'Generate Technical STEM Question Diagram',
+    method: 'POST',
+    url: '/api/assignments/generate-diagram',
+    roles: ['TEACHER', 'BRANCH_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Generates high-resolution diagrams, geometric figures, or circuit schematics for STEM questions using AI image rendering with SVG vector fallback.',
+    frontendNotes: 'Allows teachers to auto-generate illustrations for questions that require visual diagrams.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      question_text: 'Draw a ray diagram illustrating the formation of image by a concave mirror when object is placed at centre of curvature.',
+      subject: 'Physics'
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Diagram generated successfully.',
+        body: {
+          status: 'success',
+          message: 'Technical diagram generated successfully',
+          data: {
+            image_url: 'https://s3.amazonaws.com/paatam/diagrams/diagram-17610283.png',
+            diagram_svg: '<svg width="100%" height="auto">...</svg>',
+            type: 'image'
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'question_text is required.', body: { status: 'error', message: 'Validation failed' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-chapter-ingest',
+    title: 'Ingest Textbook Chapter Document (RAG)',
+    method: 'POST',
+    url: '/api/curriculum/chapters/ingest',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.',
+    frontendNotes: 'Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      chapter_title: 'Acids, Bases and Salts',
+      chapter_number: 2,
+      chapter_text: 'Acids have sour taste and turn blue litmus red...',
+      pdf_url: 'https://s3.amazonaws.com/paatam/curriculum/ch2.pdf',
+      file_name: 'science_ch2.pdf'
+    },
+    responses: {
+      success: {
+        code: 201,
+        status: 'Created',
+        desc: 'Chapter indexed and vectorized.',
+        body: {
+          status: 'success',
+          message: 'Chapter indexed into curriculum and vectorized into vector store',
+          data: {
+            chapter_id: '102',
+            chapter_number: 2,
+            chapter_title: 'Acids, Bases and Salts',
+            subtopics: ['Properties of Acids', 'Bases', 'pH Scale', 'Salts'],
+            chunk_count: 14
+          }
+        }
+      },
+      errors: [
+        { code: 404, status: 'Not Found', desc: 'ClassSubject not found.', body: { status: 'error', message: 'ClassSubject not found' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-chapter-list',
+    title: 'List Indexed Textbook Chapters',
+    method: 'GET',
+    url: '/api/curriculum/chapters',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Retrieves all textbook chapters, identified subtopics, and chunk counts for a given subject.',
+    frontendNotes: 'Populates the multi-select chapter filter in the AI Question Paper generator.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [{ key: 'class_subject_id', type: 'string', required: true, desc: 'ClassSubject ID' }],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'List of chapters.',
+        body: {
+          status: 'success',
+          data: [
+            {
+              id: '102',
+              chapter_number: 2,
+              chapter_title: 'Acids, Bases and Salts',
+              subtopics: ['Properties of Acids', 'Bases', 'pH Scale', 'Salts'],
+              chunk_count: 14,
+              pdf_url: 'https://s3.amazonaws.com/paatam/curriculum/ch2.pdf'
+            }
+          ]
+        }
+      },
+      errors: [
+        { code: 404, status: 'Not Found', desc: 'ClassSubject not found.', body: { status: 'error', message: 'ClassSubject not found' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-syllabus-ingest',
+    title: 'Ingest Syllabus Structure & Weightage',
+    method: 'POST',
+    url: '/api/curriculum/syllabus/ingest',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Extracts curriculum units, syllabus topics, and exam marks weightages using AI.',
+    frontendNotes: 'Allows importing the official board syllabus breakdown for blueprint alignment.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      class_subject_id: '1001',
+      syllabus_text: 'Unit I: Chemical Substances - Nature and Behaviour (25 Marks)...'
+    },
+    responses: {
+      success: {
+        code: 201,
+        status: 'Created',
+        desc: 'Syllabus indexed.',
+        body: {
+          status: 'success',
+          message: 'Syllabus topics parsed and indexed successfully',
+          data: {
+            topics_count: 5,
+            topics: [{ name: 'Chemical Substances - Nature and Behaviour', marks: 25, unit: 'Unit I' }]
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Invalid input.', body: { status: 'error', message: 'Validation failed' } }
+      ]
+    }
+  },
+  {
+    id: 'curriculum-topics-list',
+    title: 'List Syllabus Topics & Marks Weightage',
+    method: 'GET',
+    url: '/api/curriculum/topics',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'AI Question Generator & Curriculum RAG',
+    description: 'Lists all curriculum syllabus topics and marks weightage breakdown for a class subject.',
+    frontendNotes: 'Displays unit weightage bars and topic checklist in the exam generator UI.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [{ key: 'class_subject_id', type: 'string', required: true, desc: 'ClassSubject ID' }],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'List of syllabus topics.',
+        body: {
+          status: 'success',
+          data: [
+            {
+              id: '501',
+              topic_name: 'Chemical Substances - Nature and Behaviour',
+              subtopics: ['Chemical reactions', 'Acids, bases and salts'],
+              weightage: 25,
+              unit: 'Unit I'
+            }
+          ]
+        }
+      },
+      errors: [
+        { code: 404, status: 'Not Found', desc: 'ClassSubject not found.', body: { status: 'error', message: 'ClassSubject not found' } }
+      ]
+    }
   }
 ];
 
@@ -3323,6 +3629,83 @@ function generateHtml() {
       font-weight: 600;
       letter-spacing: 0.05em;
     }
+
+    /* Async Processing & Real-Time Sync Guide Styles */
+    .async-guide-card {
+      background: linear-gradient(135deg, rgba(19, 26, 43, 0.95), rgba(14, 20, 34, 0.98));
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .async-guide-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
+    }
+
+    .async-guide-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #60A5FA;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .async-flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .async-flow-box {
+      background: var(--bg-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .async-flow-box h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .async-step-list {
+      list-style: none;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      line-height: 1.5;
+    }
+
+    .async-step-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-queued { background: rgba(148, 163, 184, 0.2); color: #CBD5E1; }
+    .badge-processing { background: rgba(59, 130, 246, 0.2); color: #60A5FA; }
+    .badge-ready { background: rgba(16, 185, 129, 0.2); color: #34D399; }
+    .badge-evaluating { background: rgba(245, 158, 11, 0.2); color: #FBBF24; }
 
     /* Role Filter Tabs */
     .role-tabs {
@@ -3792,6 +4175,58 @@ function generateHtml() {
         <div class="stat-pill">
           <div class="stat-val">100%</div>
           <div class="stat-lbl">Live on ALB</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Async Processing & Real-time State Synchronization Guide -->
+    <div class="async-guide-card">
+      <div class="async-guide-header">
+        <div class="async-guide-title">
+          <span>⚡</span>
+          <span>Asynchronous Workflows &amp; Frontend State Synchronization Guide</span>
+        </div>
+        <div style="font-size: 12px; color: #94A3B8;">
+          AWS SQS + Lambda Serverless Architecture (No Timeout Latency)
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6;">
+        All heavy AI tasks (PDF OCR, Question Paper Extraction, Bulk Stack Slicing, and Rubric Grading) run asynchronously in the background via dedicated AWS SQS queues and Lambda workers. The REST API responds instantly (&lt;100ms) with tracking IDs. Follow the status transitions below to implement real-time progress bars and automated polling in the frontend.
+      </p>
+      <div class="async-flow-grid">
+        <!-- Flow 1 -->
+        <div class="async-flow-box">
+          <h4><span>📄</span> Assignment Paper &amp; Key Ingestion</h4>
+          <ul class="async-step-list">
+            <li><strong>Trigger:</strong> <code style="color:#60A5FA;">POST /api/assignments/process-async</code></li>
+            <li><strong>State 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda runs Vision OCR (Sarvam/Gemini) to extract hierarchical questions &amp; rubric keys. Render a progress bar at 45%.</li>
+            <li><strong>State 2:</strong> <span class="async-step-badge badge-ready">ready</span> &mdash; Extraction complete. Questions &amp; answer key text are populated. Progress hits 100%.</li>
+            <li><strong>Polling:</strong> Poll <code style="color:#60A5FA;">GET /api/assignments/:id/pipeline-status</code> every <strong>3 seconds</strong> until ready.</li>
+          </ul>
+        </div>
+
+        <!-- Flow 2 -->
+        <div class="async-flow-box">
+          <h4><span>📦</span> Bulk Class Stack Splitting</h4>
+          <ul class="async-step-list">
+            <li><strong>Trigger:</strong> <code style="color:#60A5FA;">POST /api/submissions/bulk</code> (35-student PDF)</li>
+            <li><strong>State 1:</strong> <span class="async-step-badge badge-queued">queued</span> &rarr; <span class="async-step-badge badge-processing">splitting</span> &mdash; Lambda scans page headers, names, and QR codes to slice the multi-page stack into individual student PDFs.</li>
+            <li><strong>State 2:</strong> <span class="async-step-badge badge-evaluating">grading</span> &mdash; Sliced papers are enqueued to the OCR and Evaluation workers. Submissions start appearing in the review table.</li>
+            <li><strong>State 3:</strong> <span class="async-step-badge badge-ready">completed</span> &mdash; All student submissions generated.</li>
+            <li><strong>Polling:</strong> Poll <code style="color:#60A5FA;">GET /api/submissions/batch/:jobId</code> every <strong>5 seconds</strong>.</li>
+          </ul>
+        </div>
+
+        <!-- Flow 3 -->
+        <div class="async-flow-box">
+          <h4><span>✍️</span> Student Paper Evaluation &amp; Grading</h4>
+          <ul class="async-step-list">
+            <li><strong>Trigger:</strong> Student upload or Bulk Stack slice</li>
+            <li><strong>Stage 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda transcribes handwritten answers line-by-line (Indic via Sarvam DocAI, STEM via Gemini).</li>
+            <li><strong>Stage 2:</strong> <span class="async-step-badge badge-evaluating">evaluating</span> &mdash; Rubric scoring, ground truth comparison, and Socratic hint synthesis via LLM reasoning.</li>
+            <li><strong>Terminal:</strong> <span class="async-step-badge badge-ready">graded</span> / <code>pending_review</code> &mdash; Marks &amp; feedback published. Student receives scorecard notification.</li>
+            <li><strong>Polling:</strong> Poll <code style="color:#60A5FA;">GET /api/submissions/:id</code> every <strong>4 seconds</strong>.</li>
+          </ul>
         </div>
       </div>
     </div>

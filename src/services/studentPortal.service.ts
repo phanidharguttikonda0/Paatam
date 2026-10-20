@@ -3,6 +3,7 @@ import { idGenerator } from '../utils/idGenerator';
 import { parseBigInt } from '../utils/bigint';
 import { formatPaginatedResponse } from '../utils/pagination';
 import { AppError } from '../exceptions/AppError';
+import { SqsService } from './sqs.service';
 
 export class StudentPortalService {
   /**
@@ -209,6 +210,7 @@ export class StudentPortalService {
       title: assignment.title,
       subject: assignment.ClassSubject?.Subject?.name || 'Subject',
       duration_minutes: assignment.duration_minutes,
+      submission_mode: assignment.submission_mode,
       question_paper_url: assignment.question_paper_url,
       due_date: assignment.due_date,
       questions: assignment.questions_json,
@@ -243,6 +245,27 @@ export class StudentPortalService {
       throw new AppError('Assignment not found', 404);
     }
 
+    if (assignment.submission_mode === 'TEACHER_UPLOAD') {
+      throw new AppError(
+        'Submissions for this assignment are collected physically and uploaded exclusively by the teacher',
+        403
+      );
+    }
+
+    const existingSubmission = await prisma.submission.findFirst({
+      where: {
+        assignment_id: assignmentId,
+        student_id: studentId,
+      },
+    });
+
+    if (existingSubmission) {
+      throw new AppError(
+        'Answer sheets have already been submitted for this assignment',
+        403
+      );
+    }
+
     const rawUrls =
       body.sample_paper_urls ||
       (body.sample_paper_url ? [body.sample_paper_url] : ['https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf']);
@@ -260,8 +283,18 @@ export class StudentPortalService {
         sample_paper_url: samplePaperUrl,
         sample_paper_urls: samplePaperUrls,
         status: 'submitted',
+        evaluation_status: 'pending_ocr',
         submitted_at: new Date(),
       },
+    });
+
+    // Enqueue to Queue 1 for Handwriting OCR
+    await SqsService.dispatchPaperOcr({
+      submission_id: submission.id.toString(),
+      assignment_id: assignment.id.toString(),
+      student_id: studentId.toString(),
+      paper_urls: samplePaperUrls,
+      timestamp: Date.now(),
     });
 
     // Generate student confirmation notification
