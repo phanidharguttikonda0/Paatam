@@ -59,7 +59,7 @@ export class AssignmentService {
           const bucket = S3Service.getBucketName();
           const region = S3Service.getRegion();
           const fileUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-          const uploadUrl = `${fileUrl}?mock-presigned=true`;
+          const uploadUrl = `${fileUrl}?mock-presigned=true&X-Amz-Signature=mock_test_signature`;
           return {
             purpose: file.purpose,
             upload_url: uploadUrl,

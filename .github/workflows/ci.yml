@@ -69,4 +69,8 @@ jobs:
           DATABASE_URL: "postgresql://admin:adminpassword@localhost:5432/paatam_dev?schema=public"
           JWT_SECRET: test-jwt-secret-key-for-unit-testing
           JWT_REFRESH_SECRET: test-jwt-refresh-secret-key-unit-testing
+          AWS_REGION: ap-south-2
+          AWS_ACCESS_KEY_ID: mock-access-key-id-for-testing
+          AWS_SECRET_ACCESS_KEY: mock-secret-access-key-for-testing
+          AWS_S3_BUCKET: paatam-uploads-dev
         run: npx vitest run
