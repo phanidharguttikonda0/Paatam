@@ -128,8 +128,8 @@ resource "aws_iam_role_policy" "lambda_worker_policy" {
 resource "aws_s3_object" "lambda_bundle" {
   bucket = aws_s3_bucket.main.bucket
   key    = "lambdas/bundle.zip"
-  source = "${path.module}/bundle.zip"
-  etag   = filemd5("${path.module}/bundle.zip")
+  source = fileexists("${path.module}/bundle.zip") ? "${path.module}/bundle.zip" : null
+  etag   = fileexists("${path.module}/bundle.zip") ? filemd5("${path.module}/bundle.zip") : null
 }
 
 # ==========================================================

@@ -14,6 +14,21 @@ jobs:
     name: Lint, Typecheck, and Test
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: adminpassword
+          POSTGRES_DB: paatam_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,9 +58,15 @@ jobs:
       - name: Build & Verify Documentation
         run: npm run build:docs
 
+      - name: Run Database Migrations
+        env:
+          DATABASE_URL: "postgresql://admin:adminpassword@localhost:5432/paatam_dev?schema=public"
+        run: npx prisma migrate deploy
+
       - name: Run Test Suite
         env:
           NODE_ENV: test
+          DATABASE_URL: "postgresql://admin:adminpassword@localhost:5432/paatam_dev?schema=public"
           JWT_SECRET: test-jwt-secret-key-for-unit-testing
           JWT_REFRESH_SECRET: test-jwt-refresh-secret-key-unit-testing
         run: npx vitest run
