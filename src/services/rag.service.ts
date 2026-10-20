@@ -289,4 +289,44 @@ Output JSON schema ONLY:
 
     return embeddings.map((e) => e.content_chunk).join('\n\n');
   }
+
+  /**
+   * Performs semantic similarity search using pgvector cosine distance (<=>)
+   */
+  public static async searchSimilarChunks(
+    classSubjectId: string,
+    queryText: string,
+    topK: number = 5
+  ): Promise<Array<{ id: string; content_chunk: string; similarity: number }>> {
+    const classSubjectIdBigInt = parseBigInt(classSubjectId, 'class_subject_id');
+    const queryEmbedding = await this.generateEmbedding(queryText);
+    const vectorString = `[${queryEmbedding.join(',')}]`;
+
+    try {
+      const results: any[] = await prisma.$queryRawUnsafe(
+        `SELECT id, content_chunk, 1 - (embedding <=> $1::vector) AS similarity
+         FROM "TextbookEmbedding"
+         WHERE class_subject_id = $2 AND embedding IS NOT NULL
+         ORDER BY embedding <=> $1::vector ASC
+         LIMIT $3`,
+        vectorString,
+        classSubjectIdBigInt,
+        topK
+      );
+
+      return results.map((r) => ({
+        id: r.id.toString(),
+        content_chunk: r.content_chunk,
+        similarity: Number(r.similarity),
+      }));
+    } catch (err: any) {
+      console.warn('⚠️ [RAG PGVECTOR] Vector similarity query notice (fallback to text chunk retrieval):', err.message);
+      const fallback = await prisma.textbookEmbedding.findMany({
+        where: { class_subject_id: classSubjectIdBigInt },
+        take: topK,
+        select: { id: true, content_chunk: true },
+      });
+      return fallback.map((f) => ({ id: f.id.toString(), content_chunk: f.content_chunk, similarity: 1.0 }));
+    }
+  }
 }

@@ -1,0 +1,51 @@
+name: CI Test & Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-and-test:
+    name: Lint, Typecheck, and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript Compilation Check
+        run: npx tsc --noEmit
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Validate Terraform Configurations
+        run: |
+          terraform -chdir=terraform init -backend=false
+          terraform -chdir=terraform validate
+
+      - name: Build & Verify Documentation
+        run: npm run build:docs
+
+      - name: Run Test Suite
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-jwt-secret-key-for-unit-testing
+          JWT_REFRESH_SECRET: test-jwt-refresh-secret-key-unit-testing
+        run: npx vitest run

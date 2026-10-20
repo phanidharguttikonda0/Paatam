@@ -141,6 +141,8 @@ export async function runSweeperJob(): Promise<SweeperRunResult> {
       // Re-enqueue to Assignment Ingestion Queue
       await SqsService.dispatchAssignmentOcr({
         assignment_id: asgn.id.toString(),
+        section_id: asgn.section_id.toString(),
+        class_subject_id: asgn.class_subject_id.toString(),
         question_paper_url: asgn.question_paper_url,
         answer_key_url: asgn.answer_key_url || undefined,
         subject_name: 'General',
