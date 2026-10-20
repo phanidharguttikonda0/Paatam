@@ -10,6 +10,8 @@ public
 .terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
+*.lock.info
+*.zip
 
 # previous logic backend
 smartstudy-backend

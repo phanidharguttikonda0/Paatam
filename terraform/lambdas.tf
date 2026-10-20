@@ -123,6 +123,16 @@ resource "aws_iam_role_policy" "lambda_worker_policy" {
 }
 
 # ==========================================================
+# 2b. S3 Deployment Bundle for Lambda Workers
+# ==========================================================
+resource "aws_s3_object" "lambda_bundle" {
+  bucket = aws_s3_bucket.main.bucket
+  key    = "lambdas/bundle.zip"
+  source = "${path.module}/bundle.zip"
+  etag   = filemd5("${path.module}/bundle.zip")
+}
+
+# ==========================================================
 # 3. Lambda Functions (HLD Async Pipeline)
 # ==========================================================
 
@@ -135,7 +145,13 @@ resource "aws_lambda_function" "assignment_ocr" {
   timeout       = 900 # 15 minutes
   memory_size   = 1024
   s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = "lambdas/bundle.zip"
+  s3_key        = aws_s3_object.lambda_bundle.key
+
+  depends_on = [
+    aws_s3_object.lambda_bundle,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy.lambda_worker_policy
+  ]
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id
@@ -166,7 +182,13 @@ resource "aws_lambda_function" "bulk_split" {
   timeout       = 900
   memory_size   = 2048 # Slicing master PDFs benefits from higher RAM
   s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = "lambdas/bundle.zip"
+  s3_key        = aws_s3_object.lambda_bundle.key
+
+  depends_on = [
+    aws_s3_object.lambda_bundle,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy.lambda_worker_policy
+  ]
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id
@@ -197,7 +219,13 @@ resource "aws_lambda_function" "paper_ocr" {
   timeout       = 900
   memory_size   = 1024
   s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = "lambdas/bundle.zip"
+  s3_key        = aws_s3_object.lambda_bundle.key
+
+  depends_on = [
+    aws_s3_object.lambda_bundle,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy.lambda_worker_policy
+  ]
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id
@@ -228,7 +256,13 @@ resource "aws_lambda_function" "paper_evaluation" {
   timeout       = 900
   memory_size   = 1024
   s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = "lambdas/bundle.zip"
+  s3_key        = aws_s3_object.lambda_bundle.key
+
+  depends_on = [
+    aws_s3_object.lambda_bundle,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy.lambda_worker_policy
+  ]
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id
@@ -259,7 +293,13 @@ resource "aws_lambda_function" "sweeper" {
   timeout       = 300 # 5 minutes
   memory_size   = 512
   s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = "lambdas/bundle.zip"
+  s3_key        = aws_s3_object.lambda_bundle.key
+
+  depends_on = [
+    aws_s3_object.lambda_bundle,
+    aws_iam_role_policy_attachment.lambda_vpc_access,
+    aws_iam_role_policy.lambda_worker_policy
+  ]
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id
