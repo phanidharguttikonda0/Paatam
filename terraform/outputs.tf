@@ -49,3 +49,9 @@ output "s3_bucket_name" {
   value       = aws_s3_bucket.main.bucket
 }
 
+output "s3_vpc_endpoint_id" {
+  description = "The VPC Gateway Endpoint ID for Amazon S3"
+  value       = aws_vpc_endpoint.s3.id
+}
+
+
