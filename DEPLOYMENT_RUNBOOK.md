@@ -18,6 +18,7 @@ This document details the exact configuration steps, verification procedures, an
    - **Message Queues**: 4 Amazon SQS queues with 15-minute visibility timeouts and 4 dedicated Dead Letter Queues (DLQs) with 14-day retention.
    - **Serverless Workers**: 5 AWS Lambda functions (`assignment-ocr`, `bulk-split`, `paper-ocr`, `paper-evaluation`, `sweeper`).
    - **Self-Healing Cron**: Amazon EventBridge rule invoking `sweeper` Lambda every 15 minutes to rescue stalled submissions.
+   - **Internal VPC Endpoint**: Amazon S3 Gateway VPC Endpoint (`vpce-0f456e659ae22c06f`) eliminating NAT Gateway data transfer fees and routing all S3 traffic privately with minimal latency.
 4. **CI/CD Automation**:
    - GitHub Actions pipeline runs linting, typechecking, documentation generation, and the full 230-test Vitest test suite against an isolated PostgreSQL `pgvector` container.
    - Merges into `main` automatically trigger production Docker image builds, pushes to Amazon ECR, and zero-downtime rolling updates to ECS.
