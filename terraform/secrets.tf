@@ -7,6 +7,10 @@ resource "aws_secretsmanager_secret" "db_credentials" {
   name                    = "paatam/db/credentials-${var.environment}"
   description             = "PostgreSQL credentials for Paatam ${var.environment}"
   recovery_window_in_days = var.environment == "prod" ? 30 : 0 # 30 days protection in prod, 0 in dev
+
+  lifecycle {
+    ignore_changes = [description]
+  }
 }
 
 # This places the actual JSON payload into the secret container.
@@ -25,6 +29,10 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
     # Prisma connection URL using the RDS Proxy endpoint for connection pooling!
     DATABASE_URL         = "postgresql://${aws_db_instance.main.username}:${urlencode(random_password.db_password.result)}@${aws_db_proxy.main.endpoint}:5432/${aws_db_instance.main.db_name}?connection_limit=1"
   })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
 }
 
 # ==========================================

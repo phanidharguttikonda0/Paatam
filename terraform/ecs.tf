@@ -91,11 +91,23 @@ resource "aws_ecs_task_definition" "main" {
       { name = "NODE_ENV", value = var.environment == "prod" ? "production" : var.environment }
     ]
 
-    # This pulls the DATABASE_URL directly from AWS Secrets Manager and injects it as an environment variable!
+    # Pull secrets directly from AWS Secrets Manager and inject as container environment variables!
     secrets = [
       {
         name      = "DATABASE_URL"
         valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:DATABASE_URL::"
+      },
+      {
+        name      = "JWT_SECRET"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:JWT_SECRET::"
+      },
+      {
+        name      = "GEMINI_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:GEMINI_API_KEY::"
+      },
+      {
+        name      = "SARVAM_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:SARVAM_API_KEY::"
       }
     ]
 

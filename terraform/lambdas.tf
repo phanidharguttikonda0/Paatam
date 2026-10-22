@@ -117,6 +117,11 @@ resource "aws_iam_role_policy" "lambda_worker_policy" {
         ]
         Effect   = "Allow"
         Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Action   = ["secretsmanager:GetSecretValue"]
+        Effect   = "Allow"
+        Resource = aws_secretsmanager_secret.db_credentials.arn
       }
     ]
   })
