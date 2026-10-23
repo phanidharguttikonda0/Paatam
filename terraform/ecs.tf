@@ -108,10 +108,35 @@ resource "aws_ecs_task_definition" "main" {
       {
         name      = "SARVAM_API_KEY"
         valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:SARVAM_API_KEY::"
+      },
+      {
+        name      = "PRIMARY_AI_PROVIDER"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:PRIMARY_AI_PROVIDER::"
+      },
+      {
+        name      = "GEMINI_MODEL"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:GEMINI_MODEL::"
+      },
+      {
+        name      = "SARVAM_CHAT_MODEL"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:SARVAM_CHAT_MODEL::"
+      },
+      {
+        name      = "EVOLUTION_API_URL"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:EVOLUTION_API_URL::"
+      },
+      {
+        name      = "EVOLUTION_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:EVOLUTION_API_KEY::"
+      },
+      {
+        name      = "EVOLUTION_INSTANCE_NAME"
+        valueFrom = "${aws_secretsmanager_secret.db_credentials.arn}:EVOLUTION_INSTANCE_NAME::"
       }
     ]
 
     logConfiguration = {
+
       logDriver = "awslogs"
       options = {
         "awslogs-group"         = aws_cloudwatch_log_group.ecs.name

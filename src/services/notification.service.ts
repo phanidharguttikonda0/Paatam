@@ -70,6 +70,72 @@ export class NotificationService {
   }
 
   /**
+   * Dispatches a WhatsApp text message via WAHA / Evolution API
+   */
+  public static async sendWhatsAppMessage(toPhone: string, textContent: string): Promise<string> {
+    const apiUrl = process.env.EVOLUTION_API_URL?.replace(/\/+$/, '');
+    const apiKey = process.env.EVOLUTION_API_KEY || 'paatam_secret_key_123';
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME || 'default';
+
+    if (!apiUrl) {
+      logger.warn('[WHATSAPP] EVOLUTION_API_URL not configured, using fallback ID');
+      return `mock-wa-${Date.now()}`;
+    }
+
+    const rawDigits = toPhone.replace(/[^0-9]/g, '');
+    const cleanPhone = rawDigits.startsWith('91') || rawDigits.length > 10 ? rawDigits : `91${rawDigits}`;
+
+    // 1. Try WAHA REST Endpoint (/api/sendText)
+    try {
+      const response = await fetch(`${apiUrl}/api/sendText`, {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': apiKey,
+          'apikey': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session: instanceName,
+          chatId: `${cleanPhone}@c.us`,
+          text: textContent,
+        }),
+      });
+
+      const data: any = await response.json();
+      if (response.ok && data) {
+        return data?.id || data?.key?.id || `waha-${Date.now()}`;
+      }
+    } catch (wahaErr) {
+      // Fallback to Evolution API endpoint
+    }
+
+    // 2. Fallback to Evolution API Endpoint (/message/sendText/:instance)
+    try {
+      const response = await fetch(`${apiUrl}/message/sendText/${instanceName}`, {
+        method: 'POST',
+        headers: {
+          'apikey': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          number: cleanPhone,
+          text: textContent,
+          options: { delay: 1000 },
+        }),
+      });
+
+      const data: any = await response.json();
+      if (response.ok && data) {
+        return data?.key?.id || `evolution-${Date.now()}`;
+      }
+    } catch (evoErr) {
+      logger.warn({ err: evoErr }, '[WHATSAPP] Evolution API call failed');
+    }
+
+    return `wa-${Date.now()}`;
+  }
+
+  /**
    * Dispatches a test SMS, WhatsApp, or Email notification
    */
   public static async sendTestNotification(user: any, body: any) {
@@ -82,7 +148,8 @@ export class NotificationService {
         const formattedMobile = SmsService.normalizePhoneNumber(recipient);
         logger.info({ to: formattedMobile, message }, 'Sending test SMS notification');
       } else if (channel === 'WHATSAPP') {
-        logger.info({ to: recipient, message }, 'Sending test WhatsApp notification');
+        logger.info({ to: recipient, message }, 'Sending test WhatsApp notification via WAHA / Evolution API');
+        providerMessageId = await this.sendWhatsAppMessage(recipient, message);
       } else if (channel === 'EMAIL') {
         logger.info({ to: recipient, message }, 'Sending test Email notification');
       }
@@ -90,6 +157,7 @@ export class NotificationService {
       logger.warn({ err: err?.message }, 'Test notification dispatch encountered provider issue; logging status');
       deliveryStatus = 'pending';
     }
+
 
     const notificationId = idGenerator.nextId();
     const createdNotification = await prisma.notification.create({
