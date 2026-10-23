@@ -110,4 +110,60 @@ export class SubmissionController {
       next(error);
     }
   }
+
+  /**
+   * GET /api/submissions
+   */
+  public static async listAllSubmissions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const result = await SubmissionService.listAllSubmissions(user, req.query as any);
+
+      res.status(200).json({
+        status: 'success',
+        data: result.data,
+        meta: result.meta,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/submissions
+   */
+  public static async createSingleSubmission(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const result = await SubmissionService.createSingleSubmission(user, req.body);
+
+      res.status(201).json({
+        status: 'success',
+        message: 'Submission created and queued for AI evaluation',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * DELETE /api/submissions/:id
+   */
+  public static async deleteSubmission(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const submissionId = req.params.id as string;
+      const result = await SubmissionService.deleteSubmission(user, submissionId);
+
+      res.status(200).json({
+        status: 'success',
+        message: result.message,
+        data: { id: result.id },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+

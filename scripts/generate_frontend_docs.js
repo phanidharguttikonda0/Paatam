@@ -3386,8 +3386,323 @@ const apiCatalog = [
         { code: 404, status: 'Not Found', desc: 'ClassSubject not found.', body: { status: 'error', message: 'ClassSubject not found' } }
       ]
     }
+  },
+  {
+    id: 'submissions-list-global',
+    title: 'Global Review Queue & Submissions Feed',
+    method: 'GET',
+    url: '/api/submissions',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'Grading & Review',
+    description: 'Fetches a branch-wide or teacher-assigned list of all student submissions for the evaluation review queue. Supports filtering by status, assignment_id, class_id, section_id, and cursor pagination.',
+    frontendNotes: 'Used in Overview.tsx, ReviewQueue.tsx, and Dashboard.tsx to display all pending or completed submissions across all assignments in one central table.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [
+      { key: 'assignment_id', type: 'string', required: false, desc: 'Filter by specific assignment' },
+      { key: 'status', type: 'string', required: false, desc: 'Filter by status (e.g. submitted, pending_review, graded, approved)' },
+      { key: 'class_id', type: 'string', required: false, desc: 'Filter by class' },
+      { key: 'section_id', type: 'string', required: false, desc: 'Filter by section' },
+      { key: 'cursor', type: 'string', required: false, desc: 'Pagination cursor ID' },
+      { key: 'limit', type: 'number', required: false, desc: 'Items per page (max 10, default 10)' }
+    ],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Submissions list with pagination metadata.',
+        body: {
+          status: 'success',
+          data: [
+            {
+              id: '3233756592734400',
+              assignment_id: '1001',
+              assignment_title: 'Mid-Term Mathematics Exam',
+              subject_name: 'Mathematics',
+              student_id: '2001',
+              student_name: 'Aryabhata',
+              roll_no: '101',
+              admission_no: 'ADM-2026-001',
+              class_name: 'Grade 10',
+              section_name: 'A',
+              score: 36,
+              max_score: 40,
+              status: 'graded',
+              evaluation_status: 'completed',
+              submitted_at: '2026-10-23T12:00:00.000Z',
+              sample_paper_url: 'https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf'
+            }
+          ],
+          meta: { nextCursor: '3233756592734400', hasNextPage: false }
+        }
+      },
+      errors: [
+        { code: 401, status: 'Unauthorized', desc: 'Missing or invalid token.', body: { message: 'Unauthorized: Missing or invalid token' } },
+        { code: 403, status: 'Forbidden', desc: 'Insufficient role permissions.', body: { message: 'Forbidden: Insufficient permissions' } }
+      ]
+    }
+  },
+  {
+    id: 'submissions-create-single',
+    title: 'Direct Single-Script Upload & Evaluation Queue',
+    method: 'POST',
+    url: '/api/submissions',
+    roles: ['TEACHER', 'BRANCH_ADMIN'],
+    category: 'Grading & Review',
+    description: 'Allows a teacher to directly upload an individual student handwritten paper or single scanned script, and immediately enqueue it for automated OCR extraction and AI evaluation.',
+    frontendNotes: 'Used in ScanGrade.tsx and Dashboard.tsx when teachers scan a physical exam paper on a smartphone camera or desktop scanner.',
+    headers: [
+      { key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' },
+      { key: 'Content-Type', value: 'application/json', required: true, desc: 'JSON payload' }
+    ],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      assignment_id: '1001',
+      student_id: '2001',
+      sample_paper_url: 'https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf',
+      submission_mode: 'HANDWRITTEN'
+    },
+    responses: {
+      success: {
+        code: 201,
+        status: 'Created',
+        desc: 'Single submission created and dispatched to SQS AI evaluation pipeline.',
+        body: {
+          status: 'success',
+          message: 'Submission created and queued for AI evaluation',
+          data: {
+            submission_id: '3233756592734400',
+            assignment_id: '1001',
+            student_id: '2001',
+            status: 'submitted',
+            evaluation_status: 'pending_ocr',
+            sample_paper_url: 'https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf',
+            submitted_at: '2026-10-23T12:00:00.000Z'
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Student does not belong to assignment section or URL missing.', body: { status: 'error', message: 'Student does not belong to this assignment section' } },
+        { code: 404, status: 'Not Found', desc: 'Assignment or student not found.', body: { status: 'error', message: 'Assignment not found' } }
+      ]
+    }
+  },
+  {
+    id: 'submissions-delete-single',
+    title: 'Delete Single Student Submission',
+    method: 'DELETE',
+    url: '/api/submissions/:id',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'Grading & Review',
+    description: 'Deletes an individual student submission from the review queue (e.g. if blurry, corrupt, or re-scanned) without deleting the entire assignment or affecting other classmates.',
+    frontendNotes: 'Call this from PaperDetail.tsx or ReviewQueue.tsx when a teacher clicks "Delete & Re-scan Paper".',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [{ key: 'id', type: 'string', required: true, desc: 'Submission ID to delete' }],
+    queryParams: [],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Submission purged successfully.',
+        body: {
+          status: 'success',
+          message: 'Submission deleted successfully',
+          data: { id: '3233756592734400' }
+        }
+      },
+      errors: [
+        { code: 404, status: 'Not Found', desc: 'Submission not found.', body: { status: 'error', message: 'Submission not found' } }
+      ]
+    }
+  },
+  {
+    id: 'analytics-overview',
+    title: 'Branch & Class Academic Performance Overview',
+    method: 'GET',
+    url: '/api/analytics/overview',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'Analytics & Reporting',
+    description: 'Supplies aggregated KPIs, average percentages, pass percentages, letter grade distributions (A, B, C, D, F), score buckets, and subject breakdown for the Analytics dashboard.',
+    frontendNotes: 'Powers the charts, bell curves, and KPI summary tiles on Analytics.tsx.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [
+      { key: 'class_id', type: 'string', required: false, desc: 'Filter by Class ID' },
+      { key: 'section_id', type: 'string', required: false, desc: 'Filter by Section ID' },
+      { key: 'subject_id', type: 'string', required: false, desc: 'Filter by Subject ID' },
+      { key: 'assignment_id', type: 'string', required: false, desc: 'Filter by Assignment ID' }
+    ],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Aggregated analytics metrics.',
+        body: {
+          status: 'success',
+          data: {
+            total_assignments: 12,
+            total_submissions: 340,
+            evaluated_submissions: 325,
+            unique_students_evaluated: 28,
+            average_score_percentage: 76.4,
+            pass_percentage: 92.3,
+            grade_distribution: { A: 120, B: 95, C: 60, D: 25, F: 25 },
+            score_distribution: { '0-20%': 10, '21-40%': 25, '41-60%': 60, '61-80%': 110, '81-100%': 120 },
+            subject_performance: [
+              { subject_name: 'Mathematics', average_score: 78.2, total_evaluations: 160 },
+              { subject_name: 'Physics', average_score: 74.5, total_evaluations: 165 }
+            ]
+          }
+        }
+      },
+      errors: [
+        { code: 401, status: 'Unauthorized', desc: 'Missing or invalid token.', body: { message: 'Unauthorized' } }
+      ]
+    }
+  },
+  {
+    id: 'analytics-students',
+    title: 'Student Roster Performance & Grade Rankings',
+    method: 'GET',
+    url: '/api/analytics/students',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'Analytics & Reporting',
+    description: 'Returns student-by-student academic performance metrics including average percentage scores, overall letter grades, and highest/lowest test marks with cursor pagination.',
+    frontendNotes: 'Powers the student rank list and performance table on Analytics.tsx.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [
+      { key: 'class_id', type: 'string', required: false, desc: 'Filter by Class ID' },
+      { key: 'section_id', type: 'string', required: false, desc: 'Filter by Section ID' },
+      { key: 'cursor', type: 'string', required: false, desc: 'Cursor ID for pagination' },
+      { key: 'limit', type: 'number', required: false, desc: 'Page size (default 10, max 50)' }
+    ],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Student analytics list with cursor pagination.',
+        body: {
+          status: 'success',
+          data: [
+            {
+              id: '2001',
+              name: 'Aryabhata',
+              roll_no: '101',
+              admission_no: 'ADM-2026-001',
+              class_name: 'Grade 10',
+              section_name: 'A',
+              total_submissions: 5,
+              evaluated_submissions: 5,
+              average_score: 90,
+              grade: 'A',
+              highest_score: 95,
+              lowest_score: 85
+            }
+          ],
+          meta: { nextCursor: '2001', hasNextPage: false }
+        }
+      },
+      errors: []
+    }
+  },
+  {
+    id: 'notifications-list',
+    title: 'System & Parent Notification Delivery Feed',
+    method: 'GET',
+    url: '/api/notifications',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN', 'STUDENT'],
+    category: 'Notifications & Alerts',
+    description: 'Lists system notifications, parent SMS/WhatsApp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed).',
+    frontendNotes: 'Used in ParentPortal.tsx to view WhatsApp and SMS delivery logs sent to student guardians.',
+    headers: [{ key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' }],
+    urlParams: [],
+    queryParams: [
+      { key: 'type', type: 'string', required: false, desc: 'Filter by notification type' },
+      { key: 'delivery_status', type: 'string', required: false, desc: 'Filter by delivery status' },
+      { key: 'cursor', type: 'string', required: false, desc: 'Pagination cursor ID' },
+      { key: 'limit', type: 'number', required: false, desc: 'Limit per page' }
+    ],
+    requestBody: null,
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Notification logs feed.',
+        body: {
+          status: 'success',
+          data: [
+            {
+              id: '5001',
+              type: 'SMS_TEST',
+              title: 'Test SMS to PARENT',
+              message: 'Your child Aryabhata scored 36/40 in Mathematics.',
+              delivery_status: 'delivered',
+              provider_message_id: 'SM1234567890',
+              submission_id: null,
+              timestamp: '2026-10-23T12:00:00.000Z',
+              details: { channel: 'SMS', recipient: '+919888999888', recipient_type: 'PARENT' }
+            }
+          ],
+          meta: { nextCursor: '5001', hasNextPage: false }
+        }
+      },
+      errors: []
+    }
+  },
+  {
+    id: 'notifications-test',
+    title: 'Trigger Test SMS, WhatsApp or Email Alert',
+    method: 'POST',
+    url: '/api/notifications/test',
+    roles: ['TEACHER', 'BRANCH_ADMIN', 'CORPORATE_ADMIN'],
+    category: 'Notifications & Alerts',
+    description: 'Dispatches a test notification via SMS, WhatsApp, or Email to verify parent communication channels, Twilio/SES configurations, and gateway delivery status.',
+    frontendNotes: 'Used in ParentPortal.tsx when an administrator or teacher clicks "Send Test Alert".',
+    headers: [
+      { key: 'Authorization', value: 'Bearer <token>', required: true, desc: 'Bearer JWT token' },
+      { key: 'Content-Type', value: 'application/json', required: true, desc: 'JSON payload' }
+    ],
+    urlParams: [],
+    queryParams: [],
+    requestBody: {
+      channel: 'SMS',
+      recipient: '+919888999888',
+      message: 'Paatam test SMS alert: Parent communication gateway active.',
+      recipient_type: 'PARENT'
+    },
+    responses: {
+      success: {
+        code: 200,
+        status: 'OK',
+        desc: 'Test notification dispatched and logged.',
+        body: {
+          status: 'success',
+          message: 'Test notification dispatched successfully',
+          data: {
+            id: '5001',
+            channel: 'SMS',
+            recipient: '+919888999888',
+            recipient_type: 'PARENT',
+            message: 'Paatam test SMS alert: Parent communication gateway active.',
+            delivery_status: 'delivered',
+            provider_message_id: 'SM1234567890',
+            timestamp: '2026-10-23T12:00:00.000Z'
+          }
+        }
+      },
+      errors: [
+        { code: 400, status: 'Bad Request', desc: 'Invalid channel or missing recipient.', body: { status: 'error', message: 'Recipient phone or email is required' } }
+      ]
+    }
   }
 ];
+
 
 // Helper to escape HTML characters
 function escapeHtml(str) {

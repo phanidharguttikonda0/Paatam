@@ -3487,5 +3487,271 @@ Lists syllabus topics and weightage distribution for a class subject.
   }
   ```
 
+---
+
+## 16. Submissions Review Queue & Single Direct Upload
+
+### `GET /api/submissions`
+Fetches a global review queue of all student submissions across assignments, classes, or branches with cursor pagination.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Query Parameters:**
+  - `assignment_id` (string, optional): Filter by assignment
+  - `student_id` (string, optional): Filter by student
+  - `status` (string, optional): Filter by status (`submitted`, `pending_review`, `graded`, `approved`)
+  - `class_id` (string, optional): Filter by class
+  - `section_id` (string, optional): Filter by section
+  - `cursor` (string, optional): Pagination cursor
+  - `limit` (number, optional): Items per page (default: 10, max: 10)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "3233756592734400",
+        "assignment_id": "1001",
+        "assignment_title": "Mid-Term Mathematics Exam",
+        "subject_name": "Mathematics",
+        "student_id": "2001",
+        "student_name": "Aryabhata",
+        "roll_no": "101",
+        "admission_no": "ADM-2026-001",
+        "class_name": "Grade 10",
+        "section_name": "A",
+        "score": 36,
+        "max_score": 40,
+        "status": "graded",
+        "evaluation_status": "completed",
+        "submitted_at": "2026-10-23T12:00:00.000Z",
+        "sample_paper_url": "https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf"
+      }
+    ],
+    "meta": {
+      "nextCursor": "3233756592734400",
+      "hasNextPage": false
+    }
+  }
+  ```
+
+---
+
+### `POST /api/submissions`
+Direct single-script upload by teacher via JSON (with pre-signed or S3 paper URL). Queues the paper immediately into the SQS AI evaluation pipeline.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "assignment_id": "1001",
+    "student_id": "2001",
+    "sample_paper_url": "https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf",
+    "submission_mode": "HANDWRITTEN"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Submission created and queued for AI evaluation",
+    "data": {
+      "submission_id": "3233756592734400",
+      "assignment_id": "1001",
+      "student_id": "2001",
+      "status": "submitted",
+      "evaluation_status": "pending_ocr",
+      "sample_paper_url": "https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf",
+      "submitted_at": "2026-10-23T12:00:00.000Z"
+    }
+  }
+  ```
+
+---
+
+### `DELETE /api/submissions/:id`
+Deletes a single student's submission from the review queue (e.g. if corrupt, illegible, or needs re-scanning) without deleting the entire exam or other students' papers.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Params:** `id` (string, required): Submission ID
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Submission deleted successfully",
+    "data": {
+      "id": "3233756592734400"
+    }
+  }
+  ```
+
+---
+
+## 17. Academic Performance & Analytics
+
+### `GET /api/analytics/overview`
+Returns high-level academic KPIs, pass rates, grade distributions (A, B, C, D, F), score buckets, and subject breakdown.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Query Parameters:**
+  - `class_id` (string, optional)
+  - `section_id` (string, optional)
+  - `subject_id` (string, optional)
+  - `assignment_id` (string, optional)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "total_assignments": 12,
+      "total_submissions": 340,
+      "evaluated_submissions": 325,
+      "unique_students_evaluated": 28,
+      "average_score_percentage": 76.4,
+      "pass_percentage": 92.3,
+      "grade_distribution": {
+        "A": 120,
+        "B": 95,
+        "C": 60,
+        "D": 25,
+        "F": 25
+      },
+      "score_distribution": {
+        "0-20%": 10,
+        "21-40%": 25,
+        "41-60%": 60,
+        "61-80%": 110,
+        "81-100%": 120
+      },
+      "subject_performance": [
+        {
+          "subject_name": "Mathematics",
+          "average_score": 78.2,
+          "total_evaluations": 160
+        }
+      ]
+    }
+  }
+  ```
+
+---
+
+### `GET /api/analytics/students`
+Supplies individual student performance rankings, average scores, and overall letter grades with cursor pagination.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Query Parameters:**
+  - `class_id` (string, optional)
+  - `section_id` (string, optional)
+  - `cursor` (string, optional)
+  - `limit` (number, optional, max: 50, default: 10)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "2001",
+        "name": "Aryabhata",
+        "roll_no": "101",
+        "admission_no": "ADM-2026-001",
+        "class_name": "Grade 10",
+        "section_name": "A",
+        "total_submissions": 5,
+        "evaluated_submissions": 5,
+        "average_score": 90,
+        "grade": "A",
+        "highest_score": 95,
+        "lowest_score": 85
+      }
+    ],
+    "meta": {
+      "nextCursor": "2001",
+      "hasNextPage": false
+    }
+  }
+  ```
+
+---
+
+## 18. Notifications & Alerts
+
+### `GET /api/notifications`
+Fetches system notification logs and parent SMS/WhatsApp delivery receipts with cursor pagination.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`, `STUDENT`
+- **Query Parameters:**
+  - `type` (string, optional)
+  - `delivery_status` (string, optional: `delivered`, `sent`, `pending`, `failed`)
+  - `cursor` (string, optional)
+  - `limit` (number, optional)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "5001",
+        "type": "SMS_TEST",
+        "title": "Test SMS to PARENT",
+        "message": "Your child Aryabhata scored 36/40 in Mathematics.",
+        "delivery_status": "delivered",
+        "provider_message_id": "SM1234567890",
+        "submission_id": null,
+        "timestamp": "2026-10-23T12:00:00.000Z",
+        "details": {
+          "channel": "SMS",
+          "recipient": "+919888999888",
+          "recipient_type": "PARENT"
+        }
+      }
+    ],
+    "meta": {
+      "nextCursor": "5001",
+      "hasNextPage": false
+    }
+  }
+  ```
+
+---
+
+### `POST /api/notifications/test`
+Triggers a live test SMS, WhatsApp, or Email notification to verify parent alert dispatch.
+
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **Request Body:**
+  ```json
+  {
+    "channel": "SMS",
+    "recipient": "+919888999888",
+    "message": "Paatam test SMS alert: Parent communication gateway active.",
+    "recipient_type": "PARENT"
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Test notification dispatched successfully",
+    "data": {
+      "id": "5001",
+      "channel": "SMS",
+      "recipient": "+919888999888",
+      "recipient_type": "PARENT",
+      "message": "Paatam test SMS alert: Parent communication gateway active.",
+      "delivery_status": "delivered",
+      "provider_message_id": "SM1234567890",
+      "timestamp": "2026-10-23T12:00:00.000Z"
+    }
+  }
+  ```
+
+
 
 

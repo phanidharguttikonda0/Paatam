@@ -759,7 +759,7 @@
       </div>
       <div class="stats-ribbon">
         <div class="stat-pill">
-          <div class="stat-val">96</div>
+          <div class="stat-val">103</div>
           <div class="stat-lbl">Active APIs</div>
         </div>
         <div class="stat-pill">
@@ -2465,7 +2465,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #A855F7;">39</span>
+              <span class="role-count-num" style="color: #A855F7;">45</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -6763,7 +6763,7 @@
         <div class="category-group" data-category="Grading &amp; Review">
           <div class="category-header">
             <span class="category-title">Grading &amp; Review</span>
-            <span class="category-count">2 APIs</span>
+            <span class="category-count">4 APIs</span>
           </div>
           
     <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/assignments/:id/submissions list student submissions for assignment lists all student answer sheet submissions for a specific test paper, showing submission time, score, and review status. grading &amp; review teacher branch_admin corporate_admin">
@@ -7092,6 +7092,318 @@
         &quot;verdict&quot;: &quot;partial&quot;
       }
     ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Submission not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Submission not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Submission not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/submissions global review queue &amp; submissions feed fetches a branch-wide or teacher-assigned list of all student submissions for the evaluation review queue. supports filtering by status, assignment_id, class_id, section_id, and cursor pagination. grading &amp; review teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/submissions</span>
+          <span class="api-title">• Global Review Queue &amp; Submissions Feed</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Fetches a branch-wide or teacher-assigned list of all student submissions for the evaluation review queue. Supports filtering by status, assignment_id, class_id, section_id, and cursor pagination.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in Overview.tsx, ReviewQueue.tsx, and Dashboard.tsx to display all pending or completed submissions across all assignments in one central table.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?assignment_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by specific assignment</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?status</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by status (e.g. submitted, pending_review, graded, approved)</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by class</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by section</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Pagination cursor ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Items per page (max 10, default 10)</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Submissions list with pagination metadata.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;3233756592734400&quot;,
+      &quot;assignment_id&quot;: &quot;1001&quot;,
+      &quot;assignment_title&quot;: &quot;Mid-Term Mathematics Exam&quot;,
+      &quot;subject_name&quot;: &quot;Mathematics&quot;,
+      &quot;student_id&quot;: &quot;2001&quot;,
+      &quot;student_name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;score&quot;: 36,
+      &quot;max_score&quot;: 40,
+      &quot;status&quot;: &quot;graded&quot;,
+      &quot;evaluation_status&quot;: &quot;completed&quot;,
+      &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf&quot;
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;3233756592734400&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;3233756592734400&quot;,
+      &quot;assignment_id&quot;: &quot;1001&quot;,
+      &quot;assignment_title&quot;: &quot;Mid-Term Mathematics Exam&quot;,
+      &quot;subject_name&quot;: &quot;Mathematics&quot;,
+      &quot;student_id&quot;: &quot;2001&quot;,
+      &quot;student_name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;score&quot;: 36,
+      &quot;max_score&quot;: 40,
+      &quot;status&quot;: &quot;graded&quot;,
+      &quot;evaluation_status&quot;: &quot;completed&quot;,
+      &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf&quot;
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;3233756592734400&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Unauthorized: Missing or invalid token&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Unauthorized: Missing or invalid token&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Insufficient role permissions.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Forbidden: Insufficient permissions&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Forbidden: Insufficient permissions&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="delete /api/submissions/:id delete single student submission deletes an individual student submission from the review queue (e.g. if blurry, corrupt, or re-scanned) without deleting the entire assignment or affecting other classmates. grading &amp; review teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-DELETE">DELETE</span>
+          <span class="api-endpoint-url">/api/submissions/:id</span>
+          <span class="api-title">• Delete Single Student Submission</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Deletes an individual student submission from the review queue (e.g. if blurry, corrupt, or re-scanned) without deleting the entire assignment or affecting other classmates.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Call this from PaperDetail.tsx or ReviewQueue.tsx when a teacher clicks &quot;Delete &amp; Re-scan Paper&quot;.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">URL Path Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">:id</td>
+              <td class="param-type">string</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Submission ID to delete</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Submission purged successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission deleted successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3233756592734400&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission deleted successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3233756592734400&quot;
   }
 }</code></pre>
         </div>
@@ -7655,6 +7967,654 @@
   
         </div>
       
+
+        <div class="category-group" data-category="Analytics &amp; Reporting">
+          <div class="category-header">
+            <span class="category-title">Analytics &amp; Reporting</span>
+            <span class="category-count">2 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/analytics/overview branch &amp; class academic performance overview supplies aggregated kpis, average percentages, pass percentages, letter grade distributions (a, b, c, d, f), score buckets, and subject breakdown for the analytics dashboard. analytics &amp; reporting teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/analytics/overview</span>
+          <span class="api-title">• Branch &amp; Class Academic Performance Overview</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Supplies aggregated KPIs, average percentages, pass percentages, letter grade distributions (A, B, C, D, F), score buckets, and subject breakdown for the Analytics dashboard.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Powers the charts, bell curves, and KPI summary tiles on Analytics.tsx.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Class ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Section ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Subject ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?assignment_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Assignment ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Aggregated analytics metrics.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: {
+    &quot;total_assignments&quot;: 12,
+    &quot;total_submissions&quot;: 340,
+    &quot;evaluated_submissions&quot;: 325,
+    &quot;unique_students_evaluated&quot;: 28,
+    &quot;average_score_percentage&quot;: 76.4,
+    &quot;pass_percentage&quot;: 92.3,
+    &quot;grade_distribution&quot;: {
+      &quot;A&quot;: 120,
+      &quot;B&quot;: 95,
+      &quot;C&quot;: 60,
+      &quot;D&quot;: 25,
+      &quot;F&quot;: 25
+    },
+    &quot;score_distribution&quot;: {
+      &quot;0-20%&quot;: 10,
+      &quot;21-40%&quot;: 25,
+      &quot;41-60%&quot;: 60,
+      &quot;61-80%&quot;: 110,
+      &quot;81-100%&quot;: 120
+    },
+    &quot;subject_performance&quot;: [
+      {
+        &quot;subject_name&quot;: &quot;Mathematics&quot;,
+        &quot;average_score&quot;: 78.2,
+        &quot;total_evaluations&quot;: 160
+      },
+      {
+        &quot;subject_name&quot;: &quot;Physics&quot;,
+        &quot;average_score&quot;: 74.5,
+        &quot;total_evaluations&quot;: 165
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: {
+    &quot;total_assignments&quot;: 12,
+    &quot;total_submissions&quot;: 340,
+    &quot;evaluated_submissions&quot;: 325,
+    &quot;unique_students_evaluated&quot;: 28,
+    &quot;average_score_percentage&quot;: 76.4,
+    &quot;pass_percentage&quot;: 92.3,
+    &quot;grade_distribution&quot;: {
+      &quot;A&quot;: 120,
+      &quot;B&quot;: 95,
+      &quot;C&quot;: 60,
+      &quot;D&quot;: 25,
+      &quot;F&quot;: 25
+    },
+    &quot;score_distribution&quot;: {
+      &quot;0-20%&quot;: 10,
+      &quot;21-40%&quot;: 25,
+      &quot;41-60%&quot;: 60,
+      &quot;61-80%&quot;: 110,
+      &quot;81-100%&quot;: 120
+    },
+    &quot;subject_performance&quot;: [
+      {
+        &quot;subject_name&quot;: &quot;Mathematics&quot;,
+        &quot;average_score&quot;: 78.2,
+        &quot;total_evaluations&quot;: 160
+      },
+      {
+        &quot;subject_name&quot;: &quot;Physics&quot;,
+        &quot;average_score&quot;: 74.5,
+        &quot;total_evaluations&quot;: 165
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/analytics/students student roster performance &amp; grade rankings returns student-by-student academic performance metrics including average percentage scores, overall letter grades, and highest/lowest test marks with cursor pagination. analytics &amp; reporting teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/analytics/students</span>
+          <span class="api-title">• Student Roster Performance &amp; Grade Rankings</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Returns student-by-student academic performance metrics including average percentage scores, overall letter grades, and highest/lowest test marks with cursor pagination.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Powers the student rank list and performance table on Analytics.tsx.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Class ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Section ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Cursor ID for pagination</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Page size (default 10, max 50)</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Student analytics list with cursor pagination.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;2001&quot;,
+      &quot;name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;total_submissions&quot;: 5,
+      &quot;evaluated_submissions&quot;: 5,
+      &quot;average_score&quot;: 90,
+      &quot;grade&quot;: &quot;A&quot;,
+      &quot;highest_score&quot;: 95,
+      &quot;lowest_score&quot;: 85
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;2001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;2001&quot;,
+      &quot;name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;total_submissions&quot;: 5,
+      &quot;evaluated_submissions&quot;: 5,
+      &quot;average_score&quot;: 90,
+      &quot;grade&quot;: &quot;A&quot;,
+      &quot;highest_score&quot;: 95,
+      &quot;lowest_score&quot;: 85
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;2001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
+
+        <div class="category-group" data-category="Notifications &amp; Alerts">
+          <div class="category-header">
+            <span class="category-title">Notifications &amp; Alerts</span>
+            <span class="category-count">2 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN STUDENT" data-search="get /api/notifications system &amp; parent notification delivery feed lists system notifications, parent sms/whatsapp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed). notifications &amp; alerts teacher branch_admin corporate_admin student">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/notifications</span>
+          <span class="api-title">• System &amp; Parent Notification Delivery Feed</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span> <span class="badge-role role-STUDENT">STUDENT</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Lists system notifications, parent SMS/WhatsApp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed).</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ParentPortal.tsx to view WhatsApp and SMS delivery logs sent to student guardians.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?type</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by notification type</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?delivery_status</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by delivery status</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Pagination cursor ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Limit per page</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Notification logs feed.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/notifications/test trigger test sms, whatsapp or email alert dispatches a test notification via sms, whatsapp, or email to verify parent communication channels, twilio/ses configurations, and gateway delivery status. notifications &amp; alerts teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/notifications/test</span>
+          <span class="api-title">• Trigger Test SMS, WhatsApp or Email Alert</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Dispatches a test notification via SMS, WhatsApp, or Email to verify parent communication channels, Twilio/SES configurations, and gateway delivery status.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ParentPortal.tsx when an administrator or teacher clicks &quot;Send Test Alert&quot;.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;channel&quot;: &quot;SMS&quot;,
+  &quot;recipient&quot;: &quot;+919888999888&quot;,
+  &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+  &quot;recipient_type&quot;: &quot;PARENT&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;channel&quot;: &quot;SMS&quot;,
+  &quot;recipient&quot;: &quot;+919888999888&quot;,
+  &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+  &quot;recipient_type&quot;: &quot;PARENT&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Test notification dispatched and logged.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Test notification dispatched successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;5001&quot;,
+    &quot;channel&quot;: &quot;SMS&quot;,
+    &quot;recipient&quot;: &quot;+919888999888&quot;,
+    &quot;recipient_type&quot;: &quot;PARENT&quot;,
+    &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+    &quot;delivery_status&quot;: &quot;delivered&quot;,
+    &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+    &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Test notification dispatched successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;5001&quot;,
+    &quot;channel&quot;: &quot;SMS&quot;,
+    &quot;recipient&quot;: &quot;+919888999888&quot;,
+    &quot;recipient_type&quot;: &quot;PARENT&quot;,
+    &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+    &quot;delivery_status&quot;: &quot;delivered&quot;,
+    &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+    &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid channel or missing recipient.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Recipient phone or email is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Recipient phone or email is required&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
       </section>
     
 
@@ -7670,7 +8630,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #06B6D4;">68</span>
+              <span class="role-count-num" style="color: #06B6D4;">75</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -14563,7 +15523,7 @@
         <div class="category-group" data-category="Grading &amp; Review">
           <div class="category-header">
             <span class="category-title">Grading &amp; Review</span>
-            <span class="category-count">6 APIs</span>
+            <span class="category-count">9 APIs</span>
           </div>
           
     <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/assignments/:id/submissions list student submissions for assignment lists all student answer sheet submissions for a specific test paper, showing submission time, score, and review status. grading &amp; review teacher branch_admin corporate_admin">
@@ -15469,6 +16429,467 @@
             <pre><code>{
   &quot;status&quot;: &quot;error&quot;,
   &quot;message&quot;: &quot;Batch job not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/submissions global review queue &amp; submissions feed fetches a branch-wide or teacher-assigned list of all student submissions for the evaluation review queue. supports filtering by status, assignment_id, class_id, section_id, and cursor pagination. grading &amp; review teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/submissions</span>
+          <span class="api-title">• Global Review Queue &amp; Submissions Feed</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Fetches a branch-wide or teacher-assigned list of all student submissions for the evaluation review queue. Supports filtering by status, assignment_id, class_id, section_id, and cursor pagination.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in Overview.tsx, ReviewQueue.tsx, and Dashboard.tsx to display all pending or completed submissions across all assignments in one central table.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?assignment_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by specific assignment</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?status</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by status (e.g. submitted, pending_review, graded, approved)</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by class</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by section</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Pagination cursor ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Items per page (max 10, default 10)</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Submissions list with pagination metadata.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;3233756592734400&quot;,
+      &quot;assignment_id&quot;: &quot;1001&quot;,
+      &quot;assignment_title&quot;: &quot;Mid-Term Mathematics Exam&quot;,
+      &quot;subject_name&quot;: &quot;Mathematics&quot;,
+      &quot;student_id&quot;: &quot;2001&quot;,
+      &quot;student_name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;score&quot;: 36,
+      &quot;max_score&quot;: 40,
+      &quot;status&quot;: &quot;graded&quot;,
+      &quot;evaluation_status&quot;: &quot;completed&quot;,
+      &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf&quot;
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;3233756592734400&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;3233756592734400&quot;,
+      &quot;assignment_id&quot;: &quot;1001&quot;,
+      &quot;assignment_title&quot;: &quot;Mid-Term Mathematics Exam&quot;,
+      &quot;subject_name&quot;: &quot;Mathematics&quot;,
+      &quot;student_id&quot;: &quot;2001&quot;,
+      &quot;student_name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;score&quot;: 36,
+      &quot;max_score&quot;: 40,
+      &quot;status&quot;: &quot;graded&quot;,
+      &quot;evaluation_status&quot;: &quot;completed&quot;,
+      &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf&quot;
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;3233756592734400&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Unauthorized: Missing or invalid token&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Unauthorized: Missing or invalid token&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Insufficient role permissions.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Forbidden: Insufficient permissions&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Forbidden: Insufficient permissions&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/submissions direct single-script upload &amp; evaluation queue allows a teacher to directly upload an individual student handwritten paper or single scanned script, and immediately enqueue it for automated ocr extraction and ai evaluation. grading &amp; review teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/submissions</span>
+          <span class="api-title">• Direct Single-Script Upload &amp; Evaluation Queue</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Allows a teacher to directly upload an individual student handwritten paper or single scanned script, and immediately enqueue it for automated OCR extraction and AI evaluation.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ScanGrade.tsx and Dashboard.tsx when teachers scan a physical exam paper on a smartphone camera or desktop scanner.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;assignment_id&quot;: &quot;1001&quot;,
+  &quot;student_id&quot;: &quot;2001&quot;,
+  &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+  &quot;submission_mode&quot;: &quot;HANDWRITTEN&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;assignment_id&quot;: &quot;1001&quot;,
+  &quot;student_id&quot;: &quot;2001&quot;,
+  &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+  &quot;submission_mode&quot;: &quot;HANDWRITTEN&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Single submission created and dispatched to SQS AI evaluation pipeline.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission created and queued for AI evaluation&quot;,
+  &quot;data&quot;: {
+    &quot;submission_id&quot;: &quot;3233756592734400&quot;,
+    &quot;assignment_id&quot;: &quot;1001&quot;,
+    &quot;student_id&quot;: &quot;2001&quot;,
+    &quot;status&quot;: &quot;submitted&quot;,
+    &quot;evaluation_status&quot;: &quot;pending_ocr&quot;,
+    &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+    &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission created and queued for AI evaluation&quot;,
+  &quot;data&quot;: {
+    &quot;submission_id&quot;: &quot;3233756592734400&quot;,
+    &quot;assignment_id&quot;: &quot;1001&quot;,
+    &quot;student_id&quot;: &quot;2001&quot;,
+    &quot;status&quot;: &quot;submitted&quot;,
+    &quot;evaluation_status&quot;: &quot;pending_ocr&quot;,
+    &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+    &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Student does not belong to assignment section or URL missing.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student does not belong to this assignment section&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student does not belong to this assignment section&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Assignment or student not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Assignment not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Assignment not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="delete /api/submissions/:id delete single student submission deletes an individual student submission from the review queue (e.g. if blurry, corrupt, or re-scanned) without deleting the entire assignment or affecting other classmates. grading &amp; review teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-DELETE">DELETE</span>
+          <span class="api-endpoint-url">/api/submissions/:id</span>
+          <span class="api-title">• Delete Single Student Submission</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Deletes an individual student submission from the review queue (e.g. if blurry, corrupt, or re-scanned) without deleting the entire assignment or affecting other classmates.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Call this from PaperDetail.tsx or ReviewQueue.tsx when a teacher clicks &quot;Delete &amp; Re-scan Paper&quot;.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">URL Path Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">:id</td>
+              <td class="param-type">string</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Submission ID to delete</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Submission purged successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission deleted successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3233756592734400&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission deleted successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3233756592734400&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Submission not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Submission not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Submission not found&quot;
 }</code></pre>
           </div>
         
@@ -16514,6 +17935,654 @@
   
         </div>
       
+
+        <div class="category-group" data-category="Analytics &amp; Reporting">
+          <div class="category-header">
+            <span class="category-title">Analytics &amp; Reporting</span>
+            <span class="category-count">2 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/analytics/overview branch &amp; class academic performance overview supplies aggregated kpis, average percentages, pass percentages, letter grade distributions (a, b, c, d, f), score buckets, and subject breakdown for the analytics dashboard. analytics &amp; reporting teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/analytics/overview</span>
+          <span class="api-title">• Branch &amp; Class Academic Performance Overview</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Supplies aggregated KPIs, average percentages, pass percentages, letter grade distributions (A, B, C, D, F), score buckets, and subject breakdown for the Analytics dashboard.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Powers the charts, bell curves, and KPI summary tiles on Analytics.tsx.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Class ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Section ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Subject ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?assignment_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Assignment ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Aggregated analytics metrics.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: {
+    &quot;total_assignments&quot;: 12,
+    &quot;total_submissions&quot;: 340,
+    &quot;evaluated_submissions&quot;: 325,
+    &quot;unique_students_evaluated&quot;: 28,
+    &quot;average_score_percentage&quot;: 76.4,
+    &quot;pass_percentage&quot;: 92.3,
+    &quot;grade_distribution&quot;: {
+      &quot;A&quot;: 120,
+      &quot;B&quot;: 95,
+      &quot;C&quot;: 60,
+      &quot;D&quot;: 25,
+      &quot;F&quot;: 25
+    },
+    &quot;score_distribution&quot;: {
+      &quot;0-20%&quot;: 10,
+      &quot;21-40%&quot;: 25,
+      &quot;41-60%&quot;: 60,
+      &quot;61-80%&quot;: 110,
+      &quot;81-100%&quot;: 120
+    },
+    &quot;subject_performance&quot;: [
+      {
+        &quot;subject_name&quot;: &quot;Mathematics&quot;,
+        &quot;average_score&quot;: 78.2,
+        &quot;total_evaluations&quot;: 160
+      },
+      {
+        &quot;subject_name&quot;: &quot;Physics&quot;,
+        &quot;average_score&quot;: 74.5,
+        &quot;total_evaluations&quot;: 165
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: {
+    &quot;total_assignments&quot;: 12,
+    &quot;total_submissions&quot;: 340,
+    &quot;evaluated_submissions&quot;: 325,
+    &quot;unique_students_evaluated&quot;: 28,
+    &quot;average_score_percentage&quot;: 76.4,
+    &quot;pass_percentage&quot;: 92.3,
+    &quot;grade_distribution&quot;: {
+      &quot;A&quot;: 120,
+      &quot;B&quot;: 95,
+      &quot;C&quot;: 60,
+      &quot;D&quot;: 25,
+      &quot;F&quot;: 25
+    },
+    &quot;score_distribution&quot;: {
+      &quot;0-20%&quot;: 10,
+      &quot;21-40%&quot;: 25,
+      &quot;41-60%&quot;: 60,
+      &quot;61-80%&quot;: 110,
+      &quot;81-100%&quot;: 120
+    },
+    &quot;subject_performance&quot;: [
+      {
+        &quot;subject_name&quot;: &quot;Mathematics&quot;,
+        &quot;average_score&quot;: 78.2,
+        &quot;total_evaluations&quot;: 160
+      },
+      {
+        &quot;subject_name&quot;: &quot;Physics&quot;,
+        &quot;average_score&quot;: 74.5,
+        &quot;total_evaluations&quot;: 165
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/analytics/students student roster performance &amp; grade rankings returns student-by-student academic performance metrics including average percentage scores, overall letter grades, and highest/lowest test marks with cursor pagination. analytics &amp; reporting teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/analytics/students</span>
+          <span class="api-title">• Student Roster Performance &amp; Grade Rankings</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Returns student-by-student academic performance metrics including average percentage scores, overall letter grades, and highest/lowest test marks with cursor pagination.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Powers the student rank list and performance table on Analytics.tsx.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Class ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Section ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Cursor ID for pagination</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Page size (default 10, max 50)</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Student analytics list with cursor pagination.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;2001&quot;,
+      &quot;name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;total_submissions&quot;: 5,
+      &quot;evaluated_submissions&quot;: 5,
+      &quot;average_score&quot;: 90,
+      &quot;grade&quot;: &quot;A&quot;,
+      &quot;highest_score&quot;: 95,
+      &quot;lowest_score&quot;: 85
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;2001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;2001&quot;,
+      &quot;name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;total_submissions&quot;: 5,
+      &quot;evaluated_submissions&quot;: 5,
+      &quot;average_score&quot;: 90,
+      &quot;grade&quot;: &quot;A&quot;,
+      &quot;highest_score&quot;: 95,
+      &quot;lowest_score&quot;: 85
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;2001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
+
+        <div class="category-group" data-category="Notifications &amp; Alerts">
+          <div class="category-header">
+            <span class="category-title">Notifications &amp; Alerts</span>
+            <span class="category-count">2 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN STUDENT" data-search="get /api/notifications system &amp; parent notification delivery feed lists system notifications, parent sms/whatsapp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed). notifications &amp; alerts teacher branch_admin corporate_admin student">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/notifications</span>
+          <span class="api-title">• System &amp; Parent Notification Delivery Feed</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span> <span class="badge-role role-STUDENT">STUDENT</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Lists system notifications, parent SMS/WhatsApp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed).</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ParentPortal.tsx to view WhatsApp and SMS delivery logs sent to student guardians.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?type</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by notification type</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?delivery_status</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by delivery status</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Pagination cursor ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Limit per page</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Notification logs feed.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/notifications/test trigger test sms, whatsapp or email alert dispatches a test notification via sms, whatsapp, or email to verify parent communication channels, twilio/ses configurations, and gateway delivery status. notifications &amp; alerts teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/notifications/test</span>
+          <span class="api-title">• Trigger Test SMS, WhatsApp or Email Alert</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Dispatches a test notification via SMS, WhatsApp, or Email to verify parent communication channels, Twilio/SES configurations, and gateway delivery status.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ParentPortal.tsx when an administrator or teacher clicks &quot;Send Test Alert&quot;.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;channel&quot;: &quot;SMS&quot;,
+  &quot;recipient&quot;: &quot;+919888999888&quot;,
+  &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+  &quot;recipient_type&quot;: &quot;PARENT&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;channel&quot;: &quot;SMS&quot;,
+  &quot;recipient&quot;: &quot;+919888999888&quot;,
+  &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+  &quot;recipient_type&quot;: &quot;PARENT&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Test notification dispatched and logged.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Test notification dispatched successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;5001&quot;,
+    &quot;channel&quot;: &quot;SMS&quot;,
+    &quot;recipient&quot;: &quot;+919888999888&quot;,
+    &quot;recipient_type&quot;: &quot;PARENT&quot;,
+    &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+    &quot;delivery_status&quot;: &quot;delivered&quot;,
+    &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+    &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Test notification dispatched successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;5001&quot;,
+    &quot;channel&quot;: &quot;SMS&quot;,
+    &quot;recipient&quot;: &quot;+919888999888&quot;,
+    &quot;recipient_type&quot;: &quot;PARENT&quot;,
+    &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+    &quot;delivery_status&quot;: &quot;delivered&quot;,
+    &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+    &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid channel or missing recipient.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Recipient phone or email is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Recipient phone or email is required&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
       </section>
     
 
@@ -16529,7 +18598,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #F97316;">43</span>
+              <span class="role-count-num" style="color: #F97316;">50</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -20270,7 +22339,7 @@
         <div class="category-group" data-category="Grading &amp; Review">
           <div class="category-header">
             <span class="category-title">Grading &amp; Review</span>
-            <span class="category-count">6 APIs</span>
+            <span class="category-count">9 APIs</span>
           </div>
           
     <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/assignments/:id/submissions list student submissions for assignment lists all student answer sheet submissions for a specific test paper, showing submission time, score, and review status. grading &amp; review teacher branch_admin corporate_admin">
@@ -21176,6 +23245,467 @@
             <pre><code>{
   &quot;status&quot;: &quot;error&quot;,
   &quot;message&quot;: &quot;Batch job not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/submissions global review queue &amp; submissions feed fetches a branch-wide or teacher-assigned list of all student submissions for the evaluation review queue. supports filtering by status, assignment_id, class_id, section_id, and cursor pagination. grading &amp; review teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/submissions</span>
+          <span class="api-title">• Global Review Queue &amp; Submissions Feed</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Fetches a branch-wide or teacher-assigned list of all student submissions for the evaluation review queue. Supports filtering by status, assignment_id, class_id, section_id, and cursor pagination.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in Overview.tsx, ReviewQueue.tsx, and Dashboard.tsx to display all pending or completed submissions across all assignments in one central table.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?assignment_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by specific assignment</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?status</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by status (e.g. submitted, pending_review, graded, approved)</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by class</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by section</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Pagination cursor ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Items per page (max 10, default 10)</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Submissions list with pagination metadata.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;3233756592734400&quot;,
+      &quot;assignment_id&quot;: &quot;1001&quot;,
+      &quot;assignment_title&quot;: &quot;Mid-Term Mathematics Exam&quot;,
+      &quot;subject_name&quot;: &quot;Mathematics&quot;,
+      &quot;student_id&quot;: &quot;2001&quot;,
+      &quot;student_name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;score&quot;: 36,
+      &quot;max_score&quot;: 40,
+      &quot;status&quot;: &quot;graded&quot;,
+      &quot;evaluation_status&quot;: &quot;completed&quot;,
+      &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf&quot;
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;3233756592734400&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;3233756592734400&quot;,
+      &quot;assignment_id&quot;: &quot;1001&quot;,
+      &quot;assignment_title&quot;: &quot;Mid-Term Mathematics Exam&quot;,
+      &quot;subject_name&quot;: &quot;Mathematics&quot;,
+      &quot;student_id&quot;: &quot;2001&quot;,
+      &quot;student_name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;score&quot;: 36,
+      &quot;max_score&quot;: 40,
+      &quot;status&quot;: &quot;graded&quot;,
+      &quot;evaluation_status&quot;: &quot;completed&quot;,
+      &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/paper-1.pdf&quot;
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;3233756592734400&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Unauthorized: Missing or invalid token&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Unauthorized: Missing or invalid token&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-403">403 Forbidden</span>
+              <span class="resp-title">Insufficient role permissions.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Forbidden: Insufficient permissions&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Forbidden: Insufficient permissions&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN" data-search="post /api/submissions direct single-script upload &amp; evaluation queue allows a teacher to directly upload an individual student handwritten paper or single scanned script, and immediately enqueue it for automated ocr extraction and ai evaluation. grading &amp; review teacher branch_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/submissions</span>
+          <span class="api-title">• Direct Single-Script Upload &amp; Evaluation Queue</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Allows a teacher to directly upload an individual student handwritten paper or single scanned script, and immediately enqueue it for automated OCR extraction and AI evaluation.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ScanGrade.tsx and Dashboard.tsx when teachers scan a physical exam paper on a smartphone camera or desktop scanner.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;assignment_id&quot;: &quot;1001&quot;,
+  &quot;student_id&quot;: &quot;2001&quot;,
+  &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+  &quot;submission_mode&quot;: &quot;HANDWRITTEN&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;assignment_id&quot;: &quot;1001&quot;,
+  &quot;student_id&quot;: &quot;2001&quot;,
+  &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+  &quot;submission_mode&quot;: &quot;HANDWRITTEN&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-201">201 Created</span>
+            <span class="resp-title">Single submission created and dispatched to SQS AI evaluation pipeline.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission created and queued for AI evaluation&quot;,
+  &quot;data&quot;: {
+    &quot;submission_id&quot;: &quot;3233756592734400&quot;,
+    &quot;assignment_id&quot;: &quot;1001&quot;,
+    &quot;student_id&quot;: &quot;2001&quot;,
+    &quot;status&quot;: &quot;submitted&quot;,
+    &quot;evaluation_status&quot;: &quot;pending_ocr&quot;,
+    &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+    &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission created and queued for AI evaluation&quot;,
+  &quot;data&quot;: {
+    &quot;submission_id&quot;: &quot;3233756592734400&quot;,
+    &quot;assignment_id&quot;: &quot;1001&quot;,
+    &quot;student_id&quot;: &quot;2001&quot;,
+    &quot;status&quot;: &quot;submitted&quot;,
+    &quot;evaluation_status&quot;: &quot;pending_ocr&quot;,
+    &quot;sample_paper_url&quot;: &quot;https://paatam-uploads.s3.ap-south-2.amazonaws.com/submissions/sheet-1.pdf&quot;,
+    &quot;submitted_at&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Student does not belong to assignment section or URL missing.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student does not belong to this assignment section&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Student does not belong to this assignment section&quot;
+}</code></pre>
+          </div>
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Assignment or student not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Assignment not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Assignment not found&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="delete /api/submissions/:id delete single student submission deletes an individual student submission from the review queue (e.g. if blurry, corrupt, or re-scanned) without deleting the entire assignment or affecting other classmates. grading &amp; review teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-DELETE">DELETE</span>
+          <span class="api-endpoint-url">/api/submissions/:id</span>
+          <span class="api-title">• Delete Single Student Submission</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Deletes an individual student submission from the review queue (e.g. if blurry, corrupt, or re-scanned) without deleting the entire assignment or affecting other classmates.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Call this from PaperDetail.tsx or ReviewQueue.tsx when a teacher clicks &quot;Delete &amp; Re-scan Paper&quot;.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">URL Path Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">:id</td>
+              <td class="param-type">string</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Submission ID to delete</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Submission purged successfully.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission deleted successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3233756592734400&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Submission deleted successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;3233756592734400&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-404">404 Not Found</span>
+              <span class="resp-title">Submission not found.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Submission not found&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Submission not found&quot;
 }</code></pre>
           </div>
         
@@ -22221,6 +24751,654 @@
   
         </div>
       
+
+        <div class="category-group" data-category="Analytics &amp; Reporting">
+          <div class="category-header">
+            <span class="category-title">Analytics &amp; Reporting</span>
+            <span class="category-count">2 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/analytics/overview branch &amp; class academic performance overview supplies aggregated kpis, average percentages, pass percentages, letter grade distributions (a, b, c, d, f), score buckets, and subject breakdown for the analytics dashboard. analytics &amp; reporting teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/analytics/overview</span>
+          <span class="api-title">• Branch &amp; Class Academic Performance Overview</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Supplies aggregated KPIs, average percentages, pass percentages, letter grade distributions (A, B, C, D, F), score buckets, and subject breakdown for the Analytics dashboard.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Powers the charts, bell curves, and KPI summary tiles on Analytics.tsx.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Class ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Section ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?subject_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Subject ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?assignment_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Assignment ID</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Aggregated analytics metrics.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: {
+    &quot;total_assignments&quot;: 12,
+    &quot;total_submissions&quot;: 340,
+    &quot;evaluated_submissions&quot;: 325,
+    &quot;unique_students_evaluated&quot;: 28,
+    &quot;average_score_percentage&quot;: 76.4,
+    &quot;pass_percentage&quot;: 92.3,
+    &quot;grade_distribution&quot;: {
+      &quot;A&quot;: 120,
+      &quot;B&quot;: 95,
+      &quot;C&quot;: 60,
+      &quot;D&quot;: 25,
+      &quot;F&quot;: 25
+    },
+    &quot;score_distribution&quot;: {
+      &quot;0-20%&quot;: 10,
+      &quot;21-40%&quot;: 25,
+      &quot;41-60%&quot;: 60,
+      &quot;61-80%&quot;: 110,
+      &quot;81-100%&quot;: 120
+    },
+    &quot;subject_performance&quot;: [
+      {
+        &quot;subject_name&quot;: &quot;Mathematics&quot;,
+        &quot;average_score&quot;: 78.2,
+        &quot;total_evaluations&quot;: 160
+      },
+      {
+        &quot;subject_name&quot;: &quot;Physics&quot;,
+        &quot;average_score&quot;: 74.5,
+        &quot;total_evaluations&quot;: 165
+      }
+    ]
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: {
+    &quot;total_assignments&quot;: 12,
+    &quot;total_submissions&quot;: 340,
+    &quot;evaluated_submissions&quot;: 325,
+    &quot;unique_students_evaluated&quot;: 28,
+    &quot;average_score_percentage&quot;: 76.4,
+    &quot;pass_percentage&quot;: 92.3,
+    &quot;grade_distribution&quot;: {
+      &quot;A&quot;: 120,
+      &quot;B&quot;: 95,
+      &quot;C&quot;: 60,
+      &quot;D&quot;: 25,
+      &quot;F&quot;: 25
+    },
+    &quot;score_distribution&quot;: {
+      &quot;0-20%&quot;: 10,
+      &quot;21-40%&quot;: 25,
+      &quot;41-60%&quot;: 60,
+      &quot;61-80%&quot;: 110,
+      &quot;81-100%&quot;: 120
+    },
+    &quot;subject_performance&quot;: [
+      {
+        &quot;subject_name&quot;: &quot;Mathematics&quot;,
+        &quot;average_score&quot;: 78.2,
+        &quot;total_evaluations&quot;: 160
+      },
+      {
+        &quot;subject_name&quot;: &quot;Physics&quot;,
+        &quot;average_score&quot;: 74.5,
+        &quot;total_evaluations&quot;: 165
+      }
+    ]
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-401">401 Unauthorized</span>
+              <span class="resp-title">Missing or invalid token.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;message&quot;: &quot;Unauthorized&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="get /api/analytics/students student roster performance &amp; grade rankings returns student-by-student academic performance metrics including average percentage scores, overall letter grades, and highest/lowest test marks with cursor pagination. analytics &amp; reporting teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/analytics/students</span>
+          <span class="api-title">• Student Roster Performance &amp; Grade Rankings</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Returns student-by-student academic performance metrics including average percentage scores, overall letter grades, and highest/lowest test marks with cursor pagination.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Powers the student rank list and performance table on Analytics.tsx.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?class_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Class ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?section_id</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by Section ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Cursor ID for pagination</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Page size (default 10, max 50)</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Student analytics list with cursor pagination.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;2001&quot;,
+      &quot;name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;total_submissions&quot;: 5,
+      &quot;evaluated_submissions&quot;: 5,
+      &quot;average_score&quot;: 90,
+      &quot;grade&quot;: &quot;A&quot;,
+      &quot;highest_score&quot;: 95,
+      &quot;lowest_score&quot;: 85
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;2001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;2001&quot;,
+      &quot;name&quot;: &quot;Aryabhata&quot;,
+      &quot;roll_no&quot;: &quot;101&quot;,
+      &quot;admission_no&quot;: &quot;ADM-2026-001&quot;,
+      &quot;class_name&quot;: &quot;Grade 10&quot;,
+      &quot;section_name&quot;: &quot;A&quot;,
+      &quot;total_submissions&quot;: 5,
+      &quot;evaluated_submissions&quot;: 5,
+      &quot;average_score&quot;: 90,
+      &quot;grade&quot;: &quot;A&quot;,
+      &quot;highest_score&quot;: 95,
+      &quot;lowest_score&quot;: 85
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;2001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
+
+        <div class="category-group" data-category="Notifications &amp; Alerts">
+          <div class="category-header">
+            <span class="category-title">Notifications &amp; Alerts</span>
+            <span class="category-count">2 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN STUDENT" data-search="get /api/notifications system &amp; parent notification delivery feed lists system notifications, parent sms/whatsapp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed). notifications &amp; alerts teacher branch_admin corporate_admin student">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/notifications</span>
+          <span class="api-title">• System &amp; Parent Notification Delivery Feed</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span> <span class="badge-role role-STUDENT">STUDENT</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Lists system notifications, parent SMS/WhatsApp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed).</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ParentPortal.tsx to view WhatsApp and SMS delivery logs sent to student guardians.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?type</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by notification type</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?delivery_status</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by delivery status</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Pagination cursor ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Limit per page</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Notification logs feed.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/notifications/test trigger test sms, whatsapp or email alert dispatches a test notification via sms, whatsapp, or email to verify parent communication channels, twilio/ses configurations, and gateway delivery status. notifications &amp; alerts teacher branch_admin corporate_admin">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-POST">POST</span>
+          <span class="api-endpoint-url">/api/notifications/test</span>
+          <span class="api-title">• Trigger Test SMS, WhatsApp or Email Alert</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Dispatches a test notification via SMS, WhatsApp, or Email to verify parent communication channels, Twilio/SES configurations, and gateway delivery status.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ParentPortal.tsx when an administrator or teacher clicks &quot;Send Test Alert&quot;.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>JSON payload</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+        
+    <div class="section-block">
+      <div class="section-heading">JSON Request Body Payload</div>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>application/json</span>
+          <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;channel&quot;: &quot;SMS&quot;,
+  &quot;recipient&quot;: &quot;+919888999888&quot;,
+  &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+  &quot;recipient_type&quot;: &quot;PARENT&quot;
+}')">Copy JSON</button>
+        </div>
+        <pre><code>{
+  &quot;channel&quot;: &quot;SMS&quot;,
+  &quot;recipient&quot;: &quot;+919888999888&quot;,
+  &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+  &quot;recipient_type&quot;: &quot;PARENT&quot;
+}</code></pre>
+      </div>
+    </div>
+  
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Test notification dispatched and logged.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Test notification dispatched successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;5001&quot;,
+    &quot;channel&quot;: &quot;SMS&quot;,
+    &quot;recipient&quot;: &quot;+919888999888&quot;,
+    &quot;recipient_type&quot;: &quot;PARENT&quot;,
+    &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+    &quot;delivery_status&quot;: &quot;delivered&quot;,
+    &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+    &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;message&quot;: &quot;Test notification dispatched successfully&quot;,
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;5001&quot;,
+    &quot;channel&quot;: &quot;SMS&quot;,
+    &quot;recipient&quot;: &quot;+919888999888&quot;,
+    &quot;recipient_type&quot;: &quot;PARENT&quot;,
+    &quot;message&quot;: &quot;Paatam test SMS alert: Parent communication gateway active.&quot;,
+    &quot;delivery_status&quot;: &quot;delivered&quot;,
+    &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+    &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;
+  }
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Invalid channel or missing recipient.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Recipient phone or email is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Recipient phone or email is required&quot;
+}</code></pre>
+          </div>
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
       </section>
     
 
@@ -22236,7 +25414,7 @@
           </div>
           <div class="role-banner-right">
             <div class="role-count-box">
-              <span class="role-count-num" style="color: #EC4899;">14</span>
+              <span class="role-count-num" style="color: #EC4899;">15</span>
               <span class="role-count-lbl">APIs in Role</span>
             </div>
           </div>
@@ -23943,6 +27121,167 @@
       &quot;read&quot;: false
     }
   ]
+}</code></pre>
+        </div>
+
+        <!-- Error Responses -->
+        
+      </div>
+    </div>
+  
+      </div>
+    </div>
+  
+        </div>
+      
+
+        <div class="category-group" data-category="Notifications &amp; Alerts">
+          <div class="category-header">
+            <span class="category-title">Notifications &amp; Alerts</span>
+            <span class="category-count">1 APIs</span>
+          </div>
+          
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN STUDENT" data-search="get /api/notifications system &amp; parent notification delivery feed lists system notifications, parent sms/whatsapp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed). notifications &amp; alerts teacher branch_admin corporate_admin student">
+      <div class="api-card-header">
+        <div class="api-card-left">
+          <span class="badge-method method-GET">GET</span>
+          <span class="api-endpoint-url">/api/notifications</span>
+          <span class="api-title">• System &amp; Parent Notification Delivery Feed</span>
+        </div>
+        <div class="api-card-right">
+          <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span> <span class="badge-role role-STUDENT">STUDENT</span>
+          <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
+      <div class="api-card-body">
+        <div class="section-block">
+          <div class="section-heading">Detailed Description &amp; Business Logic</div>
+          <div class="desc-text">Lists system notifications, parent SMS/WhatsApp delivery receipts, and student submission alerts with delivery status (delivered, sent, pending, failed).</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Used in ParentPortal.tsx to view WhatsApp and SMS delivery logs sent to student guardians.</div>
+        </div>
+
+        
+    <div class="section-block">
+      <div class="section-heading">Required HTTP Headers</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Header</th><th>Example Value</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">Authorization</td>
+              <td class="param-type">Bearer &lt;token&gt;</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>Bearer JWT token</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">URL Query Parameters</div>
+      <table class="param-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="param-name">?type</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by notification type</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?delivery_status</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Filter by delivery status</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?cursor</td>
+              <td class="param-type">string</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Pagination cursor ID</td>
+            </tr>
+          
+            <tr>
+              <td class="param-name">?limit</td>
+              <td class="param-type">number</td>
+              <td><span style="color:#64748B">—</span></td>
+              <td>Limit per page</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  
+        
+        
+    <div class="section-block">
+      <div class="section-heading">Possible HTTP Responses &amp; Status Codes</div>
+      <div class="response-cards-grid">
+        <!-- Success Response -->
+        <div class="resp-card">
+          <div class="resp-card-header">
+            <span class="resp-code-badge code-200">200 OK</span>
+            <span class="resp-title">Notification logs feed.</span>
+            <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
+}')">Copy</button>
+          </div>
+          <pre><code>{
+  &quot;status&quot;: &quot;success&quot;,
+  &quot;data&quot;: [
+    {
+      &quot;id&quot;: &quot;5001&quot;,
+      &quot;type&quot;: &quot;SMS_TEST&quot;,
+      &quot;title&quot;: &quot;Test SMS to PARENT&quot;,
+      &quot;message&quot;: &quot;Your child Aryabhata scored 36/40 in Mathematics.&quot;,
+      &quot;delivery_status&quot;: &quot;delivered&quot;,
+      &quot;provider_message_id&quot;: &quot;SM1234567890&quot;,
+      &quot;submission_id&quot;: null,
+      &quot;timestamp&quot;: &quot;2026-10-23T12:00:00.000Z&quot;,
+      &quot;details&quot;: {
+        &quot;channel&quot;: &quot;SMS&quot;,
+        &quot;recipient&quot;: &quot;+919888999888&quot;,
+        &quot;recipient_type&quot;: &quot;PARENT&quot;
+      }
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;nextCursor&quot;: &quot;5001&quot;,
+    &quot;hasNextPage&quot;: false
+  }
 }</code></pre>
         </div>
 

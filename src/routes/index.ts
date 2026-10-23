@@ -15,6 +15,8 @@ import studentPortalRoutes from './studentPortal.routes';
 import assignmentRoutes from './assignment.routes';
 import submissionRoutes from './submission.routes';
 import curriculumRoutes from './curriculum.routes';
+import analyticsRoutes from './analytics.routes';
+import notificationRoutes from './notification.routes';
 
 const router = Router();
 
@@ -34,5 +36,8 @@ router.use('/student', studentPortalRoutes);
 router.use('/assignments', assignmentRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/curriculum', curriculumRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;
+

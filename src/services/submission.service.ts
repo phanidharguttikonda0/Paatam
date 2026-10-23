@@ -5,6 +5,7 @@ import { idGenerator } from '../utils/idGenerator';
 import { AcademicYearService } from './academicYear.service';
 import { S3Service } from './s3.service';
 import { SqsService } from './sqs.service';
+import { UserRole, BRANCH_ADMIN_ROLES } from '../enums/role.enum';
 
 export interface AssignmentSubmissionsQuery {
   status?: string;
@@ -452,4 +453,333 @@ export class SubmissionService {
       created_submissions: createdSubmissions,
     };
   }
+
+  /**
+   * Global/Branch-wide submissions list for review queue with filters and pagination
+   */
+  public static async listAllSubmissions(user: any, query: any) {
+    const limit = query.limit && query.limit > 0 ? Math.min(query.limit, 10) : 10;
+    const cursor = query.cursor ? parseBigInt(query.cursor, 'cursor') : undefined;
+
+    const whereClause: any = {};
+
+    if (query.assignment_id) {
+      whereClause.assignment_id = parseBigInt(query.assignment_id, 'assignment_id');
+    }
+    if (query.student_id) {
+      whereClause.student_id = parseBigInt(query.student_id, 'student_id');
+    }
+    if (query.status) {
+      whereClause.status = query.status;
+    }
+    if (cursor) {
+      whereClause.id = { lt: cursor };
+    }
+
+    // Role-based tenant scoping
+    if (user.role === UserRole.TEACHER) {
+      const teacherId = parseBigInt(user.userId, 'userId');
+      const teacher = await prisma.teacher.findUnique({
+        where: { id: teacherId },
+        include: {
+          TeacherSubjects: true,
+          Sections: true,
+        },
+      });
+      if (!teacher) {
+        throw new AppError('Teacher not found', 404);
+      }
+      const sectionIds = teacher.Sections.map((s) => s.id);
+      const teacherSubjectIds = teacher.TeacherSubjects.map((ts) => ts.id);
+      whereClause.Assignment = {
+        OR: [
+          { section_id: { in: sectionIds } },
+          { teacher_subject_id: { in: teacherSubjectIds } },
+          { Section: { Class: { branch_id: teacher.branch_id } } },
+        ],
+      };
+    } else if (BRANCH_ADMIN_ROLES.includes(user.role)) {
+      const adminId = parseBigInt(user.userId, 'userId');
+      const accesses = await prisma.adminBranchAccess.findMany({
+        where: { admin_id: adminId },
+        select: { branch_id: true },
+      });
+      const branchIds = accesses.map((a) => a.branch_id);
+      if (query.branch_id) {
+        const reqBranchId = parseBigInt(query.branch_id, 'branch_id');
+        if (!branchIds.some((b) => b === reqBranchId)) {
+          throw new AppError('Forbidden: Access denied to requested branch', 403);
+        }
+        whereClause.Assignment = {
+          Section: { Class: { branch_id: reqBranchId } },
+        };
+      } else {
+        whereClause.Assignment = {
+          Section: { Class: { branch_id: { in: branchIds } } },
+        };
+      }
+    } else if (user.role === UserRole.CORPORATE_ADMIN) {
+      if (query.branch_id) {
+        const reqBranchId = parseBigInt(query.branch_id, 'branch_id');
+        await AcademicYearService.assertBranchAccess(user, reqBranchId);
+        whereClause.Assignment = {
+          Section: { Class: { branch_id: reqBranchId } },
+        };
+      }
+    }
+
+    if (query.class_id) {
+      const classId = parseBigInt(query.class_id, 'class_id');
+      whereClause.Assignment = {
+        ...(whereClause.Assignment || {}),
+        Section: {
+          ...(whereClause.Assignment?.Section || {}),
+          class_id: classId,
+        },
+      };
+    }
+
+    if (query.section_id) {
+      const sectionId = parseBigInt(query.section_id, 'section_id');
+      whereClause.Assignment = {
+        ...(whereClause.Assignment || {}),
+        section_id: sectionId,
+      };
+    }
+
+    const submissions = await prisma.submission.findMany({
+      where: whereClause,
+      take: limit + 1,
+      orderBy: { id: 'desc' },
+      include: {
+        Student: {
+          include: {
+            Section: {
+              include: {
+                Class: true,
+              },
+            },
+          },
+        },
+        Assignment: {
+          include: {
+            ClassSubject: {
+              include: {
+                Subject: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const hasNextPage = submissions.length > limit;
+    const items = hasNextPage ? submissions.slice(0, limit) : submissions;
+    const nextCursor = hasNextPage && items.length > 0 ? items[items.length - 1].id.toString() : null;
+
+    const data = items.map((s) => ({
+      id: s.id.toString(),
+      assignment_id: s.assignment_id?.toString() || null,
+      assignment_title: s.Assignment?.title || 'Unknown Assignment',
+      subject_name: s.Assignment?.ClassSubject?.Subject?.name || 'Subject',
+      student_id: s.student_id.toString(),
+      student_name: s.Student.name,
+      roll_no: s.Student.roll_no,
+      admission_no: s.Student.admission_no,
+      class_name: s.Student.Section?.Class?.name || '',
+      section_name: s.Student.Section?.section_name || '',
+      score:
+        s.final_score !== null
+          ? Number(s.final_score)
+          : s.score !== null
+            ? Number(s.score)
+            : null,
+      max_score: s.max_score !== null ? Number(s.max_score) : 40,
+      status: s.status,
+      evaluation_status: s.evaluation_status,
+      submitted_at: s.submitted_at.toISOString(),
+      sample_paper_url: s.sample_paper_url,
+    }));
+
+    return {
+      data,
+      meta: {
+        nextCursor,
+        hasNextPage,
+      },
+    };
+  }
+
+  /**
+   * Direct single-script upload by teacher
+   */
+  public static async createSingleSubmission(user: any, body: any) {
+    const assignmentId = parseBigInt(body.assignment_id, 'assignment_id');
+    const studentId = parseBigInt(body.student_id, 'student_id');
+
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        Section: {
+          include: {
+            Class: true,
+          },
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new AppError('Assignment not found', 404);
+    }
+
+    await AcademicYearService.assertBranchAccess(user, assignment.Section.Class.branch_id);
+
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      throw new AppError('Student not found', 404);
+    }
+
+    if (student.section_id !== assignment.section_id) {
+      throw new AppError('Student does not belong to this assignment section', 400);
+    }
+
+    const rawUrls =
+      body.sample_paper_urls ||
+      (body.file_url ? [body.file_url] : body.sample_paper_url ? [body.sample_paper_url] : []);
+
+    if (rawUrls.length === 0) {
+      throw new AppError('At least one paper URL (file_url or sample_paper_url) must be provided', 400);
+    }
+
+    const samplePaperUrls = Array.isArray(rawUrls) ? rawUrls : [String(rawUrls)];
+    const samplePaperUrl = samplePaperUrls[0];
+
+    const existingSubmission = await prisma.submission.findFirst({
+      where: {
+        assignment_id: assignmentId,
+        student_id: studentId,
+      },
+    });
+
+    let submission;
+    if (existingSubmission) {
+      submission = await prisma.submission.update({
+        where: { id: existingSubmission.id },
+        data: {
+          sample_paper_url: samplePaperUrl,
+          sample_paper_urls: samplePaperUrls,
+          status: 'submitted',
+          evaluation_status: 'pending_ocr',
+          score: null,
+          feedback: null,
+          socratic_hint: null,
+          final_score: null,
+          final_feedback: null,
+          submitted_at: new Date(),
+        },
+      });
+    } else {
+      const submissionId = idGenerator.nextId();
+      submission = await prisma.submission.create({
+        data: {
+          id: submissionId,
+          assignment_id: assignment.id,
+          student_id: studentId,
+          sample_paper_url: samplePaperUrl,
+          sample_paper_urls: samplePaperUrls,
+          status: 'submitted',
+          evaluation_status: 'pending_ocr',
+          submitted_at: new Date(),
+        },
+      });
+    }
+
+    try {
+      await SqsService.dispatchPaperOcr({
+        submission_id: submission.id.toString(),
+        assignment_id: assignment.id.toString(),
+        student_id: studentId.toString(),
+        paper_urls: samplePaperUrls,
+        timestamp: Date.now(),
+      });
+    } catch (sqsErr) {
+      console.warn('⚠️ [SUBMISSION] SQS dispatch notice (continuing):', sqsErr);
+    }
+
+    try {
+      const notificationId = idGenerator.nextId();
+      await prisma.notification.create({
+        data: {
+          id: notificationId,
+          type: 'SUBMISSION_RECEIVED',
+          title: 'Teacher Uploaded Submission',
+          message: `Your answer sheet for "${assignment.title}" has been uploaded by the teacher and queued for evaluation.`,
+          submission_id: submission.id,
+          delivery_status: 'delivered',
+        },
+      });
+    } catch (notifErr) {
+      console.warn('⚠️ [SUBMISSION] Notification notice (continuing):', notifErr);
+    }
+
+    return {
+      submission_id: submission.id.toString(),
+      assignment_id: assignment.id.toString(),
+      student_id: student.id.toString(),
+      status: submission.status,
+      evaluation_status: submission.evaluation_status,
+      sample_paper_url: submission.sample_paper_url,
+      submitted_at: submission.submitted_at.toISOString(),
+    };
+  }
+
+  /**
+   * Deletes a single submission and purges related notifications
+   */
+  public static async deleteSubmission(user: any, submissionIdStr: string) {
+    const submissionId = parseBigInt(submissionIdStr, 'submission_id');
+
+    const submission = await prisma.submission.findUnique({
+      where: { id: submissionId },
+      include: {
+        Assignment: {
+          include: {
+            Section: {
+              include: {
+                Class: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!submission) {
+      throw new AppError('Submission not found', 404);
+    }
+
+    if (submission.Assignment) {
+      await AcademicYearService.assertBranchAccess(
+        user,
+        submission.Assignment.Section.Class.branch_id
+      );
+    }
+
+    await prisma.notification.deleteMany({
+      where: { submission_id: submissionId },
+    });
+
+    await prisma.submission.delete({
+      where: { id: submissionId },
+    });
+
+    return {
+      message: 'Submission deleted successfully',
+      id: submissionIdStr,
+    };
+  }
 }
+
