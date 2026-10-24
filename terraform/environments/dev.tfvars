@@ -21,7 +21,7 @@ db_multi_az          = false          # Single instance for Dev (No failover)
 # Dev Compute Configuration
 ecs_task_cpu      = 512  # 0.5 vCPU
 ecs_task_memory   = 1024 # 1 GB RAM
-ecs_desired_count = 2    # Run 2 containers by default
+ecs_desired_count = 1    # Run 1 container by default for Dev cost optimization
 
 # Dev Messaging Configuration
 company_domain = "paatam.in"

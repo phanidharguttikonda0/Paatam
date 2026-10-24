@@ -39,11 +39,6 @@ output "rds_endpoint" {
   value       = aws_db_instance.main.address
 }
 
-output "rds_proxy_endpoint" {
-  description = "The endpoint of the RDS Proxy"
-  value       = aws_db_proxy.main.endpoint
-}
-
 output "s3_bucket_name" {
   description = "The S3 bucket for uploads"
   value       = aws_s3_bucket.main.bucket
@@ -53,5 +48,16 @@ output "s3_vpc_endpoint_id" {
   description = "The VPC Gateway Endpoint ID for Amazon S3"
   value       = aws_vpc_endpoint.s3.id
 }
+
+output "nat_instance_id" {
+  description = "The ID of the cost-optimized NAT EC2 instance"
+  value       = aws_instance.nat.id
+}
+
+output "nat_public_ip" {
+  description = "The static Elastic IP associated with the NAT instance"
+  value       = aws_eip.nat.public_ip
+}
+
 
 

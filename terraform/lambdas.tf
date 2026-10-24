@@ -9,15 +9,15 @@ resource "aws_security_group" "lambda_sg" {
   vpc_id      = aws_vpc.main.id
 
   egress {
-    description = "Allow outbound to RDS PostgreSQL / RDS Proxy"
+    description = "Allow outbound to RDS PostgreSQL"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = var.private_subnets
+    cidr_blocks = var.isolated_subnets
   }
 
   egress {
-    description = "Allow outbound internet traffic via NAT Gateway for Gemini/Sarvam AI APIs"
+    description = "Allow outbound internet traffic via NAT for Gemini/Sarvam AI APIs"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -30,27 +30,6 @@ resource "aws_security_group" "lambda_sg" {
   }
 }
 
-# Allow Lambda SG to connect to RDS Proxy
-resource "aws_security_group_rule" "rds_proxy_allow_lambda" {
-  type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.rds_proxy.id
-  source_security_group_id = aws_security_group.lambda_sg.id
-  description              = "Allow PostgreSQL access from Lambda AI workers through RDS Proxy"
-}
-
-# Allow Lambda SG to connect directly to RDS if proxy bypassed
-resource "aws_security_group_rule" "rds_allow_lambda" {
-  type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.rds_db.id
-  source_security_group_id = aws_security_group.lambda_sg.id
-  description              = "Allow PostgreSQL access from Lambda AI workers"
-}
 
 # 2. IAM Role for Lambda Execution
 resource "aws_iam_role" "lambda_exec_role" {
@@ -166,7 +145,7 @@ resource "aws_lambda_function" "assignment_ocr" {
   environment {
     variables = {
       NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_proxy.main.endpoint}:5432/paatam?sslmode=require"
+      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
       AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
       AWS_REGION_NAME    = var.aws_region
     }
@@ -203,7 +182,7 @@ resource "aws_lambda_function" "bulk_split" {
   environment {
     variables = {
       NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_proxy.main.endpoint}:5432/paatam?sslmode=require"
+      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
       AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
       AWS_REGION_NAME    = var.aws_region
     }
@@ -240,7 +219,7 @@ resource "aws_lambda_function" "paper_ocr" {
   environment {
     variables = {
       NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_proxy.main.endpoint}:5432/paatam?sslmode=require"
+      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
       AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
       AWS_REGION_NAME    = var.aws_region
     }
@@ -277,7 +256,7 @@ resource "aws_lambda_function" "paper_evaluation" {
   environment {
     variables = {
       NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_proxy.main.endpoint}:5432/paatam?sslmode=require"
+      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
       AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
       AWS_REGION_NAME    = var.aws_region
     }
@@ -314,7 +293,7 @@ resource "aws_lambda_function" "sweeper" {
   environment {
     variables = {
       NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_proxy.main.endpoint}:5432/paatam?sslmode=require"
+      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
       AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
       AWS_REGION_NAME    = var.aws_region
     }

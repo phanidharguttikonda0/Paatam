@@ -67,6 +67,7 @@ variable "ecs_task_memory" {
 variable "ecs_desired_count" {
   description = "Number of Fargate containers to run"
   type        = number
+  default     = 1
 }
 
 # ================================

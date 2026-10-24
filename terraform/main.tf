@@ -48,9 +48,14 @@ data "aws_availability_zones" "available" {
 }
 
 # ==========================================
-# 4. NAT Gateway (For Private Subnets internet access)
+# 4. NAT EC2 Instance (Cost-optimized NAT replacing AWS NAT Gateway)
 # ==========================================
-# The NAT Gateway requires a static Public IP, known as an Elastic IP (EIP).
+# Query latest Amazon Linux 2023 ARM64 AMI for Graviton
+data "aws_ssm_parameter" "al2023_arm64" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
+}
+
+# The NAT Instance requires a static Public IP, using existing Elastic IP (EIP).
 resource "aws_eip" "nat" {
   domain = "vpc"
   
@@ -59,18 +64,67 @@ resource "aws_eip" "nat" {
   }
 }
 
-# We place the NAT Gateway in the FIRST Public Subnet (index 0).
-resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
+# Security group for NAT instance allowing outbound internet routing from private subnets
+resource "aws_security_group" "nat" {
+  name        = "paatam-nat-instance-sg-${var.environment}"
+  description = "Security group for NAT EC2 instance allowing outbound internet traffic from private subnets"
+  vpc_id      = aws_vpc.main.id
 
-  # Ensure the Internet Gateway exists before creating the NAT Gateway
-  depends_on = [aws_internet_gateway.main]
+  ingress {
+    description = "Allow all inbound traffic from VPC CIDR"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    description = "Allow outbound internet traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
-    Name = "paatam-natgw-${var.environment}"
+    Name = "paatam-nat-sg-${var.environment}"
   }
 }
+
+# Deploy a lightweight t4g.nano (Graviton/ARM64) NAT instance in the first public subnet
+resource "aws_instance" "nat" {
+  ami                         = data.aws_ssm_parameter.al2023_arm64.value
+  instance_type               = "t4g.nano"
+  subnet_id                   = aws_subnet.public[0].id
+  vpc_security_group_ids      = [aws_security_group.nat.id]
+  source_dest_check           = false
+
+  user_data = <<-EOF
+              #!/bin/bash
+              echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-nat.conf
+              sysctl -p /etc/sysctl.d/99-nat.conf
+              dnf install -y iptables-services
+              DEFAULT_IF=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\\S+)' | head -n1)
+              iptables -t nat -A POSTROUTING -o $DEFAULT_IF -j MASQUERADE
+              iptables -F FORWARD
+              service iptables save
+              systemctl enable --now iptables
+              EOF
+
+  tags = {
+    Name        = "paatam-nat-instance-${var.environment}"
+    Environment = var.environment
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+# Associate existing Elastic IP with the NAT instance
+resource "aws_eip_association" "nat" {
+  instance_id   = aws_instance.nat.id
+  allocation_id = aws_eip.nat.id
+}
+
 
 # ==========================================
 # 5. Private Subnets (For ECS & Lambda)
@@ -124,13 +178,13 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Private Route Table: Routes 0.0.0.0/0 to the NAT Gateway.
+# Private Route Table: Routes 0.0.0.0/0 to the NAT EC2 Instance.
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
+    cidr_block           = "0.0.0.0/0"
+    network_interface_id = aws_instance.nat.primary_network_interface_id
   }
 
   tags = {

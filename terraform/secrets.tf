@@ -26,8 +26,8 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
     port                 = aws_db_instance.main.port
     dbname               = aws_db_instance.main.db_name
     dbInstanceIdentifier = aws_db_instance.main.id
-    # Prisma connection URL using the RDS Proxy endpoint for connection pooling!
-    DATABASE_URL         = "postgresql://${aws_db_instance.main.username}:${urlencode(random_password.db_password.result)}@${aws_db_proxy.main.endpoint}:5432/${aws_db_instance.main.db_name}?connection_limit=1"
+    # Direct PostgreSQL connection to RDS instance endpoint
+    DATABASE_URL         = "postgresql://${aws_db_instance.main.username}:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name}?sslmode=require"
   })
 
   lifecycle {
