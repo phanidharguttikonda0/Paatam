@@ -98,16 +98,41 @@ resource "aws_instance" "nat" {
   subnet_id                   = aws_subnet.public[0].id
   vpc_security_group_ids      = [aws_security_group.nat.id]
   source_dest_check           = false
+  user_data_replace_on_change = true
 
   user_data = <<-EOF
               #!/bin/bash
+              set -ex
+
+              # 1. Allocate 1GB swap space so package installations never trigger OOM on t4g.nano
+              fallocate -l 1G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=1024
+              chmod 600 /swapfile
+              mkswap /swapfile
+              swapon /swapfile
+              echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+
+              # 2. Enable IPv4 packet forwarding in the Linux kernel
               echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-nat.conf
               sysctl -p /etc/sysctl.d/99-nat.conf
+
+              # 3. Install iptables-services
               dnf install -y iptables-services
-              DEFAULT_IF=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\\S+)' | head -n1)
-              iptables -t nat -A POSTROUTING -o $DEFAULT_IF -j MASQUERADE
-              iptables -F FORWARD
-              service iptables save
+
+              # 4. Find the active outbound interface reliably
+              DEFAULT_IF=$(ip -4 route show default | awk '{print $5}')
+              if [ -z "$DEFAULT_IF" ]; then
+                DEFAULT_IF=$(ip -br link show | awk '$1 !~ "lo" {print $1; exit}')
+              fi
+
+              # 5. Flush and configure NAT Masquerading and Forwarding
+              iptables -F
+              iptables -t nat -F
+              iptables -t nat -A POSTROUTING -o "$DEFAULT_IF" -j MASQUERADE
+              iptables -A FORWARD -i "$DEFAULT_IF" -m state --state RELATED,ESTABLISHED -j ACCEPT
+              iptables -A FORWARD -j ACCEPT
+
+              # 6. Save iptables rules and enable systemd service on boot
+              iptables-save > /etc/sysconfig/iptables
               systemctl enable --now iptables
               EOF
 
