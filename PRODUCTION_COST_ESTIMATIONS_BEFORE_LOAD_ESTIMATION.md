@@ -176,6 +176,91 @@ In our asynchronous architecture, AI tasks are decoupled from the Express web se
 
 ---
 
+## 6b. Why ECR, SQS, and Lambda are so Cheap ($0.50 – $3.50/mo) & How They Scale
+
+A frequent doubt when reviewing serverless estimates is: *"ECR is kept at $0.50, SQS at $0.50, and Lambda at $3.00. Are these numbers real, or will they explode under production load?"*
+
+Here is the exact mathematical breakdown based on AWS billing formulas and the AWS Permanent Free Tier.
+
+### 1. Amazon ECR ($0.50/month) — Fixed by Storage, NOT Traffic
+- **How ECR Charges:** ECR charges **$0.10 per GB-month** for stored Docker images. It does **not** charge for user requests, API hits, or traffic.
+- **Image Size:** Our production Node.js Alpine container is approximately **~250 MB compressed**.
+- **Image Retention:** With a standard lifecycle policy retaining the `latest` tag plus the 9 most recent builds (~10 images total), total storage is:
+  $$\text{Storage} = 10 \times 0.25\text{ GB} = 2.5\text{ GB}$$
+  $$\text{Cost} = 2.5\text{ GB} \times \$0.10 = \mathbf{\$0.25 / \text{month}}$$
+- **Data Transfer:** Pulling images from ECR into ECS Fargate in the same AWS region (`ap-south-2` / `ap-south-1`) is **$0.00 (100% Free)**.
+- **Scaling Behavior:** Whether you have 250 concurrent users or 25,000 concurrent users, ECR storage stays at **~$0.25 – $0.50/month**.
+
+---
+
+### 2. Amazon SQS ($0.50/month) — The 1 Million Permanent Free Requests
+- **How SQS Charges:** Standard SQS charges **$0.40 per 1,000,000 requests** ($0.0000004 per request).
+- **AWS Permanent Free Tier:** **1,000,000 requests are 100% FREE every single month forever.**
+- **Requests Generated per Submission:**
+  - `SendMessage`: 1 request
+  - Lambda polling (`ReceiveMessage` via 20-second Long Polling): ~2–3 requests per batch
+  - `DeleteMessage`: 1 request
+  - Total per submission: ~5 SQS requests.
+- **For 10,000 Submissions / Month:**
+  $$\text{Total Active SQS Requests} = 10,000 \times 5 = 50,000\text{ requests}$$
+  - Even factoring in idle long-polling across our 4 queues (~450,000 background checks/month):
+  $$\text{Total SQS Volume} = 50,000 + 450,000 = \mathbf{500,000\text{ requests / month}}$$
+  - **Since 500,000 requests is well BELOW the 1,000,000 Free Tier, SQS cost is literally \$0.00!**
+  - Even if AWS Free Tier did not exist:
+    $$500,000 \times \frac{\$0.40}{1,000,000} = \mathbf{\$0.20\text{ (20 cents)}}$$
+  - We budgeted **$0.50** as a safe, conservative ceiling.
+
+---
+
+### 3. AWS Lambda ($3.00/month) — Compute Time Sizing & Math
+Lambda does not run 24/7 like an EC2 instance. It costs money **only for the exact milliseconds code is actively executing**. When nobody is taking exams at 2:00 AM, Lambda costs **$0.00000**.
+
+- **AWS Permanent Free Tier:**
+  - **1,000,000 invocations FREE every month.**
+  - **400,000 GB-seconds of compute time FREE every month.**
+- **Our 5 Lambda Worker Functions (from `terraform/lambdas.tf`):**
+  1. `paper_ocr`: 1024 MB (1.0 GB RAM) &mdash; avg 6 seconds per submission.
+  2. `paper_evaluation`: 1024 MB (1.0 GB RAM) &mdash; avg 5 seconds per submission.
+  3. `assignment_ocr`: 1024 MB (1.0 GB RAM) &mdash; avg 8 seconds per assignment.
+  4. `bulk_split`: 2048 MB (2.0 GB RAM) &mdash; avg 10 seconds per 50-student stack.
+  5. `sweeper`: 512 MB (0.5 GB RAM) &mdash; runs every 5 minutes (8,640 runs/mo, 1 sec each).
+
+- **Execution Calculation for 10,000 Submissions + 1,000 Assignments:**
+  $$\text{paper\_ocr} = 10,000 \times 6\text{s} \times 1.0\text{ GB} = 60,000\text{ GB-seconds}$$
+  $$\text{paper\_evaluation} = 10,000 \times 5\text{s} \times 1.0\text{ GB} = 50,000\text{ GB-seconds}$$
+  $$\text{assignment\_ocr} = 1,000 \times 8\text{s} \times 1.0\text{ GB} = 8,000\text{ GB-seconds}$$
+  $$\text{bulk\_split} (200\text{ bulk uploads}) = 200 \times 10\text{s} \times 2.0\text{ GB} = 4,000\text{ GB-seconds}$$
+  $$\text{sweeper} (8,640\text{ runs}) = 8,640 \times 1\text{s} \times 0.5\text{ GB} = 4,320\text{ GB-seconds}$$
+  $$\mathbf{\text{Total Compute}} = 60,000 + 50,000 + 8,000 + 4,000 + 4,320 = \mathbf{126,320\text{ GB-seconds}}$$
+
+- **Total Invocations:** $10,000 + 10,000 + 1,000 + 200 + 8,640 = \mathbf{29,840\text{ invocations}}$.
+- **Applying AWS Pricing:**
+  - **Invocations:** 29,840 is well under 1,000,000 (Free Tier = **$0.00**).
+  - **Compute:** 126,320 GB-seconds is well under the 400,000 GB-seconds Free Tier (**$0.00**).
+  - **Even if Free Tier has expired:**
+    $$\text{Billable Compute} = 126,320\text{ GB-s} \times \$0.0000166667 = \mathbf{\$2.105 / \text{month}}$$
+    $$\text{Billable Invocations} = 29,840 \times \frac{\$0.20}{1,000,000} = \mathbf{\$0.006 / \text{month}}$$
+    $$\mathbf{\text{Net Lambda Cost}} = \mathbf{\$2.11 / \text{month}}$$
+  - We rounded this up to **$3.00/month** to allow for test retries, dead-letter redrives, and debugging runs.
+
+---
+
+### 4. How SQS & Lambda Scale as Student Volume Multiplies
+
+| Monthly Workload Volume | SQS Requests & Cost | Lambda GB-Seconds & Cost | Total Combined Pipeline Cost |
+| :--- | :--- | :--- | :--- |
+| **10,000 Submissions** | 500,000 reqs &rarr; **$0.00** *(within Free Tier)* or **$0.20** | 126,320 GB-s &rarr; **$0.00** *(within Free Tier)* or **$2.11** | **~$2.31 / month** (Budgeted $3.50) |
+| **50,000 Submissions** | 2,500,000 reqs &rarr; **$0.60** | 630,000 GB-s &rarr; **$3.83** | **~$4.43 / month** |
+| **100,000 Submissions** | 5,000,000 reqs &rarr; **$1.60** | 1,260,000 GB-s &rarr; **$14.33** | **~$15.93 / month** |
+| **500,000 Submissions** | 25,000,000 reqs &rarr; **$9.60** | 6,300,000 GB-s &rarr; **$98.33** | **~$107.93 / month** |
+
+> [!TIP]
+> **Why Serverless Saves Educational Startups Thousands of Dollars:**
+> If you built this OCR/evaluation queue using a dedicated EC2 worker VM running 24/7, a 4 vCPU / 8 GB EC2 worker instance would cost **~$50 to $70 every month**, even when sitting idle 90% of the time.
+> With **SQS + Lambda**, you pay **~$2.31/month** at 10,000 submissions, and your cost only grows when your revenue and student numbers grow.
+
+---
+
 ## 7. Performance Feasibility for 250 Concurrent Users
 
 Can this **$278/month** system handle 250 concurrent users, 10,000 submissions, and 1,000 assignments smoothly?
