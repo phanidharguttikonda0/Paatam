@@ -15,4 +15,3 @@ terraform.tfstate.backup
 
 # previous logic backend
 smartstudy-backend
-cost-calculator

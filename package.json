@@ -10,7 +10,7 @@
     "dev": "tsx watch server.ts",
     "build": "tsc",
     "generate:docs": "node scripts/generate_frontend_docs.js",
-    "build:docs": "node scripts/generate_frontend_docs.js && mkdir -p public && cp API_DOCUMENTATION_FOR_FRONTEND.html public/index.html",
+    "build:docs": "node scripts/generate_frontend_docs.js && mkdir -p public && cp API_DOCUMENTATION_FOR_FRONTEND.html public/index.html && rm -rf public/cost-calculator && cp -r cost-calculator public/cost-calculator",
     "test": "vitest",
     "db:shell": "bash scripts/db-shell.sh"
   },

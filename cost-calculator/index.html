@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paatam AI Cost & Pricing Calculator | Gemini & Sarvam Architecture</title>
+  <meta name="description" content="Planning estimate for Paatam AI grading costs using Gemini 3.6 Flash and Sarvam. Verify model routing and token usage against invoices.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Application Header -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-logo" id="brandLogo">P</div>
+      <div class="brand-meta">
+        <h1>
+          Paatam AI Cost Engine
+          <span class="version-tag">Scenario estimate</span>
+        </h1>
+        <p>Scenario estimate for exam and curriculum AI calls across Gemini and Sarvam. Verify deployment routing and usage against invoices.</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Currency Switcher -->
+      <div class="currency-toggle-group" id="currencyToggleGroup">
+        <button type="button" class="currency-btn active" id="btnCurrencyINR" data-currency="INR">INR (₹)</button>
+        <button type="button" class="currency-btn" id="btnCurrencyUSD" data-currency="USD">USD ($)</button>
+      </div>
+
+      <!-- Theme Switcher -->
+      <button type="button" class="btn btn-secondary" id="btnThemeToggle" title="Toggle Dark/Light Mode">
+        <span id="themeIcon">☀️</span>
+        <span id="themeLabel">Light</span>
+      </button>
+
+      <!-- Edit Rates Modal Button -->
+      <button type="button" class="btn btn-secondary" id="btnOpenRatesModal" title="Customize API token and per-page rates">
+        <span>⚙️</span>
+        <span>API Rates</span>
+      </button>
+
+      <!-- Export CSV Button -->
+      <button type="button" class="btn btn-primary" id="btnExportCsv" title="Export complete cost calculation to CSV">
+        <span>📥</span>
+        <span>Export CSV</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Institutional Preset Profiles Ribbon -->
+  <div class="presets-bar" id="presetsBar">
+    <span class="presets-label">Deployment Presets:</span>
+    <button type="button" class="preset-chip" data-preset="single_class">
+      <span class="preset-icon">🏫</span>
+      <span class="preset-name">Single Classroom (40 Students)</span>
+    </button>
+    <button type="button" class="preset-chip active" data-preset="medium_school">
+      <span class="preset-icon">🎓</span>
+      <span class="preset-name">Mid-Sized School (350 Students)</span>
+    </button>
+    <button type="button" class="preset-chip" data-preset="large_institution">
+      <span class="preset-icon">🏛️</span>
+      <span class="preset-name">Large Campus (1,200 Students)</span>
+    </button>
+    <button type="button" class="preset-chip" data-preset="state_group">
+      <span class="preset-icon">🌐</span>
+      <span class="preset-name">School Group (5,000 Students)</span>
+    </button>
+  </div>
+
+  <!-- KPI Overview Ribbon -->
+  <section class="kpi-ribbon" aria-label="Key Performance Indicators">
+    <div class="kpi-card" style="--card-accent: var(--accent-indigo)">
+      <div class="kpi-header">
+        <span class="kpi-title">Cost Per Student / Exam</span>
+        <span class="kpi-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo)">Blended Avg</span>
+      </div>
+      <div class="kpi-value" id="kpiCostPerPaper">
+        <span class="currency-symbol">₹</span>
+        <span class="number-val">2.85</span>
+      </div>
+      <div class="kpi-subtext" id="kpiCostPerPaperSub">All pipeline steps & models included</div>
+    </div>
+
+    <div class="kpi-card" style="--card-accent: var(--accent-purple)">
+      <div class="kpi-header">
+        <span class="kpi-title">Cost Per Student / Month</span>
+        <span class="kpi-badge" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple)" id="kpiExamsPerMonthBadge">6 Exams/Mo</span>
+      </div>
+      <div class="kpi-value" id="kpiCostPerMonth">
+        <span class="currency-symbol">₹</span>
+        <span class="number-val">17.10</span>
+      </div>
+      <div class="kpi-subtext" id="kpiCostPerYearSub">Annual: ₹171 / student (10 mo)</div>
+    </div>
+
+    <div class="kpi-card" style="--card-accent: var(--accent-rose)">
+      <div class="kpi-header">
+        <span class="kpi-title">Estimated Monthly AI Bill</span>
+        <span class="kpi-badge" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose)">Raw COGS</span>
+      </div>
+      <div class="kpi-value" id="kpiTotalCohortCost">
+        <span class="currency-symbol">₹</span>
+        <span class="number-val">5,985</span>
+      </div>
+      <div class="kpi-subtext" id="kpiTotalCohortSub">For 350 active students (2,100 papers)</div>
+    </div>
+
+    <div class="kpi-card highlight" style="--card-accent: var(--accent-emerald)">
+      <div class="kpi-header">
+        <span class="kpi-title">Recommended School Price</span>
+        <span class="kpi-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald)" id="kpiMarginBadge">70% Margin</span>
+      </div>
+      <div class="kpi-value" id="kpiRecommendedPrice">
+        <span class="currency-symbol">₹</span>
+        <span class="number-val">59.00</span>
+      </div>
+      <div class="kpi-subtext" id="kpiRecommendedPriceSub">Per student / month • Pipeline spread only</div>
+    </div>
+
+    <div class="kpi-card" style="--card-accent: var(--accent-emerald)">
+      <div class="kpi-header">
+        <span class="kpi-title">Monthly Pipeline Spread</span>
+        <span class="kpi-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald)">After AI Cost</span>
+      </div>
+      <div class="kpi-value" id="kpiTotalProfit">
+        <span class="currency-symbol">₹</span>
+        <span class="number-val">14,665</span>
+      </div>
+      <div class="kpi-subtext" id="kpiAnnualProfitSub">Excludes unmodeled costs and taxes</div>
+    </div>
+  </section>
+
+  <!-- Main Workspace Grid -->
+  <main class="main-grid">
+
+    <!-- Left Column: Controls & Configuration Panels -->
+    <aside class="controls-column" aria-label="Calculator Input Parameters">
+
+      <!-- Panel 1: Institutional Scale -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><span>📊</span> Institutional Scale</h2>
+          <span class="panel-subtitle">Cohort Volume</span>
+        </div>
+
+        <!-- Students Count Slider -->
+        <div class="control-group">
+          <div class="control-label-row">
+            <label class="control-label" for="sliderStudentsCount">
+              <span>👥 Total Active Students</span>
+            </label>
+            <span class="control-value-pill" id="valStudentsCount">350</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" class="range-slider" id="sliderStudentsCount" min="10" max="5000" step="10" value="350">
+          </div>
+          <div class="slider-scale">
+            <span>10</span>
+            <span>500</span>
+            <span>2,000</span>
+            <span>5,000</span>
+          </div>
+        </div>
+
+        <!-- Exams Per Month Slider -->
+        <div class="control-group">
+          <label class="control-label" for="inputParticipantsPerExam">Students sharing each generated exam</label>
+          <input type="number" class="input-field" id="inputParticipantsPerExam" min="1" max="350" step="1" value="40">
+        </div>
+
+        <!-- Exams Per Month Slider -->
+        <div class="control-group">
+          <div class="control-label-row">
+            <label class="control-label" for="sliderExamsPerMonth">
+              <span>📝 Exams / Student / Month</span>
+            </label>
+            <span class="control-value-pill" id="valExamsPerMonth">6</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" class="range-slider" id="sliderExamsPerMonth" min="1" max="20" step="1" value="6">
+          </div>
+          <div class="slider-scale">
+            <span>1 test/mo</span>
+            <span>Weekly (4)</span>
+            <span>Bi-Weekly (6-8)</span>
+            <span>Daily (20)</span>
+          </div>
+        </div>
+
+        <!-- Pages Per Paper Slider -->
+        <div class="control-group">
+          <div class="control-label-row">
+            <label class="control-label" for="sliderPagesPerPaper">
+              <span>📄 Pages / Student Answer Sheet</span>
+            </label>
+            <span class="control-value-pill" id="valPagesPerPaper">4 Pages</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" class="range-slider" id="sliderPagesPerPaper" min="1" max="12" step="1" value="4">
+          </div>
+          <div class="slider-scale">
+            <span>1 pg (Worksheet)</span>
+            <span>4 pgs (Standard)</span>
+            <span>8 pgs</span>
+            <span>12 pgs (Term Final)</span>
+          </div>
+        </div>
+
+        <!-- Questions Count Slider -->
+        <div class="control-group" style="margin-bottom: 0;">
+          <div class="control-label-row">
+            <label class="control-label" for="sliderQuestionsPerPaper">
+              <span>❓ Questions / Exam Paper</span>
+            </label>
+            <span class="control-value-pill" id="valQuestionsPerPaper">22 Qs</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" class="range-slider" id="sliderQuestionsPerPaper" min="5" max="40" step="1" value="22">
+          </div>
+          <div class="slider-scale">
+            <span>5 (Quick Quiz)</span>
+            <span>15</span>
+            <span>25</span>
+            <span>40 (Full Board)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: AI Pipeline & Calibration Settings -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><span>⚡</span> Workflow & AI Engines</h2>
+          <span class="panel-subtitle">Pipeline Stages</span>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Exam paper source</label>
+          <div class="segmented-control" id="paperSourceControl">
+            <button type="button" class="segment-btn active" data-mode="generated">Generate exam</button>
+            <button type="button" class="segment-btn" data-mode="uploaded">Upload exam PDF</button>
+          </div>
+        </div>
+        <div id="uploadedPaperFields" hidden>
+          <div class="control-group">
+            <label class="control-label" for="inputQuestionPaperPages">Question paper PDF pages / exam</label>
+            <input type="number" class="input-field" id="inputQuestionPaperPages" min="1" step="1" value="2">
+          </div>
+          <div class="control-group">
+            <label class="control-label" for="inputAnswerKeyPages">Answer key PDF pages / exam (0 = none)</label>
+            <input type="number" class="input-field" id="inputAnswerKeyPages" min="0" step="1" value="0">
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputRegenerations">Question replacements / exam</label>
+          <input type="number" class="input-field" id="inputRegenerations" min="0" step="1" value="0">
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputOcrRepeats">Additional OCR calls / 100 papers (%)</label>
+          <input type="number" class="input-field" id="inputOcrRepeats" min="0" step="1" value="0">
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputEvaluationRepeats">Additional grading calls / 100 papers (%)</label>
+          <input type="number" class="input-field" id="inputEvaluationRepeats" min="0" step="1" value="0">
+        </div>
+
+        <!-- Optional calibration scenario -->
+        <div class="toggle-switch-wrapper">
+          <div class="toggle-info">
+            <h4>Extra Calibration Passes</h4>
+            <p>Optional second evaluation pass on sampled papers plus one synthesis call</p>
+          </div>
+          <input type="checkbox" class="toggle-checkbox" id="checkCalibration22">
+        </div>
+
+        <!-- Calibration Ratio Slider (appears when calibration is enabled) -->
+        <div class="control-group" id="calibrationRatioContainer" style="padding: 0 0.25rem 0.5rem 0.25rem; display: none;">
+          <div class="control-label-row">
+            <label class="control-label" for="sliderCalibrationRatio" style="font-size: 0.78rem;">
+              <span>Calibration Sample Size</span>
+            </label>
+            <span class="control-value-pill" id="valCalibrationRatio" style="font-size: 0.75rem;">22%</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" class="range-slider" id="sliderCalibrationRatio" min="5" max="50" step="1" value="22">
+          </div>
+        </div>
+
+        <!-- Bulk Slicing Mode -->
+        <div class="control-group">
+          <div class="control-label-row">
+            <label class="control-label">
+              <span>📑 Bulk Stack Slicing Mode</span>
+            </label>
+          </div>
+          <div class="segmented-control" id="slicingModeControl">
+            <button type="button" class="segment-btn active" data-mode="dynamic_ai">Combined PDF: AI Boundaries</button>
+            <button type="button" class="segment-btn" data-mode="fixed">Direct per-paper uploads</button>
+          </div>
+        </div>
+
+        <!-- Visual Diagram Generation Mode -->
+        <div class="control-group" style="margin-bottom: 0;">
+          <div class="control-label-row">
+            <label class="control-label">
+              <span>🖼️ Diagram Generation Mode</span>
+            </label>
+          </div>
+          <div class="segmented-control" id="diagramModeControl">
+            <button type="button" class="segment-btn active" data-mode="none">No extra diagrams</button>
+            <button type="button" class="segment-btn" data-mode="svg">SVG Vector</button>
+            <button type="button" class="segment-btn" data-mode="mixed">Mixed (40/60)</button>
+            <button type="button" class="segment-btn" data-mode="ai_image">AI Image</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Subject Distribution & Curriculum Mix -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Monthly Curriculum AI</h2>
+          <span class="panel-subtitle">Shared institution cost</span>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputChaptersPerMonth">New chapters ingested / month</label>
+          <input type="number" class="input-field" id="inputChaptersPerMonth" min="0" step="1" value="0">
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="inputChunksPerChapter">Embedding chunks / chapter</label>
+          <input type="number" class="input-field" id="inputChunksPerChapter" min="0" step="1" value="10">
+        </div>
+        <div class="control-group" style="margin-bottom: 0;">
+          <label class="control-label" for="inputSyllabusAnalyses">Syllabus analyses / month</label>
+          <input type="number" class="input-field" id="inputSyllabusAnalyses" min="0" step="1" value="0">
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.75rem;">Embeddings default to $0 until you enter a verified rate for a supported model in API Rates. Metadata and syllabus calls use Gemini 3.6 Flash estimates.</p>
+      </div>
+
+      <!-- Panel 3: Subject Distribution & Curriculum Mix -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><span>📚</span> Subject Curriculum Mix</h2>
+          <span class="panel-subtitle" id="subjectMixTotalLabel">Total: 100%</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Weights are normalized to 100%. Indic uses Sarvam; other subjects assume Gemini 3.6 Flash.
+        </p>
+
+        <div class="subject-distribution-grid">
+          <!-- Math -->
+          <div class="subject-item-row">
+            <div class="subject-icon-box">📐</div>
+            <div class="subject-info-col">
+              <div class="name-row">
+                <span>Mathematics (LaTeX & Formulas)</span>
+                <span class="control-value-pill" id="valWeightMath" style="padding: 0 0.4rem; font-size: 0.75rem;">20%</span>
+              </div>
+              <input type="range" class="range-slider subject-slider" id="sliderWeightMath" min="0" max="60" step="5" value="20">
+            </div>
+          </div>
+
+          <!-- Science -->
+          <div class="subject-item-row">
+            <div class="subject-icon-box">🔬</div>
+            <div class="subject-info-col">
+              <div class="name-row">
+                <span>Science (Diagrams & Reactions)</span>
+                <span class="control-value-pill" id="valWeightSci" style="padding: 0 0.4rem; font-size: 0.75rem;">25%</span>
+              </div>
+              <input type="range" class="range-slider subject-slider" id="sliderWeightSci" min="0" max="60" step="5" value="25">
+            </div>
+          </div>
+
+          <!-- Social -->
+          <div class="subject-item-row">
+            <div class="subject-icon-box">🌍</div>
+            <div class="subject-info-col">
+              <div class="name-row">
+                <span>Social Studies (Maps & Essays)</span>
+                <span class="control-value-pill" id="valWeightSoc" style="padding: 0 0.4rem; font-size: 0.75rem;">20%</span>
+              </div>
+              <input type="range" class="range-slider subject-slider" id="sliderWeightSoc" min="0" max="60" step="5" value="20">
+            </div>
+          </div>
+
+          <!-- Hindi / Indic -->
+          <div class="subject-item-row">
+            <div class="subject-icon-box">🇮🇳</div>
+            <div class="subject-info-col">
+              <div class="name-row">
+                <span>Hindi / Telugu (Sarvam AI)</span>
+                <span class="control-value-pill" id="valWeightHin" style="padding: 0 0.4rem; font-size: 0.75rem;">15%</span>
+              </div>
+              <input type="range" class="range-slider subject-slider" id="sliderWeightHin" min="0" max="60" step="5" value="15">
+            </div>
+          </div>
+
+          <!-- English -->
+          <div class="subject-item-row">
+            <div class="subject-icon-box">📖</div>
+            <div class="subject-info-col">
+              <div class="name-row">
+                <span>English (Stems & Grammar)</span>
+                <span class="control-value-pill" id="valWeightEng" style="padding: 0 0.4rem; font-size: 0.75rem;">20%</span>
+              </div>
+              <input type="range" class="range-slider subject-slider" id="sliderWeightEng" min="0" max="60" step="5" value="20">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 4: Profit Margin Target -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><span>💰</span> Target Pipeline-Cost Margin</h2>
+          <span class="panel-subtitle">B2B SaaS Pricing</span>
+        </div>
+
+        <div class="control-group" style="margin-bottom: 0;">
+          <div class="control-label-row">
+            <label class="control-label" for="sliderMargin">
+              <span>Target Margin Over Modeled Costs</span>
+            </label>
+            <span class="control-value-pill" id="valMargin" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);">70%</span>
+          </div>
+          <div class="slider-container">
+            <input type="range" class="range-slider" id="sliderMargin" min="30" max="90" step="5" value="70">
+          </div>
+          <div class="slider-scale">
+            <span>30% (Low)</span>
+            <span>50% (Pilot)</span>
+            <span>70% (Target)</span>
+            <span>90% (High SaaS)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 5: AWS Cloud Hosting & Parent Notifications -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title"><span>☁️</span> Cloud Hosting & Notifications</h2>
+          <span class="panel-subtitle" id="cloudHostingSubtitle">AWS $347/mo Bill</span>
+        </div>
+
+        <!-- AWS Architecture Selector -->
+        <div class="control-group">
+          <label class="control-label">AWS Cloud Infrastructure Stack (250 Concurrent Users)</label>
+          <div class="segmented-control" id="cloudArchitectureControl">
+            <button type="button" class="segment-btn active" data-arch="multi_az">Multi-AZ HA ($346.67/mo)</button>
+            <button type="button" class="segment-btn" data-arch="single_az">Cost-Optimized ($248.11/mo)</button>
+          </div>
+          <p style="font-size: 0.73rem; color: var(--text-muted); margin-top: 0.35rem;">
+            ap-south-2 Hyderabad • 250 concurrent users (5k students) • db.t4g.medium
+          </p>
+        </div>
+
+        <!-- Parent Notification Channels -->
+        <div class="control-group">
+          <div class="control-label-row">
+            <label class="control-label">
+              <span>🔔 Parent Scorecard Notifications</span>
+            </label>
+            <span class="control-value-pill" id="valTotalNotificationCost">₹1.00 / Paper</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.4rem;">
+            <!-- WhatsApp: 1 Rs -->
+            <label class="notification-channel-card" for="checkNotifWhatsApp">
+              <input type="checkbox" class="channel-checkbox" id="checkNotifWhatsApp" checked>
+              <div class="channel-info">
+                <div class="channel-title">
+                  <span class="channel-icon">💬</span>
+                  <span class="channel-name">WhatsApp Notification</span>
+                </div>
+                <span class="channel-desc">Rich scorecard template + PDF result link</span>
+              </div>
+              <span class="channel-rate-badge badge-green">1 Rs (₹1.00)</span>
+            </label>
+
+            <!-- SMS: 60 Paisa -->
+            <label class="notification-channel-card" for="checkNotifSms">
+              <input type="checkbox" class="channel-checkbox" id="checkNotifSms">
+              <div class="channel-info">
+                <div class="channel-title">
+                  <span class="channel-icon">📱</span>
+                  <span class="channel-name">SMS Notification</span>
+                </div>
+                <span class="channel-desc">DLT registered domestic SMS in India</span>
+              </div>
+              <span class="channel-rate-badge badge-blue">60 Paisa (₹0.60)</span>
+            </label>
+
+            <!-- Email: 30 Paisa -->
+            <label class="notification-channel-card" for="checkNotifEmail">
+              <input type="checkbox" class="channel-checkbox" id="checkNotifEmail">
+              <div class="channel-info">
+                <div class="channel-title">
+                  <span class="channel-icon">📧</span>
+                  <span class="channel-name">Email Scorecard</span>
+                </div>
+                <span class="channel-desc">Amazon SES transactional scorecard report</span>
+              </div>
+              <span class="channel-rate-badge badge-purple">30 Paisa (₹0.30)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Amortize Fixed Cloud Toggle -->
+        <div class="toggle-switch-wrapper" style="margin-bottom: 0;">
+          <div class="toggle-info">
+            <h4>Amortize $406 Cloud Bill in Per-Paper COGS</h4>
+            <p id="amortizeToggleDesc">Distributes fixed AWS hosting across active students & exams</p>
+          </div>
+          <input type="checkbox" class="toggle-checkbox" id="checkIncludeFixedCloud">
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Right Column: Outputs, Visualizations & Breakdown -->
+    <section class="results-column" aria-label="Cost Estimation Results and Visualizations">
+
+      <!-- Navigation Tabs -->
+      <nav class="tabs-navigation" aria-label="Result View Tabs">
+        <button type="button" class="tab-btn active" data-tab="tabSteps">
+          <span>📑</span>
+          <span>Pipeline Step Breakdown</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tabCloud">
+          <span>☁️</span>
+          <span>AWS Cloud Bill ($406/mo)</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tabSubjects">
+          <span>📐</span>
+          <span>Subject Matrix (Math vs Sci vs Indic)</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tabCalibration">
+          <span>🎯</span>
+          <span>Calibration Scenario</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tabPricing">
+          <span>💎</span>
+          <span>Pricing Strategy & Tiers</span>
+        </button>
+      </nav>
+
+      <!-- Tab 1: Pipeline Step Breakdown -->
+      <div class="tab-content" id="tabSteps">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title"><span>🔍</span> Cost Distribution Across Evaluation Pipeline</h3>
+              <p class="panel-subtitle">Modeled AI workflows and per-paper infrastructure; fixed hosting and taxes excluded</p>
+            </div>
+            <span class="control-value-pill" id="chartTotalBadge">₹2.85 / Paper</span>
+          </div>
+
+          <!-- Visual Donut Chart + Legend -->
+          <div class="cost-chart-layout">
+            <div class="chart-container">
+              <svg class="donut-chart-svg" id="stepsDonutChart" viewBox="0 0 42 42" aria-label="Cost Breakdown Donut Chart">
+                <!-- SVG slices generated dynamically by app.js -->
+              </svg>
+            </div>
+            <div id="chartLegendList" style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.82rem;">
+              <!-- Legend items populated by JS -->
+            </div>
+          </div>
+
+          <!-- Detailed Step Table -->
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Pipeline Step & API Service</th>
+                  <th>Share</th>
+                  <th>Per Paper Cost</th>
+                  <th>Monthly Total (Cohort)</th>
+                  <th>Technical Details</th>
+                </tr>
+              </thead>
+              <tbody id="stepsTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Architecture Callout -->
+        <div class="callout-box info">
+          <div class="callout-icon">💡</div>
+          <div>
+            <strong>Estimation note:</strong> Enter actual repeat calls and monthly ingestion volumes above. Embedding spend is $0 until you set a supported model rate; the backend's text-embedding-004 endpoint is retired. Token counts are assumptions, not invoice data. Fixed hosting, cache writes, SMS, taxes and staff costs are excluded. Reconcile with provider invoices before quoting a school.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: AWS Cloud Production Bill & Notifications -->
+      <div class="tab-content" id="tabCloud" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title"><span>☁️</span> AWS Cloud Production Bill & Infrastructure Sizing</h3>
+              <p class="panel-subtitle">Empirically sized for 250 concurrent users (5,000 students + 1,000 staff) in AWS ap-south-2 Hyderabad</p>
+            </div>
+            <span class="control-value-pill" id="cloudBillHeaderBadge">$346.67 / mo • Multi-AZ</span>
+          </div>
+
+          <!-- 4 Cloud KPI Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="kpi-card" style="--card-accent: var(--accent-indigo)">
+              <span class="kpi-title">Monthly Fixed AWS Bill</span>
+              <div class="kpi-value" id="cardCloudMonthlyBill">
+                <span class="currency-symbol">$</span><span class="number-val">346.67</span>
+              </div>
+              <div class="kpi-subtext" id="cardCloudMonthlyBillSub">₹29,987 / month • Production Stack (250 Concurrency)</div>
+            </div>
+
+            <div class="kpi-card" style="--card-accent: var(--accent-purple)">
+              <span class="kpi-title">Fixed Cloud / Student / Mo</span>
+              <div class="kpi-value" id="cardCloudPerStudent">
+                <span class="currency-symbol">₹</span><span class="number-val">85.68</span>
+              </div>
+              <div class="kpi-subtext" id="cardCloudPerStudentSub">Amortized across 350 active students</div>
+            </div>
+
+            <div class="kpi-card" style="--card-accent: var(--accent-sky)">
+              <span class="kpi-title">Fixed Cloud / Exam Paper</span>
+              <div class="kpi-value" id="cardCloudPerPaper">
+                <span class="currency-symbol">₹</span><span class="number-val">14.28</span>
+              </div>
+              <div class="kpi-subtext" id="cardCloudPerPaperSub">Amortized across 2,100 monthly papers</div>
+            </div>
+
+            <div class="kpi-card" style="--card-accent: var(--accent-emerald)">
+              <span class="kpi-title">Scorecard Notifications</span>
+              <div class="kpi-value" id="cardNotifPerPaper">
+                <span class="currency-symbol">₹</span><span class="number-val">1.00</span>
+              </div>
+              <div class="kpi-subtext" id="cardNotifPerPaperSub">WhatsApp (₹1) • SMS (60p) • Email (30p)</div>
+            </div>
+          </div>
+
+          <!-- Cloud Component Table -->
+          <div class="data-table-wrapper" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h4 style="font-size: 0.92rem; font-weight: 700;">AWS Service Cost Breakdown & Student Amortization</h4>
+              <span class="feature-tag accent" id="cloudTableArchTag">Multi-AZ Enterprise Stack</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>AWS Service Component</th>
+                  <th>Architecture Sizing</th>
+                  <th>Monthly Fixed Cost</th>
+                  <th>Per Student / Month</th>
+                  <th>Per Exam Paper</th>
+                  <th>Share (%)</th>
+                </tr>
+              </thead>
+              <tbody id="cloudComponentsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Notification Channels Table -->
+          <div class="data-table-wrapper" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h4 style="font-size: 0.92rem; font-weight: 700;">Parent Notification Channels (User Rates: SMS 60p, Email 30p, WhatsApp 1 Rs)</h4>
+              <span class="control-value-pill" id="notifChannelsActiveBadge">1 Channel Active</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Notification Channel</th>
+                  <th>Rate / Message (INR)</th>
+                  <th>Rate / Message (USD)</th>
+                  <th>Status</th>
+                  <th>Cost / Exam Paper</th>
+                  <th>Monthly Cohort Total</th>
+                </tr>
+              </thead>
+              <tbody id="notificationChannelsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Architectural Deep Dive Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            <div class="callout-box info" style="margin: 0;">
+              <div class="callout-icon">⚡</div>
+              <div>
+                <strong>Why ECS Fargate over EC2:</strong><br>
+                Raw EC2 scaling takes <strong>20–40 minutes of total downtime</strong> (unmounting EBS, changing instance size, re-attaching IPs). In contrast, ECS Fargate auto-scales horizontally in <strong>20–30 seconds with 0 downtime</strong> during exam rushes and pays only for exact seconds consumed.
+              </div>
+            </div>
+
+            <div class="callout-box amber" style="margin: 0;">
+              <div class="callout-icon">🛡️</div>
+              <div>
+                <strong>Why RDS Proxy is Mandatory:</strong><br>
+                When 100+ students submit papers simultaneously, serverless Lambda workers spin up concurrently. Direct connections crash PostgreSQL with <code>FATAL: max_connections exceeded</code>. RDS Proxy multiplexes them safely into 15–25 stable connections.
+              </div>
+            </div>
+
+            <div class="callout-box success" style="margin: 0;">
+              <div class="callout-icon">💡</div>
+              <div>
+                <strong>1-AZ Cost Optimization ($278/mo):</strong><br>
+                Pairing 1-AZ NAT Gateway with Single-AZ RDS drops the monthly cloud bill from $406 to $278 (saving ~$128/mo). Automated daily snapshots provide robust disaster recovery for early-stage rollout.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Subject Matrix -->
+      <div class="tab-content" id="tabSubjects" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title"><span>🔬</span> Subject-by-Subject Cost & Parameter Matrix</h3>
+              <p class="panel-subtitle">Different subjects incur different token & API expenses based on formulas, diagrams, and Indic scripts</p>
+            </div>
+          </div>
+
+          <div class="subject-cards-grid" id="subjectCardsGrid">
+            <!-- Populated dynamically with cards for Math, Science, Social, Hindi, English -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Optional calibration scenario -->
+      <div class="tab-content" id="tabCalibration" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title"><span>🎯</span> Calibration Cost Scenario</h3>
+              <p class="panel-subtitle">Additional evaluation passes when calibration is enabled</p>
+            </div>
+            <span class="control-value-pill" id="calibStatusBadge">Calibration Disabled</span>
+          </div>
+
+          <div class="callout-box amber">
+            <div class="callout-icon">⚖️</div>
+            <div>
+              <strong>Calibration scenario:</strong> Every paper receives its normal evaluation. The selected sample receives one additional pass through its subject's evaluation model, followed by one synthesis call. Confirm that your backend actually performs these calls; 22% is an editable assumption, not a measured optimum.
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="kpi-card">
+              <span class="kpi-title">Anchor Calibration Sample</span>
+              <div class="kpi-value" id="calibSampleStudentsVal">77 Papers</div>
+              <div class="kpi-subtext" id="calibSampleRatioSub">22% of 40 exam participants</div>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Other Papers</span>
+              <div class="kpi-value" id="calibRemainingStudentsVal">273 Papers</div>
+              <div class="kpi-subtext">One standard evaluation each</div>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-title">Calibration Added Cost</span>
+              <div class="kpi-value" id="calibAddedCostVal">₹0.38</div>
+              <div class="kpi-subtext">Incremental cost per student paper</div>
+            </div>
+          </div>
+
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th>Model & Reasoning Depth</th>
+                  <th>Tokens / Complexity</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Baseline: All Papers</strong></td>
+                  <td><span class="feature-tag accent">Subject evaluation model</span></td>
+                  <td>Subject-specific estimate</td>
+                  <td>One evaluation for each student's paper.</td>
+                </tr>
+                <tr>
+                  <td><strong>Sample: Extra Pass</strong></td>
+                  <td><span class="feature-tag accent">Subject evaluation model</span></td>
+                  <td>Same subject-specific estimate</td>
+                  <td>Additional evaluation for the selected sample only.</td>
+                </tr>
+                <tr>
+                  <td><strong>Sample: Synthesis</strong></td>
+                  <td><span class="feature-tag">Subject evaluation model</span></td>
+                  <td>3,500 + 250/sample in; 1,200 out</td>
+                  <td>One synthesis request per exam cohort and subject.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Pricing Strategy & Tiers -->
+      <div class="tab-content" id="tabPricing" style="display: none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title"><span>💎</span> B2B School Commercial Packaging & Margin Tiers</h3>
+              <p class="panel-subtitle">Target spread over modeled pipeline costs; not net profit</p>
+            </div>
+          </div>
+
+          <div class="pricing-tiers-grid" id="pricingTiersGrid">
+            <!-- Populated dynamically with Pilot, Pro, Enterprise cards -->
+          </div>
+
+          <div style="margin-top: 1.75rem; padding: 1.25rem; background: var(--bg-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">Cost Optimization Strategies for Paatam:</h4>
+            <ul style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; padding-left: 1.25rem;">
+              <li><strong>Compare diagram formats:</strong> SVG and raster requests have different costs and quality tradeoffs; use the controls to compare estimates.</li>
+              <li><strong>Direct per-paper uploads:</strong> Skip bulk boundary detection by uploading each student paper through the single-submission flow. The current bulk route does not pass a fixed page count.</li>
+              <li><strong>Context caching:</strong> Count actual cache writes, storage time and cache hits before assuming savings.</li>
+              <li><strong>Indic digitization:</strong> Confirm whether the backend uses Sarvam's digitization or extraction endpoint before selecting a per-page rate.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Modal: Custom API Rates Override -->
+  <div class="modal-overlay" id="ratesModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ Custom API Rates & Exchange Rate</h3>
+        <button type="button" class="close-btn" id="btnCloseRatesModal">&times;</button>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Gemini Developer API paid standard rates as of October 2026. PDF input tokens per answer-sheet page are an editable estimate. Values exclude taxes.
+      </p>
+
+      <div class="rate-input-grid">
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">USD to INR Rate (₹)</label>
+          <input type="number" min="0.01" step="0.01" class="input-field" id="inputUsdToInr" value="86.50">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Sarvam DocAI Per Page (₹)</label>
+          <input type="number" min="0" step="0.01" class="input-field" id="inputSarvamDocAi" value="0.50">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Gemini 3.6 Flash Input / 1M ($)</label>
+          <input type="number" min="0" step="0.01" class="input-field" id="inputFlashIn" value="0.75">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Gemini 3.6 Flash Output / 1M ($)</label>
+          <input type="number" min="0" step="0.01" class="input-field" id="inputFlashOut" value="3.75">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">PDF input tokens / answer-sheet page</label>
+          <input type="number" min="1" step="1" class="input-field" id="inputImageTokens" value="258">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Billed thinking tokens / Gemini evaluation</label>
+          <input type="number" min="0" step="1" class="input-field" id="inputThinkingTokens" value="500">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Sarvam 105B Output / 1M (₹)</label>
+          <input type="number" min="0" step="1" class="input-field" id="inputSarvamChatOut" value="60">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Gemini Image Gen / Image ($)</label>
+          <input type="number" min="0" step="0.0001" class="input-field" id="inputImageGen" value="0.0336">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Sarvam 105B Chat In / 1M (₹)</label>
+          <input type="number" min="0" step="1" class="input-field" id="inputSarvamChatIn" value="15">
+        </div>
+        <div>
+          <label class="control-label" for="inputEmbeddingRate" style="font-size: 0.78rem;">Supported embedding model / 1M input tokens ($)</label>
+          <input type="number" min="0" step="0.0001" class="input-field" id="inputEmbeddingRate" value="0">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">WhatsApp Message Rate (₹)</label>
+          <input type="number" min="0" step="0.05" class="input-field" id="inputWhatsappRate" value="1.00">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">SMS Message Rate (₹) [60 Paisa]</label>
+          <input type="number" min="0" step="0.05" class="input-field" id="inputSmsRate" value="0.60">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Email Message Rate (₹) [30 Paisa]</label>
+          <input type="number" min="0" step="0.05" class="input-field" id="inputEmailRate" value="0.30">
+        </div>
+        <div>
+          <label class="control-label" style="font-size: 0.78rem;">Monthly Fixed AWS Cloud Bill ($) [250 Users Multi-AZ]</label>
+          <input type="number" min="0" step="0.01" class="input-field" id="inputFixedCloudBill" value="346.67">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" id="btnResetRates">Reset to Defaults</button>
+        <button type="button" class="btn btn-primary" id="btnSaveRates">Apply Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

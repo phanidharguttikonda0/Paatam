@@ -1,0 +1,24 @@
+{
+  "name": "paatam-cost-calculator",
+  "version": "1.0.0",
+  "description": "Planning estimator for Paatam AI pipeline costs (Gemini 3.6 Flash and Sarvam assumptions)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test costEngine.test.mjs"
+  },
+  "keywords": [
+    "paatam",
+    "edtech",
+    "cost-calculator",
+    "gemini",
+    "sarvam",
+    "ai-grading",
+    "ocr"
+  ],
+  "author": "Paatam AI Engineering Team",
+  "license": "ISC"
+}
