@@ -11,7 +11,8 @@
     "build": "tsc",
     "generate:docs": "node scripts/generate_frontend_docs.js",
     "build:docs": "node scripts/generate_frontend_docs.js && mkdir -p public && cp API_DOCUMENTATION_FOR_FRONTEND.html public/index.html",
-    "test": "vitest"
+    "test": "vitest",
+    "db:shell": "bash scripts/db-shell.sh"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1153.0",

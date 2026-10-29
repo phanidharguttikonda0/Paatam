@@ -241,8 +241,8 @@ Here is the exact production architecture specification ready for implementation
 │ 7. S3 Endpoint       │ Free VPC Gateway Endpoint for S3 (Zero NAT data fee) │
 │ 8. SQS & Lambda      │ 4 Queues + DLQs; 5 Lambdas capped at 50 concurrency  │
 ├──────────────────────┼──────────────────────────────────────────────────────┤
-│ Monthly AWS Cost     │ ~$277.79 / month (approx ₹24,000 INR/month)          │
-│ Cost per Student     │ ~$0.046 / student / month (approx ₹4.00 INR/student) │
+│ Monthly AWS Cost     │ ~$248.11/mo (Single-AZ) • ~$346.67/mo (Multi-AZ HA)  │
+│ Cost per Student     │ ~$0.049 / student / month (₹4.29 INR / student / mo) │
 └──────────────────────┴──────────────────────────────────────────────────────┘
 ```
 
