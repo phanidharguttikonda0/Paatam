@@ -157,20 +157,23 @@ resource "aws_iam_role_policy_attachment" "grafana_prometheus" {
 
 resource "aws_iam_role_policy_attachment" "grafana_xray" {
   role       = aws_iam_role.grafana_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSXRayReadOnlyAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AWSXrayReadOnlyAccess"
 }
 
-resource "aws_grafana_workspace" "main" {
-  name                     = "paatam-grafana-${var.environment}"
-  account_access_type      = "CURRENT_ACCOUNT"
-  authentication_providers = ["AWS_SSO"]
-  permission_type          = "SERVICE_MANAGED"
-  role_arn                 = aws_iam_role.grafana_role.arn
-  data_sources             = ["CLOUDWATCH", "PROMETHEUS", "XRAY"]
-
-  tags = {
-    Name        = "paatam-grafana-${var.environment}"
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-  }
-}
+# Note: Amazon Managed Grafana (AMG) requires AWS SSO (IAM Identity Center) and is available 
+# in select regions (e.g. ap-southeast-1 or us-east-1). 
+# Once SSO is enabled or self-hosted Grafana is deployed, uncomment this block.
+# resource "aws_grafana_workspace" "main" {
+#   name                     = "paatam-grafana-${var.environment}"
+#   account_access_type      = "CURRENT_ACCOUNT"
+#   authentication_providers = ["AWS_SSO"]
+#   permission_type          = "SERVICE_MANAGED"
+#   role_arn                 = aws_iam_role.grafana_role.arn
+#   data_sources             = ["CLOUDWATCH", "PROMETHEUS", "XRAY"]
+# 
+#   tags = {
+#     Name        = "paatam-grafana-${var.environment}"
+#     Environment = var.environment
+#     ManagedBy   = "Terraform"
+#   }
+# }

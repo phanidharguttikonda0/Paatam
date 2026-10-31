@@ -141,6 +141,10 @@ resource "aws_instance" "nat" {
     Environment = var.environment
   }
 
+  lifecycle {
+    ignore_changes = [ami]
+  }
+
   depends_on = [aws_internet_gateway.main]
 }
 
