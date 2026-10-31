@@ -53,6 +53,12 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
+# Attach AWS X-Ray daemon write policy for active distributed tracing
+resource "aws_iam_role_policy_attachment" "lambda_xray_write" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+}
+
 # Custom IAM Policy for S3, SQS & CloudWatch
 resource "aws_iam_role_policy" "lambda_worker_policy" {
   name = "paatam-lambda-worker-policy-${var.environment}"
@@ -151,6 +157,10 @@ resource "aws_lambda_function" "assignment_ocr" {
     }
   }
 
+  tracing_config {
+    mode = "Active"
+  }
+
   tags = {
     Name        = "paatam-assignment-ocr-${var.environment}"
     Environment = var.environment
@@ -186,6 +196,10 @@ resource "aws_lambda_function" "bulk_split" {
       AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
       AWS_REGION_NAME    = var.aws_region
     }
+  }
+
+  tracing_config {
+    mode = "Active"
   }
 
   tags = {
@@ -225,6 +239,10 @@ resource "aws_lambda_function" "paper_ocr" {
     }
   }
 
+  tracing_config {
+    mode = "Active"
+  }
+
   tags = {
     Name        = "paatam-paper-ocr-${var.environment}"
     Environment = var.environment
@@ -262,6 +280,10 @@ resource "aws_lambda_function" "paper_evaluation" {
     }
   }
 
+  tracing_config {
+    mode = "Active"
+  }
+
   tags = {
     Name        = "paatam-paper-evaluation-${var.environment}"
     Environment = var.environment
@@ -297,6 +319,10 @@ resource "aws_lambda_function" "sweeper" {
       AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
       AWS_REGION_NAME    = var.aws_region
     }
+  }
+
+  tracing_config {
+    mode = "Active"
   }
 
   tags = {

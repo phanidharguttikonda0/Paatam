@@ -27,10 +27,10 @@ resource "aws_security_group" "ecs" {
 # ==========================================
 # 2. CloudWatch Log Group
 # ==========================================
-# Captures all your Pino console.logs
+# Captures all your Pino console.logs (14 days for dev, 30 days for prod)
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/paatam-backend-${var.environment}"
-  retention_in_days = 30
+  retention_in_days = var.environment == "prod" ? 30 : 14
 }
 
 # ==========================================
@@ -60,6 +60,11 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
 # ==========================================
 resource "aws_ecs_cluster" "main" {
   name = "paatam-cluster-${var.environment}"
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 # ==========================================
@@ -142,6 +147,30 @@ resource "aws_ecs_task_definition" "main" {
         "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
         "awslogs-region"        = var.aws_region
         "awslogs-stream-prefix" = "ecs"
+      }
+    }
+  },
+  {
+    name      = "aws-otel-collector"
+    image     = "public.ecr.aws/aws-observability/aws-otel-collector:latest"
+    essential = false
+    command   = ["--config=/etc/ecs/ecs-default-config.yaml"]
+    environment = [
+      {
+        name  = "AWS_PROMETHEUS_ENDPOINT"
+        value = "${aws_prometheus_workspace.main.prometheus_endpoint}api/v1/remote_write"
+      },
+      {
+        name  = "AWS_REGION"
+        value = var.aws_region
+      }
+    ]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "otel"
       }
     }
   }])

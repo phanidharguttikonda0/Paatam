@@ -59,5 +59,12 @@ output "nat_public_ip" {
   value       = aws_eip.nat.public_ip
 }
 
+output "prometheus_endpoint" {
+  description = "The HTTP endpoint of AWS Managed Prometheus workspace"
+  value       = aws_prometheus_workspace.main.prometheus_endpoint
+}
 
-
+output "grafana_endpoint" {
+  description = "The Web URL of Amazon Managed Grafana workspace"
+  value       = aws_grafana_workspace.main.endpoint
+}

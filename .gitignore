@@ -15,3 +15,7 @@ terraform.tfstate.backup
 
 # previous logic backend
 smartstudy-backend
+
+# Observability documentation
+OBSERVABILITY_IMPLEMENTATION_AND_BUSINESS_VALUE.md
+OBSERVABILITY_MASTER_GUIDE.md

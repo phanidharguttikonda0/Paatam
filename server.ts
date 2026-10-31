@@ -1,4 +1,9 @@
 import express, { Express, Request, Response } from "express";
+import { initOpenTelemetry, metricsMiddleware, getPrometheusMetrics } from "./src/config/instrumentation";
+
+// Initialize OpenTelemetry SDK before Express handles requests
+initOpenTelemetry();
+
 import pinoHttp from "pino-http";
 import { logger } from "./src/config/logger";
 import apiRoutes from "./src/routes/index";
@@ -28,8 +33,21 @@ app.use(express.json());
 // Middleware to parse cookies
 app.use(cookieParser());
 
+// Middleware for Prometheus Golden Signal metrics (Throughput, Latencies, Error rates)
+app.use(metricsMiddleware);
+
 // Middleware for structured logging of HTTP requests
 app.use(pinoHttp({ logger }));
+
+// Prometheus scrape endpoint for AWS Managed Prometheus (AMP) / ADOT sidecar
+app.get("/metrics", async (_req: Request, res: Response) => {
+  try {
+    res.set("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+    res.end(await getPrometheusMetrics());
+  } catch (error) {
+    res.status(500).end(error);
+  }
+});
 
 // Mount main API routes
 app.use("/api", apiRoutes);
