@@ -441,19 +441,27 @@
       <div class="panel">
         <div class="panel-header">
           <h2 class="panel-title"><span>☁️</span> Cloud Hosting & Notifications</h2>
-          <span class="panel-subtitle" id="cloudHostingSubtitle">AWS $347/mo Bill</span>
+          <span class="panel-subtitle" id="cloudHostingSubtitle">AWS $248/mo Bill</span>
         </div>
 
-        <!-- AWS Architecture Selector -->
+        <!-- AWS Architecture (Single-AZ Baseline) -->
         <div class="control-group">
-          <label class="control-label">AWS Cloud Infrastructure Stack (250 Concurrent Users)</label>
-          <div class="segmented-control" id="cloudArchitectureControl">
-            <button type="button" class="segment-btn active" data-arch="multi_az">Multi-AZ HA ($346.67/mo)</button>
-            <button type="button" class="segment-btn" data-arch="single_az">Cost-Optimized ($248.11/mo)</button>
+          <div class="control-label-row">
+            <label class="control-label">AWS Architecture (Single-AZ)</label>
+            <span class="control-value-pill" id="cloudArchStatusBadge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.3); font-weight: 700;">$248.11 / mo</span>
           </div>
-          <p style="font-size: 0.73rem; color: var(--text-muted); margin-top: 0.35rem;">
-            ap-south-2 Hyderabad • 250 concurrent users (5k students) • db.t4g.medium
-          </p>
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; margin-top: 0.35rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span style="font-weight: 700; font-size: 0.82rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.4rem;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-emerald); display: inline-block;"></span>
+                Single-AZ Cost-Optimized Stack
+              </span>
+              <span style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted);">ap-south-2</span>
+            </div>
+            <p style="font-size: 0.73rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+              1x NAT + Single-AZ RDS PostgreSQL (<code>db.t4g.medium</code>) + ECS Fargate. Empirically sized for <strong>250 concurrent users (5,000 students)</strong> at <strong>₹4.29 / student / mo</strong>.
+            </p>
+          </div>
         </div>
 
         <!-- Parent Notification Channels -->
@@ -510,8 +518,8 @@
         <!-- Amortize Fixed Cloud Toggle -->
         <div class="toggle-switch-wrapper" style="margin-bottom: 0;">
           <div class="toggle-info">
-            <h4>Amortize $406 Cloud Bill in Per-Paper COGS</h4>
-            <p id="amortizeToggleDesc">Distributes fixed AWS hosting across active students & exams</p>
+            <h4>Amortize $248 Cloud Bill in Per-Paper COGS</h4>
+            <p id="amortizeToggleDesc">Distributes fixed Single-AZ AWS hosting across active students & exams</p>
           </div>
           <input type="checkbox" class="toggle-checkbox" id="checkIncludeFixedCloud">
         </div>
@@ -530,7 +538,7 @@
         </button>
         <button type="button" class="tab-btn" data-tab="tabCloud">
           <span>☁️</span>
-          <span>AWS Cloud Bill ($406/mo)</span>
+          <span>AWS Cloud Bill ($248/mo)</span>
         </button>
         <button type="button" class="tab-btn" data-tab="tabSubjects">
           <span>📐</span>
@@ -603,9 +611,9 @@
           <div class="panel-header">
             <div>
               <h3 class="panel-title"><span>☁️</span> AWS Cloud Production Bill & Infrastructure Sizing</h3>
-              <p class="panel-subtitle">Empirically sized for 250 concurrent users (5,000 students + 1,000 staff) in AWS ap-south-2 Hyderabad</p>
+              <p class="panel-subtitle">Single-AZ Architecture empirically sized for 250 concurrent users (5,000 capacity students • 20:1 ratio) in AWS ap-south-2 Hyderabad</p>
             </div>
-            <span class="control-value-pill" id="cloudBillHeaderBadge">$346.67 / mo • Multi-AZ</span>
+            <span class="control-value-pill" id="cloudBillHeaderBadge">$248.11 / mo • Single-AZ</span>
           </div>
 
           <!-- 4 Cloud KPI Cards -->
@@ -613,25 +621,25 @@
             <div class="kpi-card" style="--card-accent: var(--accent-indigo)">
               <span class="kpi-title">Monthly Fixed AWS Bill</span>
               <div class="kpi-value" id="cardCloudMonthlyBill">
-                <span class="currency-symbol">$</span><span class="number-val">346.67</span>
+                <span class="currency-symbol">$</span><span class="number-val">248.11</span>
               </div>
-              <div class="kpi-subtext" id="cardCloudMonthlyBillSub">₹29,987 / month • Production Stack (250 Concurrency)</div>
+              <div class="kpi-subtext" id="cardCloudMonthlyBillSub">₹21,462 / month • Single-AZ Baseline (250 Concurrency)</div>
             </div>
 
             <div class="kpi-card" style="--card-accent: var(--accent-purple)">
-              <span class="kpi-title">Fixed Cloud / Student / Mo</span>
+              <span class="kpi-title">Cost / Student (5k Capacity)</span>
               <div class="kpi-value" id="cardCloudPerStudent">
-                <span class="currency-symbol">₹</span><span class="number-val">85.68</span>
+                <span class="currency-symbol">₹</span><span class="number-val">4.29</span>
               </div>
-              <div class="kpi-subtext" id="cardCloudPerStudentSub">Amortized across 350 active students</div>
+              <div class="kpi-subtext" id="cardCloudPerStudentSub">$0.0496/mo • Ratio = Price / 5,000 students</div>
             </div>
 
             <div class="kpi-card" style="--card-accent: var(--accent-sky)">
-              <span class="kpi-title">Fixed Cloud / Exam Paper</span>
+              <span class="kpi-title">Cost / Exam Paper (40k Cap)</span>
               <div class="kpi-value" id="cardCloudPerPaper">
-                <span class="currency-symbol">₹</span><span class="number-val">14.28</span>
+                <span class="currency-symbol">₹</span><span class="number-val">0.54</span>
               </div>
-              <div class="kpi-subtext" id="cardCloudPerPaperSub">Amortized across 2,100 monthly papers</div>
+              <div class="kpi-subtext" id="cardCloudPerPaperSub">Amortized at capacity (40,000 monthly papers)</div>
             </div>
 
             <div class="kpi-card" style="--card-accent: var(--accent-emerald)">
@@ -644,10 +652,15 @@
           </div>
 
           <!-- Cloud Component Table -->
-          <div class="data-table-wrapper" style="margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-              <h4 style="font-size: 0.92rem; font-weight: 700;">AWS Service Cost Breakdown & Student Amortization</h4>
-              <span class="feature-tag accent" id="cloudTableArchTag">Multi-AZ Enterprise Stack</span>
+          <div class="data-table-wrapper" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">AWS Baseline Service Cost Breakdown (Single Availability Zone)</h4>
+                <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.15rem;">
+                  Detailed itemized service costs for 250 concurrent users. Per-student capacity cost is calculated as <code>Price / 5,000</code> based on the empirical 20:1 ratio.
+                </p>
+              </div>
+              <span class="feature-tag accent" id="cloudTableArchTag">Single-AZ Baseline ($248.11 / mo)</span>
             </div>
             <table class="data-table">
               <thead>
@@ -655,7 +668,8 @@
                   <th>AWS Service Component</th>
                   <th>Architecture Sizing</th>
                   <th>Monthly Fixed Cost</th>
-                  <th>Per Student / Month</th>
+                  <th>Per Student (5,000 Capacity)</th>
+                  <th>Per Student (Current Cohort)</th>
                   <th>Per Exam Paper</th>
                   <th>Share (%)</th>
                 </tr>
@@ -664,6 +678,184 @@
                 <!-- Dynamically populated -->
               </tbody>
             </table>
+          </div>
+
+          <!-- ======================================================== -->
+          <!-- DYNAMIC AWS CONCURRENCY & AUTO-SIZING CALCULATOR         -->
+          <!-- ======================================================== -->
+          <div class="dynamic-calculator-section" style="margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color-hover); border-radius: var(--radius-lg); box-shadow: var(--shadow-glow);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                  <span style="font-size: 1.35rem;">⚡</span>
+                  <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0;">
+                    Dynamic AWS Concurrency & Auto-Sizing Calculator
+                  </h3>
+                  <span class="feature-tag accent">Interactive Simulator</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); max-width: 720px; line-height: 1.45; margin: 0;">
+                  Simulate concurrent exam submissions (e.g., <strong>50 concurrent users</strong>) to see how <strong>ECS Fargate</strong> and <strong>RDS PostgreSQL</strong> auto-scale in real-time, with exact itemized monthly bills and per-student unit economics.
+                </p>
+              </div>
+              <div style="text-align: right;">
+                <span class="control-value-pill" id="dynamicCohortRatioBadge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border-color: rgba(16, 185, 129, 0.3); font-weight: 700;">
+                  20:1 Enrolled-to-Active Ratio
+                </span>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">
+                  250 concurrent users = 5,000 enrolled students
+                </div>
+              </div>
+            </div>
+
+            <!-- Concurrency Slider & Presets -->
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                <label style="font-size: 0.86rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                  <span>👥 Target Concurrent Exam Users:</span>
+                  <span class="control-value-pill" id="dynamicUsersPill" style="font-size: 0.82rem; font-weight: 700;">50 Concurrent Users</span>
+                </label>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">Exact Count:</span>
+                  <input type="number" id="dynamicConcurrencyInput" min="10" max="1000" step="5" value="50" style="width: 85px; padding: 0.35rem 0.5rem; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-mono); font-weight: 700; text-align: center;">
+                </div>
+              </div>
+
+              <!-- Range Slider -->
+              <div class="slider-container" style="margin-bottom: 0.4rem;">
+                <input type="range" class="range-slider" id="dynamicConcurrencySlider" min="10" max="1000" step="5" value="50">
+              </div>
+              <div class="slider-scale">
+                <span>10 Users (Minimum)</span>
+                <span>50 Users (1k Std / Pilot)</span>
+                <span>250 Users (5k Std / Baseline)</span>
+                <span>500 Users (10k Std)</span>
+                <span>1,000 Users (20k Std)</span>
+              </div>
+
+              <!-- Preset Buttons -->
+              <div style="display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; align-items: center;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Simulate Presets:</span>
+                <button type="button" class="preset-chip dynamic-preset-btn" data-users="25" style="padding: 0.35rem 0.75rem; font-size: 0.76rem;">25 Users (500 Std)</button>
+                <button type="button" class="preset-chip dynamic-preset-btn active" data-users="50" style="padding: 0.35rem 0.75rem; font-size: 0.76rem;">50 Users (1k Std / Pilot)</button>
+                <button type="button" class="preset-chip dynamic-preset-btn" data-users="100" style="padding: 0.35rem 0.75rem; font-size: 0.76rem;">100 Users (2k Std)</button>
+                <button type="button" class="preset-chip dynamic-preset-btn" data-users="250" style="padding: 0.35rem 0.75rem; font-size: 0.76rem;">250 Users (5k Std / Baseline)</button>
+                <button type="button" class="preset-chip dynamic-preset-btn" data-users="500" style="padding: 0.35rem 0.75rem; font-size: 0.76rem;">500 Users (10k Std)</button>
+                <button type="button" class="preset-chip dynamic-preset-btn" data-users="1000" style="padding: 0.35rem 0.75rem; font-size: 0.76rem;">1,000 Users (20k Std)</button>
+              </div>
+            </div>
+
+            <!-- Dynamic 4 KPI Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+              <div class="kpi-card" style="--card-accent: var(--accent-indigo)">
+                <span class="kpi-title">Simulated Concurrency & Cohort</span>
+                <div class="kpi-value" id="cardDynConcurrency">50 Users</div>
+                <div class="kpi-subtext" id="cardDynCohortSub">1,000 Enrolled Students • 8,000 Papers/mo</div>
+              </div>
+
+              <div class="kpi-card" style="--card-accent: var(--accent-emerald)">
+                <span class="kpi-title">Dynamic AWS Monthly Bill</span>
+                <div class="kpi-value" id="cardDynMonthlyBill">
+                  <span class="currency-symbol">$</span><span class="number-val">178.58</span>
+                </div>
+                <div class="kpi-subtext" id="cardDynMonthlyBillSub">₹15,447 / mo • Single-AZ Auto-Scaled</div>
+              </div>
+
+              <div class="kpi-card" style="--card-accent: var(--accent-purple)">
+                <span class="kpi-title">AWS Cost / Student / Month</span>
+                <div class="kpi-value" id="cardDynPerStudent">
+                  <span class="currency-symbol">₹</span><span class="number-val">15.45</span>
+                </div>
+                <div class="kpi-subtext" id="cardDynPerStudentSub">$0.1786/mo • Ratio = Price / 1,000 Students</div>
+              </div>
+
+              <div class="kpi-card" style="--card-accent: var(--accent-sky)">
+                <span class="kpi-title">AWS Cost / Exam Paper</span>
+                <div class="kpi-value" id="cardDynPerPaper">
+                  <span class="currency-symbol">₹</span><span class="number-val">1.93</span>
+                </div>
+                <div class="kpi-subtext" id="cardDynPerPaperSub">$0.0223/paper • Based on 8 papers/student/mo</div>
+              </div>
+            </div>
+
+            <!-- Dynamic Auto-Scaled Sizing Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem;">
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <span style="font-weight: 700; font-size: 0.82rem; color: var(--accent-indigo);">🚀 ECS Fargate Tasks</span>
+                  <span class="control-value-pill" id="dynEcsCostBadge" style="font-size: 0.72rem; font-weight: 700;">$36.04 / mo</span>
+                </div>
+                <div id="dynEcsSpec" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
+                  1.0 vCPU, 2 GB RAM (2 tasks)
+                </div>
+                <div id="dynEcsDetails" style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.35;">
+                  Throughput: 50 – 80 RPS sustained (p99 &lt; 200ms)
+                </div>
+              </div>
+
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <span style="font-weight: 700; font-size: 0.82rem; color: var(--accent-purple);">🐘 RDS PostgreSQL (Single-AZ)</span>
+                  <span class="control-value-pill" id="dynRdsCostBadge" style="font-size: 0.72rem; font-weight: 700;">$30.57 / mo</span>
+                </div>
+                <div id="dynRdsSpec" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
+                  db.t4g.small (2 vCPU, 2 GB, 50 GB gp3)
+                </div>
+                <div id="dynRdsDetails" style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.35;">
+                  Max pool: 50 active DB connections with auto-backup
+                </div>
+              </div>
+
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <span style="font-weight: 700; font-size: 0.82rem; color: var(--accent-sky);">🛡️ RDS Proxy Pooler</span>
+                  <span class="control-value-pill" id="dynProxyCostBadge" style="font-size: 0.72rem; font-weight: 700;">$21.90 / mo</span>
+                </div>
+                <div id="dynProxySpec" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
+                  1 vCPU Dedicated Proxy Pooler
+                </div>
+                <div id="dynProxyDetails" style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.35;">
+                  Multiplexes concurrent Lambda worker spikes to prevent connection starvation
+                </div>
+              </div>
+
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <span style="font-weight: 700; font-size: 0.82rem; color: var(--accent-amber);">🌐 Core Single-AZ Baseline</span>
+                  <span class="control-value-pill" id="dynBaseCostBadge" style="font-size: 0.72rem; font-weight: 700;">$90.07 / mo</span>
+                </div>
+                <div id="dynBaseSpec" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
+                  1x NAT + ALB + WAF + CW + Serverless
+                </div>
+                <div id="dynBaseDetails" style="font-size: 0.73rem; color: var(--text-muted); line-height: 1.35;">
+                  Single availability zone egress &amp; ingress infrastructure
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Cost Breakdown Table -->
+            <div class="data-table-wrapper">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary);">
+                  Itemized Dynamic AWS Cost Breakdown (<span id="dynamicTableTitleConcurrency">50</span> Concurrent Users / <span id="dynamicTableTitleStudents">1,000</span> Students)
+                </h4>
+                <span class="feature-tag accent" id="dynTableRatioTag">Price / 1,000 Students</span>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>AWS Service Component</th>
+                    <th>Dynamic Sizing &amp; Specification</th>
+                    <th>Monthly Cost</th>
+                    <th>Cost / Student / Month</th>
+                    <th>Cost / Exam Paper</th>
+                    <th>Share (%)</th>
+                  </tr>
+                </thead>
+                <tbody id="dynamicCloudComponentsTableBody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <!-- Notification Channels Table -->
@@ -710,8 +902,8 @@
             <div class="callout-box success" style="margin: 0;">
               <div class="callout-icon">💡</div>
               <div>
-                <strong>1-AZ Cost Optimization ($278/mo):</strong><br>
-                Pairing 1-AZ NAT Gateway with Single-AZ RDS drops the monthly cloud bill from $406 to $278 (saving ~$128/mo). Automated daily snapshots provide robust disaster recovery for early-stage rollout.
+                <strong>Single-AZ Cost Optimization ($248.11/mo):</strong><br>
+                Deploying in a Single Availability Zone (1x NAT Gateway + Single-AZ PostgreSQL db.t4g.medium) keeps monthly cloud costs at $248.11/mo (₹21,462/mo) — just <strong>₹4.29 / student / mo</strong> for 5,000 students. Automated daily snapshots to S3 ensure disaster recovery with zero Multi-AZ cross-zone bandwidth tax.
               </div>
             </div>
           </div>
@@ -901,8 +1093,8 @@
           <input type="number" min="0" step="0.05" class="input-field" id="inputEmailRate" value="0.30">
         </div>
         <div>
-          <label class="control-label" style="font-size: 0.78rem;">Monthly Fixed AWS Cloud Bill ($) [250 Users Multi-AZ]</label>
-          <input type="number" min="0" step="0.01" class="input-field" id="inputFixedCloudBill" value="346.67">
+          <label class="control-label" style="font-size: 0.78rem;">Monthly Fixed AWS Cloud Bill ($) [Single-AZ Baseline]</label>
+          <input type="number" min="0" step="0.01" class="input-field" id="inputFixedCloudBill" value="248.11">
         </div>
       </div>
 

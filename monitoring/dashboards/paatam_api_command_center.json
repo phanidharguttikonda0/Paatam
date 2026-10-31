@@ -57,9 +57,24 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "10.0.0",
       "title": "Running Fargate Tasks",
-      "type": "stat"
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/ECS",
+          "metricName": "CPUUtilization",
+          "dimensions": {
+            "ClusterName": "paatam-cluster-dev",
+            "ServiceName": "paatam-service-dev"
+          },
+          "statistic": "SampleCount",
+          "period": "60",
+          "refId": "A"
+        }
+      ]
     },
     {
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
@@ -89,7 +104,23 @@
         "showThresholdMarkers": true
       },
       "title": "Per-Container CPU Utilization (%)",
-      "type": "gauge"
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/ECS",
+          "metricName": "CPUUtilization",
+          "dimensions": {
+            "ClusterName": "paatam-cluster-dev",
+            "ServiceName": "paatam-service-dev"
+          },
+          "statistic": "Average",
+          "period": "60",
+          "refId": "A"
+        }
+      ]
     },
     {
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
@@ -119,7 +150,23 @@
         "showThresholdMarkers": true
       },
       "title": "Per-Container Memory (RAM) Utilization (%)",
-      "type": "gauge"
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/ECS",
+          "metricName": "MemoryUtilization",
+          "dimensions": {
+            "ClusterName": "paatam-cluster-dev",
+            "ServiceName": "paatam-service-dev"
+          },
+          "statistic": "Average",
+          "period": "60",
+          "refId": "A"
+        }
+      ]
     },
     {
       "collapsed": false,
@@ -145,8 +192,10 @@
       "type": "timeseries",
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "sum(rate(http_requests_total[1m])) by (route)",
-          "legendFormat": "{{route}}"
+          "legendFormat": "{{route}}",
+          "refId": "A"
         }
       ]
     },
@@ -168,12 +217,16 @@
       "type": "timeseries",
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "sum(rate(http_requests_total{status_code=~\"4..\"}[1m])) / sum(rate(http_requests_total[1m])) * 100",
-          "legendFormat": "HTTP 4xx (Client Bad Requests)"
+          "legendFormat": "HTTP 4xx (Client Bad Requests)",
+          "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[1m])) / sum(rate(http_requests_total[1m])) * 100",
-          "legendFormat": "HTTP 5xx (Server Crashes)"
+          "legendFormat": "HTTP 5xx (Server Crashes)",
+          "refId": "B"
         }
       ]
     },
@@ -200,29 +253,39 @@
       "type": "table",
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
           "format": "table",
-          "legendFormat": "P50 (Median)"
+          "legendFormat": "P50 (Median)",
+          "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.75, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
           "format": "table",
-          "legendFormat": "P75"
+          "legendFormat": "P75",
+          "refId": "B"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
           "format": "table",
-          "legendFormat": "P90"
+          "legendFormat": "P90",
+          "refId": "C"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
           "format": "table",
-          "legendFormat": "P95"
+          "legendFormat": "P95",
+          "refId": "D"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
           "format": "table",
-          "legendFormat": "P99"
+          "legendFormat": "P99",
+          "refId": "E"
         }
       ]
     },
@@ -252,7 +315,22 @@
       "gridPos": { "h": 6, "w": 8, "x": 0, "y": 21 },
       "id": 7,
       "title": "Active PostgreSQL Connections",
-      "type": "timeseries"
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/RDS",
+          "metricName": "DatabaseConnections",
+          "dimensions": {
+            "DBInstanceIdentifier": "paatam-db-dev"
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "refId": "A"
+        }
+      ]
     },
     {
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
@@ -267,13 +345,41 @@
               { "color": "red", "value": 50 }
             ]
           },
-          "unit": "ms"
+          "unit": "s"
         }
       },
       "gridPos": { "h": 6, "w": 8, "x": 8, "y": 21 },
       "id": 8,
-      "title": "Connection Pool Query Wait Time",
-      "type": "timeseries"
+      "title": "Database Read & Write Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/RDS",
+          "metricName": "ReadLatency",
+          "dimensions": {
+            "DBInstanceIdentifier": "paatam-db-dev"
+          },
+          "statistic": "Average",
+          "period": "60",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/RDS",
+          "metricName": "WriteLatency",
+          "dimensions": {
+            "DBInstanceIdentifier": "paatam-db-dev"
+          },
+          "statistic": "Average",
+          "period": "60",
+          "refId": "B"
+        }
+      ]
     },
     {
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
@@ -286,7 +392,22 @@
       "gridPos": { "h": 6, "w": 8, "x": 16, "y": 21 },
       "id": 9,
       "title": "RDS PostgreSQL CPU Utilization",
-      "type": "timeseries"
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/RDS",
+          "metricName": "CPUUtilization",
+          "dimensions": {
+            "DBInstanceIdentifier": "paatam-db-dev"
+          },
+          "statistic": "Average",
+          "period": "60",
+          "refId": "A"
+        }
+      ]
     },
     {
       "collapsed": false,
@@ -306,7 +427,35 @@
       "gridPos": { "h": 6, "w": 8, "x": 0, "y": 28 },
       "id": 10,
       "title": "SQS Queue In-Flight & Backlog",
-      "type": "timeseries"
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/SQS",
+          "metricName": "ApproximateNumberOfMessagesVisible",
+          "dimensions": {
+            "QueueName": "paatam-assignment-ocr-queue-dev"
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/SQS",
+          "metricName": "ApproximateNumberOfMessagesNotVisible",
+          "dimensions": {
+            "QueueName": "paatam-assignment-ocr-queue-dev"
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "refId": "B"
+        }
+      ]
     },
     {
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
@@ -326,7 +475,35 @@
       "gridPos": { "h": 6, "w": 8, "x": 8, "y": 28 },
       "id": 11,
       "title": "Dead-Letter Queues (DLQ) Count [Must be 0]",
-      "type": "stat"
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/SQS",
+          "metricName": "ApproximateNumberOfMessagesVisible",
+          "dimensions": {
+            "QueueName": "paatam-assignment-ocr-dlq-dev"
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/SQS",
+          "metricName": "ApproximateNumberOfMessagesVisible",
+          "dimensions": {
+            "QueueName": "paatam-bulk-split-dlq-dev"
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "refId": "B"
+        }
+      ]
     },
     {
       "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
@@ -338,8 +515,23 @@
       },
       "gridPos": { "h": 6, "w": 8, "x": 16, "y": 28 },
       "id": 12,
-      "title": "Lambda Execution Duration (P95 ms)",
-      "type": "timeseries"
+      "title": "Lambda Execution Duration (Average ms)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Metrics",
+          "region": "ap-south-2",
+          "namespace": "AWS/Lambda",
+          "metricName": "Duration",
+          "dimensions": {
+            "FunctionName": "paatam-assignment-ocr-dev"
+          },
+          "statistic": "Average",
+          "period": "60",
+          "refId": "A"
+        }
+      ]
     },
     {
       "collapsed": false,
@@ -349,11 +541,20 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "xray", "uid": "xray" },
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "xray" },
       "gridPos": { "h": 10, "w": 24, "x": 0, "y": 35 },
       "id": 13,
       "title": "AWS X-Ray Distributed Trace Explorer & Waterfalls",
-      "type": "xray-traces"
+      "type": "table",
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "xray" },
+          "queryType": "getTraceSummaries",
+          "region": "ap-south-2",
+          "query": "",
+          "refId": "A"
+        }
+      ]
     },
     {
       "collapsed": false,
@@ -371,7 +572,19 @@
         "wrapLogMessage": true
       },
       "title": "Live CloudWatch Logs (/ecs/paatam-backend)",
-      "type": "logs"
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
+          "queryMode": "Logs",
+          "region": "ap-south-2",
+          "logGroupNames": [
+            "/ecs/paatam-backend-dev"
+          ],
+          "expression": "fields @timestamp, @message | sort @timestamp desc | limit 50",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "refresh": "10s",
@@ -388,5 +601,5 @@
   "timezone": "browser",
   "title": "Paatam API Production Command Center",
   "uid": "paatam-command-center",
-  "version": 1
+  "version": 2
 }

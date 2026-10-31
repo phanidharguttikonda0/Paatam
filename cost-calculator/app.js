@@ -20,8 +20,9 @@ const state = {
   pagesPerPaper: 4,
   questionsPerPaper: 22,
 
-  // Cloud Infrastructure & Parent Notifications (250 Concurrent Users)
-  cloudArchitecture: 'multi_az', // 'multi_az' ($346.67) or 'single_az' ($248.11)
+  // Cloud Infrastructure & Parent Notifications (Single-AZ Baseline: 250 Concurrent Users / 5k Students)
+  cloudArchitecture: 'single_az', // Single-AZ Baseline ($248.11 / mo)
+  dynamicConcurrency: 50,         // Dynamic AWS Concurrency Simulation (10-1000 users)
   notificationChannels: {
     whatsapp: true, // 1 Rs (₹1.00)
     sms: false,     // 60 Paisa (₹0.60)
@@ -150,7 +151,7 @@ function renderKpiRibbon(result) {
     <span class="number-val">${paperCost.toFixed(2)}</span>
   `;
   document.getElementById('kpiCostPerPaperSub').textContent = state.includeFixedCloudInfra
-    ? 'All-inclusive: AI + Notifications + Amortized $406 Cloud Bill'
+    ? `All-inclusive: AI + Notifications + Amortized ${formatCurrency(result.cloudInfrastructure.fixedBill.monthlyUSD, result.cloudInfrastructure.fixedBill.monthlyINR, 0)} Cloud Bill`
     : `AI & variable pipeline; +${formatCurrency(result.cloudInfrastructure.fixedBill.perPaperUSD, result.cloudInfrastructure.fixedBill.perPaperINR)}/paper fixed AWS`;
 
   // Cost Per Month
@@ -370,14 +371,20 @@ function renderCloudTab(result) {
   // Header badge
   const headerBadge = document.getElementById('cloudBillHeaderBadge');
   if (headerBadge) {
-    headerBadge.textContent = `${formatCurrency(fixed.monthlyUSD, fixed.monthlyINR, 2)} / mo • ${cloud.isMultiAz ? 'Multi-AZ' : 'Single-AZ'}`;
+    headerBadge.textContent = `${formatCurrency(fixed.monthlyUSD, fixed.monthlyINR, 2)} / mo • Single-AZ`;
   }
   const hostingSub = document.getElementById('cloudHostingSubtitle');
   if (hostingSub) {
     hostingSub.textContent = `AWS ${formatCurrency(fixed.monthlyUSD, fixed.monthlyINR, 0)}/mo Bill`;
   }
 
-  // KPI Cards
+  // Left panel status badge
+  const cloudArchStatusBadge = document.getElementById('cloudArchStatusBadge');
+  if (cloudArchStatusBadge) {
+    cloudArchStatusBadge.textContent = `${formatCurrency(fixed.monthlyUSD, fixed.monthlyINR, 2)} / mo`;
+  }
+
+  // 4 Static KPI Cards
   const cardMonthly = document.getElementById('cardCloudMonthlyBill');
   if (cardMonthly) {
     cardMonthly.innerHTML = `
@@ -387,31 +394,31 @@ function renderCloudTab(result) {
   }
   const cardMonthlySub = document.getElementById('cardCloudMonthlyBillSub');
   if (cardMonthlySub) {
-    cardMonthlySub.textContent = `${formatCurrency(fixed.monthlyUSD, fixed.monthlyINR, 0)} / mo • ${cloud.isMultiAz ? 'Multi-AZ High Availability' : 'Single-AZ Cost-Optimized'}`;
+    cardMonthlySub.textContent = `${formatCurrency(fixed.monthlyUSD, fixed.monthlyINR, 0)} / mo • Single-AZ Baseline (250 Concurrency)`;
   }
 
   const cardPerStudent = document.getElementById('cardCloudPerStudent');
   if (cardPerStudent) {
     cardPerStudent.innerHTML = `
       <span class="currency-symbol">${symbol}</span>
-      <span class="number-val">${(isINR ? fixed.perStudentMonthINR : fixed.perStudentMonthUSD).toFixed(2)}</span>
+      <span class="number-val">${(isINR ? fixed.capacityPerStudentINR : fixed.capacityPerStudentUSD).toFixed(2)}</span>
     `;
   }
   const cardPerStudentSub = document.getElementById('cardCloudPerStudentSub');
   if (cardPerStudentSub) {
-    cardPerStudentSub.textContent = `Amortized across ${state.studentsCount.toLocaleString()} active students`;
+    cardPerStudentSub.textContent = `${formatCurrency(fixed.capacityPerStudentUSD, fixed.capacityPerStudentINR, 4)}/mo • Ratio = Price / 5,000 students`;
   }
 
   const cardPerPaper = document.getElementById('cardCloudPerPaper');
   if (cardPerPaper) {
     cardPerPaper.innerHTML = `
       <span class="currency-symbol">${symbol}</span>
-      <span class="number-val">${(isINR ? fixed.perPaperINR : fixed.perPaperUSD).toFixed(2)}</span>
+      <span class="number-val">${(isINR ? fixed.capacityPerPaperINR : fixed.capacityPerPaperUSD).toFixed(2)}</span>
     `;
   }
   const cardPerPaperSub = document.getElementById('cardCloudPerPaperSub');
   if (cardPerPaperSub) {
-    cardPerPaperSub.textContent = `Amortized across ${(state.studentsCount * state.examsPerStudentPerMonth).toLocaleString()} monthly papers`;
+    cardPerPaperSub.textContent = `${formatCurrency(fixed.capacityPerPaperUSD, fixed.capacityPerPaperINR, 4)}/paper (40,000 monthly papers)`;
   }
 
   const cardNotif = document.getElementById('cardNotifPerPaper');
@@ -436,10 +443,10 @@ function renderCloudTab(result) {
   // Table tag
   const tableArchTag = document.getElementById('cloudTableArchTag');
   if (tableArchTag) {
-    tableArchTag.textContent = cloud.isMultiAz ? 'Multi-AZ Enterprise Stack (2 AZs)' : 'Single-AZ Cost-Optimized Stack (1 AZ)';
+    tableArchTag.textContent = 'Single-AZ Baseline ($248.11 / mo)';
   }
 
-  // Populate AWS Components Table
+  // Populate AWS Components Table (Static Single-AZ Baseline)
   const compTbody = document.getElementById('cloudComponentsTableBody');
   if (compTbody) {
     compTbody.innerHTML = '';
@@ -452,8 +459,15 @@ function renderCloudTab(result) {
         </td>
         <td><span class="feature-tag">${comp.category}</span></td>
         <td class="cost-figure">${formatCurrency(comp.monthlyUSD, comp.monthlyINR, 2)}</td>
-        <td class="cost-figure" style="color: var(--text-secondary);">${formatCurrency(comp.perStudentMonthUSD, comp.perStudentMonthINR, 3)}</td>
-        <td class="cost-figure" style="color: var(--accent-indigo);">${formatCurrency(comp.perPaperUSD, comp.perPaperINR, 3)}</td>
+        <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 600;">
+          ${formatCurrency(comp.capacityPerStudentUSD, comp.capacityPerStudentINR, 3)}
+        </td>
+        <td class="cost-figure" style="color: var(--text-secondary);">
+          ${formatCurrency(comp.perStudentMonthUSD, comp.perStudentMonthINR, 3)}
+        </td>
+        <td class="cost-figure" style="color: var(--accent-indigo);">
+          ${formatCurrency(comp.capacityPerPaperUSD, comp.capacityPerPaperINR, 3)}
+        </td>
         <td style="font-family: var(--font-mono); font-weight: 600;">${comp.sharePercent}%</td>
       `;
       compTbody.appendChild(tr);
@@ -465,14 +479,18 @@ function renderCloudTab(result) {
     totalTr.style.fontWeight = '700';
     totalTr.innerHTML = `
       <td><strong>TOTAL FIXED AWS CLOUD BILL</strong></td>
-      <td><span class="feature-tag accent">${cloud.isMultiAz ? 'Multi-AZ' : 'Single-AZ'}</span></td>
+      <td><span class="feature-tag accent">Single-AZ</span></td>
       <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 800;">${formatCurrency(fixed.monthlyUSD, fixed.monthlyINR, 2)}</td>
+      <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 800;">${formatCurrency(fixed.capacityPerStudentUSD, fixed.capacityPerStudentINR, 2)}</td>
       <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 700;">${formatCurrency(fixed.perStudentMonthUSD, fixed.perStudentMonthINR, 2)}</td>
-      <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 700;">${formatCurrency(fixed.perPaperUSD, fixed.perPaperINR, 2)}</td>
+      <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 700;">${formatCurrency(fixed.capacityPerPaperUSD, fixed.capacityPerPaperINR, 2)}</td>
       <td style="font-family: var(--font-mono); font-weight: 700;">100%</td>
     `;
     compTbody.appendChild(totalTr);
   }
+
+  // Render Dynamic Concurrency AWS Calculator
+  renderDynamicAwsCalculator();
 
   // Populate Notification Channels Table
   const notifTbody = document.getElementById('notificationChannelsTableBody');
@@ -548,6 +566,143 @@ function renderCloudTab(result) {
       <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 800;">${formatCurrency(notifs.monthlyCohortUSD, notifs.monthlyCohortINR, 0)}</td>
     `;
     notifTbody.appendChild(notifTotalTr);
+  }
+}
+
+/**
+ * Render Dynamic AWS Concurrency & Auto-Sizing Calculator
+ */
+function renderDynamicAwsCalculator() {
+  const isINR = state.currency === 'INR';
+  const symbol = isINR ? '₹' : '$';
+  const dyn = CostEngine.calculateDynamicConcurrencyAWS(state.dynamicConcurrency, state.pricing);
+
+  // Sync inputs
+  const slider = document.getElementById('dynamicConcurrencySlider');
+  const input = document.getElementById('dynamicConcurrencyInput');
+  const pill = document.getElementById('dynamicUsersPill');
+  if (slider) slider.value = dyn.concurrentUsers;
+  if (input) input.value = dyn.concurrentUsers;
+  if (pill) pill.textContent = `${dyn.concurrentUsers} Concurrent Users`;
+
+  const ratioBadge = document.getElementById('dynamicCohortRatioBadge');
+  if (ratioBadge) {
+    ratioBadge.textContent = `${dyn.studentRatio}:1 Enrolled-to-Active Ratio`;
+  }
+
+  // Preset button styling
+  document.querySelectorAll('.dynamic-preset-btn').forEach((btn) => {
+    const u = Number(btn.dataset.users);
+    if (u === dyn.concurrentUsers) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Dynamic KPI Cards
+  const cardConcurrency = document.getElementById('cardDynConcurrency');
+  if (cardConcurrency) cardConcurrency.textContent = `${dyn.concurrentUsers} Users`;
+  const cardCohortSub = document.getElementById('cardDynCohortSub');
+  if (cardCohortSub) {
+    cardCohortSub.textContent = `${dyn.totalStudents.toLocaleString()} Enrolled Students • ${dyn.monthlyPapers.toLocaleString()} Papers/mo`;
+  }
+
+  const cardMonthly = document.getElementById('cardDynMonthlyBill');
+  if (cardMonthly) {
+    cardMonthly.innerHTML = `
+      <span class="currency-symbol">${symbol}</span>
+      <span class="number-val">${isINR ? Math.round(dyn.totalMonthlyINR).toLocaleString() : dyn.totalMonthlyUSD.toFixed(2)}</span>
+    `;
+  }
+  const cardMonthlySub = document.getElementById('cardDynMonthlyBillSub');
+  if (cardMonthlySub) {
+    cardMonthlySub.textContent = `${formatCurrency(dyn.totalMonthlyUSD, dyn.totalMonthlyINR, 0)} / mo • Single-AZ Auto-Scaled`;
+  }
+
+  const cardPerStudent = document.getElementById('cardDynPerStudent');
+  if (cardPerStudent) {
+    cardPerStudent.innerHTML = `
+      <span class="currency-symbol">${symbol}</span>
+      <span class="number-val">${(isINR ? dyn.perStudentMonthINR : dyn.perStudentMonthUSD).toFixed(2)}</span>
+    `;
+  }
+  const cardPerStudentSub = document.getElementById('cardDynPerStudentSub');
+  if (cardPerStudentSub) {
+    cardPerStudentSub.textContent = `${formatCurrency(dyn.perStudentMonthUSD, dyn.perStudentMonthINR, 2)}/mo • Ratio = Price / ${dyn.totalStudents.toLocaleString()} Students`;
+  }
+
+  const cardPerPaper = document.getElementById('cardDynPerPaper');
+  if (cardPerPaper) {
+    cardPerPaper.innerHTML = `
+      <span class="currency-symbol">${symbol}</span>
+      <span class="number-val">${(isINR ? dyn.perPaperINR : dyn.perPaperUSD).toFixed(2)}</span>
+    `;
+  }
+  const cardPerPaperSub = document.getElementById('cardDynPerPaperSub');
+  if (cardPerPaperSub) {
+    cardPerPaperSub.textContent = `${formatCurrency(dyn.perPaperUSD, dyn.perPaperINR, 2)}/paper • Based on ${dyn.monthlyExams} papers/student/mo`;
+  }
+
+  // Auto-Scaled Sizing Cards
+  const dynEcsCostBadge = document.getElementById('dynEcsCostBadge');
+  if (dynEcsCostBadge) dynEcsCostBadge.textContent = `${formatCurrency(dyn.ecsConfig.monthlyUSD, dyn.ecsConfig.monthlyUSD * state.pricing.usdToInr, 2)} / mo`;
+  const dynEcsSpec = document.getElementById('dynEcsSpec');
+  if (dynEcsSpec) dynEcsSpec.textContent = `${dyn.ecsConfig.label} (${dyn.ecsConfig.containers} task${dyn.ecsConfig.containers > 1 ? 's' : ''})`;
+  const dynEcsDetails = document.getElementById('dynEcsDetails');
+  if (dynEcsDetails) dynEcsDetails.textContent = `Throughput: ${dyn.ecsConfig.throughput}`;
+
+  const dynRdsCostBadge = document.getElementById('dynRdsCostBadge');
+  if (dynRdsCostBadge) dynRdsCostBadge.textContent = `${formatCurrency(dyn.rdsConfig.monthlyUSD, dyn.rdsConfig.monthlyUSD * state.pricing.usdToInr, 2)} / mo`;
+  const dynRdsSpec = document.getElementById('dynRdsSpec');
+  if (dynRdsSpec) dynRdsSpec.textContent = `${dyn.rdsConfig.label} (${dyn.rdsConfig.storageGb} GB gp3)`;
+  const dynRdsDetails = document.getElementById('dynRdsDetails');
+  if (dynRdsDetails) dynRdsDetails.textContent = `Max pool: ${dyn.rdsConfig.maxConnections} connections • ${dyn.rdsConfig.details}`;
+
+  const dynTableTitleConcurrency = document.getElementById('dynamicTableTitleConcurrency');
+  if (dynTableTitleConcurrency) dynTableTitleConcurrency.textContent = dyn.concurrentUsers;
+  const dynTableTitleStudents = document.getElementById('dynamicTableTitleStudents');
+  if (dynTableTitleStudents) dynTableTitleStudents.textContent = dyn.totalStudents.toLocaleString();
+  const dynTableRatioTag = document.getElementById('dynTableRatioTag');
+  if (dynTableRatioTag) dynTableRatioTag.textContent = `Price / ${dyn.totalStudents.toLocaleString()} Students`;
+
+  // Populate Dynamic Table
+  const dynTbody = document.getElementById('dynamicCloudComponentsTableBody');
+  if (dynTbody) {
+    dynTbody.innerHTML = '';
+    for (const [key, comp] of Object.entries(dyn.components)) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight: 600; color: var(--text-primary);">${comp.name}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${comp.details}</div>
+        </td>
+        <td><span class="feature-tag accent">${comp.sizing}</span></td>
+        <td class="cost-figure">${formatCurrency(comp.monthlyUSD, comp.monthlyINR, 2)}</td>
+        <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 600;">
+          ${formatCurrency(comp.perStudentMonthUSD, comp.perStudentMonthINR, 3)}
+        </td>
+        <td class="cost-figure" style="color: var(--accent-indigo);">
+          ${formatCurrency(comp.perPaperUSD, comp.perPaperINR, 3)}
+        </td>
+        <td style="font-family: var(--font-mono); font-weight: 600;">${comp.sharePercent}%</td>
+      `;
+      dynTbody.appendChild(tr);
+    }
+
+    // Dynamic Total Row
+    const totalTr = document.createElement('tr');
+    totalTr.style.background = 'var(--bg-glass)';
+    totalTr.style.fontWeight = '700';
+    totalTr.innerHTML = `
+      <td><strong>TOTAL DYNAMIC AWS BILL (${dyn.concurrentUsers} CONCURRENT)</strong></td>
+      <td><span class="feature-tag accent">Auto-Scaled Single-AZ</span></td>
+      <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 800;">${formatCurrency(dyn.totalMonthlyUSD, dyn.totalMonthlyINR, 2)}</td>
+      <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 800;">${formatCurrency(dyn.perStudentMonthUSD, dyn.perStudentMonthINR, 2)}</td>
+      <td class="cost-figure" style="color: var(--accent-emerald); font-weight: 700;">${formatCurrency(dyn.perPaperUSD, dyn.perPaperINR, 2)}</td>
+      <td style="font-family: var(--font-mono); font-weight: 700;">100%</td>
+    `;
+    dynTbody.appendChild(totalTr);
   }
 }
 
@@ -648,8 +803,10 @@ function exportCostToCsv() {
     ['Syllabus Analyses Per Month', state.syllabusAnalysesPerMonth],
     ['Embedding Price ($/1M)', state.pricing.geminiEmbedding.costPer1M_USD],
     ['Target Margin', `${state.marginPercent}%`],
-    ['Cloud Stack Architecture', state.cloudArchitecture === 'multi_az' ? 'Multi-AZ High Availability' : 'Single-AZ Cost-Optimized'],
+    ['Cloud Stack Architecture', 'Single-AZ Cost-Optimized (1 AZ)'],
     ['Monthly Fixed AWS Cloud Bill', `$${result.cloudInfrastructure.fixedBill.monthlyUSD.toFixed(2)} (₹${result.cloudInfrastructure.fixedBill.monthlyINR.toFixed(2)})`],
+    ['Baseline Enrolled Students Capacity', '5,000 Students (250 Concurrent Users, 20:1 Ratio)'],
+    ['Baseline Cloud Cost / Student / Month', `$${result.cloudInfrastructure.fixedBill.capacityPerStudentUSD.toFixed(4)} (₹${result.cloudInfrastructure.fixedBill.capacityPerStudentINR.toFixed(2)})`],
     ['Amortize Cloud Bill in COGS', state.includeFixedCloudInfra ? 'YES' : 'NO'],
     ['Parent Scorecard Notification Channels', result.cloudInfrastructure.notifications.activeChannels.map((c) => c.name).join(' + ') || 'None'],
     ['Pricing Scope', 'Modeled AI workflows plus per-paper infrastructure allowance; excludes unmeasured provider costs and taxes'],
@@ -807,13 +964,28 @@ function setupEventListeners() {
     });
   });
 
-  // Cloud Architecture Segmented Control
-  document.querySelectorAll('#cloudArchitectureControl .segment-btn').forEach((btn) => {
+  // Dynamic Concurrency Slider, Input, & Preset Buttons
+  const dynSlider = document.getElementById('dynamicConcurrencySlider');
+  if (dynSlider) {
+    dynSlider.addEventListener('input', (e) => {
+      state.dynamicConcurrency = Number(e.target.value);
+      renderDynamicAwsCalculator();
+    });
+  }
+
+  const dynInput = document.getElementById('dynamicConcurrencyInput');
+  if (dynInput) {
+    dynInput.addEventListener('change', (e) => {
+      const val = Math.max(10, Math.min(2000, Number(e.target.value) || 50));
+      state.dynamicConcurrency = val;
+      renderDynamicAwsCalculator();
+    });
+  }
+
+  document.querySelectorAll('.dynamic-preset-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('#cloudArchitectureControl .segment-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.cloudArchitecture = btn.dataset.arch;
-      recalculateAndRender();
+      state.dynamicConcurrency = Number(btn.dataset.users);
+      renderDynamicAwsCalculator();
     });
   });
 
@@ -1036,7 +1208,7 @@ function setupEventListeners() {
       document.getElementById('inputEmailRate').value = state.pricing.notifications?.emailINR ?? 0.30;
     }
     if (document.getElementById('inputFixedCloudBill')) {
-      document.getElementById('inputFixedCloudBill').value = state.pricing.cloudInfra?.fixedMonthlyInfraUSD ?? 346.67;
+      document.getElementById('inputFixedCloudBill').value = state.pricing.cloudInfra?.fixedMonthlyInfraUSD ?? 248.11;
     }
     modal.classList.add('open');
   });

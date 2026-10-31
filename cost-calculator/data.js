@@ -70,25 +70,26 @@ export const DEFAULT_PRICING = {
   },
 
   // AWS Infrastructure Variable & Fixed Overhead (ap-south-2 Hyderabad)
-  // Sized for 250 Concurrent Users (5,000 Students + 1,000 Staff)
-  // High-Availability Multi-AZ Production Stack ($346.67 / month ~ ₹29,987 / month)
-  // Cost-Optimized Single-AZ Alternative ($248.11 / month ~ ₹21,462 / month)
+  // Single Availability Zone Architecture (Cost-Optimized & Production Baseline)
+  // Sized for 250 Concurrent Users (5,000 Students + 1,000 Staff at 1:20 concurrency ratio)
+  // Monthly Fixed AWS Bill: $248.11 / month ~ ₹21,462 / month
   cloudInfra: {
     s3StoragePerPaperUSD: 0.00020, // S3 raw + processed page storage
     sqsLambdaPerPaperUSD: 0.00008, // SQS messages + Lambda execution (1024MB, 20s)
     notificationPerPaperUSD: 0.00000, // Calculated dynamically from selected notification channels
-    fixedMonthlyInfraUSD: 346.67,  // $346.67 / month High-Availability Multi-AZ Production AWS Bill (250 Concurrent Users)
-    fixedMonthlyInfraINR: 29986.96, // @ 86.50
-    costOptimizedInfraUSD: 248.11, // Architecture B Single-AZ option ($248.11 / mo for 250 Concurrent Users)
-    costOptimizedInfraINR: 21461.52,
+    fixedMonthlyInfraUSD: 248.11,  // $248.11 / month Single-AZ Production AWS Bill (250 Concurrent Users)
+    fixedMonthlyInfraINR: 21461.52, // @ 86.50
+    baselineConcurrentUsers: 250,
+    baselineStudentsCapacity: 5000,
+    concurrencyRatio: 20, // 20 enrolled students per 1 active concurrent user
     components: {
       waf: 10.80,          // AWS WAF (Web ACL + AWS Managed + 3 Custom Rules + Traffic)
-      natGateways: 81.54,  // 2x NAT Gateways (1 per AZ)
-      elasticIps: 7.30,    // 2x Elastic IPs for NAT Gateways
+      natGateways: 40.77,  // 1x NAT Gateway (Single-AZ ap-south-2a)
+      elasticIps: 3.65,    // 1x Elastic IP for NAT Gateway
       alb: 22.27,          // Application Load Balancer + 1 LCU
-      ecsFargate: 72.08,   // 2x ECS Fargate containers (1 vCPU, 2 GB RAM across 2 AZs)
-      rdsProxy: 21.90,     // RDS Proxy connection pooler (80% pool = 360 conns)
-      rdsPostgres: 115.28, // Multi-AZ RDS PostgreSQL (db.t4g.medium, 2 vCPU, 4 GB, 100 GB gp3 - 100% in-memory cache)
+      ecsFargate: 72.08,   // ECS Fargate container compute (2 vCPU, 4 GB RAM - handles 250 concurrent users)
+      rdsProxy: 21.90,     // Amazon RDS Proxy connection pooler (80% pool = 360 conns)
+      rdsPostgres: 61.14,  // Single-AZ RDS PostgreSQL (db.t4g.medium, 2 vCPU, 4 GB RAM, 100 GB gp3)
       cloudwatch: 7.50,    // CloudWatch logs & alarms
       ecr: 0.50,           // ECR container repository
       serverlessPipeline: 7.50, // SQS ($0.50) + Lambda ($3.00) + S3 ($3.00) + SES ($1.00)

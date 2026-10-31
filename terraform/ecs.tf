@@ -154,11 +154,15 @@ resource "aws_ecs_task_definition" "main" {
     name      = "aws-otel-collector"
     image     = "public.ecr.aws/aws-observability/aws-otel-collector:latest"
     essential = false
-    command   = ["--config=/etc/ecs/ecs-default-config.yaml"]
+    command   = ["--config=/etc/ecs/ecs-amp-xray-prometheus.yaml"]
     environment = [
       {
         name  = "AWS_PROMETHEUS_ENDPOINT"
         value = "${aws_prometheus_workspace.main.prometheus_endpoint}api/v1/remote_write"
+      },
+      {
+        name  = "AWS_PROMETHEUS_SCRAPING_ENDPOINT"
+        value = "localhost:4545"
       },
       {
         name  = "AWS_REGION"

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: paatam-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_INSTALL_PLUGINS=grafana-x-ray-datasource
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=ap-south-2
+      - AWS_DEFAULT_REGION=ap-south-2
+      - GF_AUTH_SIGV4_AUTH_ENABLED=true
+      - GF_LOG_LEVEL=debug
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro,z
+      - ./dashboards:/var/lib/grafana/dashboards:ro,z

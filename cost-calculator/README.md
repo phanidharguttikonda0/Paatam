@@ -21,42 +21,66 @@ Optional calibration assumes every paper still gets the normal subject evaluatio
 
 The recommended price is `modeled monthly pipeline cost / (1 - target margin)`. Displayed tiers round the monthly price up; their annual contracts use that displayed price. The resulting difference between price and modeled costs is a **pipeline spread**, not net profit or validated gross margin. 
 
-## AWS Cloud Infrastructure & Notification Channels (Updated for 250 Concurrent Users)
+## AWS Cloud Infrastructure & Notification Channels (Single-AZ Baseline & Dynamic Concurrency)
 
 The calculator models the baseline production infrastructure and notification costs alongside AI grading calls, sized directly from empirical load tests on live AWS infrastructure:
 
-### 1. Fixed Monthly AWS Cloud Bill ($346.67 / Month for 250 Concurrent Users)
-Based on empirical load testing and resource allocation benchmarks for **250 Concurrent Users** (5,000 Students + 1,000 Staff):
+### 1. Fixed Monthly AWS Cloud Bill ($248.11 / Month — Single Availability Zone)
+Production architecture is deployed in **Single Availability Zone (Single-AZ in AWS ap-south-2 Hyderabad)** to eliminate idle cross-zone bandwidth taxes and redundant standby instances during early/growth stages, while retaining automated daily snapshots to S3:
 - **AWS WAF v2**: $10.80 (Web ACL + AWS Managed Rules + 3 custom rules + L7 inspection)
-- **NAT Gateways**: $81.54 (2x NAT Gateways, 1 per AZ, redundant outbound egress for Gemini/Sarvam AI calls)
-- **Elastic IPs**: $7.30 (2x static IPv4 addresses attached to NAT Gateways)
-- **Application Load Balancer (ALB)**: $22.27 (Dual-AZ ingress + 1.2 LCU capacity, p99 < 180ms)
-- **ECS Fargate Containers**: $72.08 (2x tasks, 1.0 vCPU + 2 GB RAM each across 2 AZs, auto-scaling up to 4 tasks at >70% CPU)
-- **Amazon RDS PostgreSQL**: $115.28 (Multi-AZ `db.t4g.medium`, 2 vCPU + 4 GB RAM, 100 GB gp3 storage — 1,024 MB buffer pool fits 100% of working dataset in RAM for 99.5%+ cache hit ratio)
-- **Amazon RDS Database Proxy**: $21.90 (Connection pooler with `max_connections_percent = 80`, supporting 360 backend pooled connections)
+- **NAT Gateway (Single-AZ)**: $40.77 (1x NAT Gateway for outbound egress to Gemini/Sarvam AI APIs)
+- **Elastic IP**: $3.65 (1x static IPv4 address attached to NAT Gateway)
+- **Application Load Balancer (ALB)**: $22.27 (Ingress + 1.2 LCU capacity, p99 < 180ms)
+- **ECS Fargate Containers**: $72.08 (2x tasks @ 1.0 vCPU + 2 GB RAM each, auto-scaling horizontally up to 4 tasks at >70% CPU in 20-30s with 0 downtime)
+- **Amazon RDS PostgreSQL (Single-AZ)**: $61.14 (`db.t4g.medium`, 2 vCPU + 4 GB RAM, 100 GB gp3 storage — 1,024 MB buffer pool fits working dataset in RAM for 99.5%+ cache hit ratio, automated daily snapshots)
+- **Amazon RDS Database Proxy**: $21.90 (Dedicated 1 vCPU pooler multiplexing Lambda worker spikes into stable pooled DB connections)
 - **CloudWatch Alarms & Logging**: $7.50 (Alarms, structured JSON log retention, dashboard metrics)
 - **Elastic Container Registry (ECR)**: $0.50 (Docker image repository storage)
 - **Serverless Event Pipeline**: $7.50 (SQS FIFO/Standard queues, 5 Lambda workers capped at concurrency 50, S3 storage, SES)
-- **Total Multi-AZ Baseline**: **$346.67 / month** (~₹29,987 / mo at ₹86.50/USD).
-- **Cost-Optimized Single-AZ Option**: **$248.11 / month** (~₹21,462 / mo) by consolidating to 1 NAT Gateway ($40.77), 1 Elastic IP ($3.65), and Single-AZ `db.t4g.medium` ($61.14/mo with automated snapshots).
+- **Total Single-AZ Baseline**: **$248.11 / month** (~₹21,462 / mo at ₹86.50/USD).
 
-### 2. Multi-Channel Parent Notifications (Exact Rates)
+### 2. 250 Concurrent Users to 5,000 Students Ratio (20:1 Capacity Economics)
+Empirical school testing demonstrates that **1 active concurrent exam submitter represents approximately 20 enrolled students** (a 20:1 ratio, as classes take exams in staggered periods):
+- **Baseline Concurrency**: 250 concurrent users = **5,000 Enrolled Students Capacity** (40,000 monthly papers @ 8 exams/student/mo).
+- **Per-Service Cost / Student**: Calculated directly as $\text{Service Monthly Cost} / 5,000$:
+  - ECS Fargate ($72.08/mo): **$0.0144 (₹1.25)** / student / mo
+  - RDS PostgreSQL ($61.14/mo): **$0.0122 (₹1.06)** / student / mo
+  - NAT Gateway ($40.77/mo): **$0.0082 (₹0.71)** / student / mo
+  - RDS Proxy ($21.90/mo): **$0.0044 (₹0.38)** / student / mo
+  - ALB Load Balancer ($22.27/mo): **$0.0045 (₹0.39)** / student / mo
+  - AWS WAF ($10.80/mo): **$0.0022 (₹0.19)** / student / mo
+  - Core Serverless & Logging ($19.15/mo): **$0.0038 (₹0.33)** / student / mo
+- **Total Single-AZ Baseline Cost Per Student**:
+  $$\frac{\$248.11}{5,000 \text{ students}} = \mathbf{\$0.0496 / \text{student / mo}} \approx \mathbf{\text{₹4.29 / student / month}}$$
+- **Total Single-AZ Baseline Cost Per Exam Paper**:
+  $$\frac{\$248.11}{40,000 \text{ papers}} = \mathbf{\$0.0062 / \text{paper}} \approx \mathbf{\text{₹0.54 / exam paper}}$$
+
+### 3. Interactive Dynamic AWS Concurrency Calculator
+Below the static baseline table, the UI provides an interactive dynamic concurrency simulator where school operators and engineers can model custom concurrent loads (from 10 to 1,000 active concurrent exam users):
+- **Dynamic ECS Sizing**:
+  - $\le 35$ users: 0.5 vCPU, 1 GB RAM (1 task) $\implies$ $18.02/mo
+  - $36 - 80$ users (e.g. 50 users / 1,000 students): 1.0 vCPU, 2 GB RAM (2 tasks) $\implies$ $36.04/mo
+  - $81 - 250$ users (e.g. 250 users / 5,000 students): 2.0 vCPU, 4 GB RAM (2 tasks) $\implies$ $72.08/mo
+  - $251 - 600$ users (e.g. 500 users / 10,000 students): 4.0 vCPU, 8 GB RAM (4 tasks) $\implies$ $144.16/mo
+  - $> 600$ users (e.g. 1,000 users / 20,000 students): 8.0 vCPU, 16 GB RAM (4 tasks) $\implies$ $288.32/mo
+- **Dynamic RDS PostgreSQL Sizing**:
+  - $\le 35$ users: `db.t4g.micro` (2 vCPU, 1 GB, 20 GB gp3) $\implies$ $14.71/mo
+  - $36 - 80$ users (e.g. 50 users / 1,000 students): `db.t4g.small` (2 vCPU, 2 GB, 50 GB gp3) $\implies$ $30.57/mo
+  - $81 - 250$ users (e.g. 250 users / 5,000 students): `db.t4g.medium` (2 vCPU, 4 GB, 100 GB gp3) $\implies$ $61.14/mo
+  - $251 - 600$ users (e.g. 500 users / 10,000 students): `db.t4g.large` (2 vCPU, 8 GB, 200 GB gp3) $\implies$ $122.28/mo
+  - $> 600$ users (e.g. 1,000 users / 20,000 students): `db.t4g.xlarge` (4 vCPU, 16 GB, 400 GB gp3) $\implies$ $244.56/mo
+- **Example: 50 Concurrent Users (1,000 Enrolled Students)**:
+  - Total Monthly AWS Bill: **$178.58 / month** (~₹15,447 / mo)
+  - Cost Per Student / Month: $\$178.58 / 1,000 = \mathbf{\$0.1786 \approx \text{₹15.45 / student / mo}}$
+  - Cost Per Exam Paper: $\$178.58 / 8,000 = \mathbf{\$0.0223 \approx \text{₹1.93 / exam paper}}$
+
+### 4. Multi-Channel Parent Notifications (Exact Rates)
 Post-grading scorecard dispatch to students/parents supports three notification channels:
 - **WhatsApp**: **₹1.00** per message
 - **SMS**: **₹0.60** (60 Paisa) per message
 - **Email**: **₹0.30** (30 Paisa) per message
 
 Channels can be toggled independently or combined (e.g., WhatsApp + SMS = ₹1.60/paper; WhatsApp + SMS + Email = ₹1.90/paper).
-
-### 3. Per-Student and Per-Paper Amortization
-Cloud bills are evaluated in the same exact framework as AI calls:
-- **Mid-Sized Cohort (350 Students, 6 exams/mo)**:
-  - Per Student / Month: $\$346.67 / 350 = \$0.9905 \approx \text{₹85.68}$ / student / month
-  - Per Exam Paper: $\$346.67 / 2,100 = \$0.1651 \approx \text{₹14.28}$ / paper
-- **Full Capacity Campus (5,000 Students, 8 exams/mo)**:
-  - Per Student / Month: $\$346.67 / 5,000 = \$0.0693 \approx \text{₹6.00}$ / student / month
-  - Per Exam Paper: $\$346.67 / 40,000 = \$0.0087 \approx \text{₹0.75}$ / paper (less than ₹1 per paper!)
-- **Optional Toggle**: In the UI, the toggle *"Amortize Fixed Cloud in Per-Paper COGS"* dynamically incorporates the fixed hosting bill into per-paper cost cards and displayed subscription tiers.
 
 ---
 

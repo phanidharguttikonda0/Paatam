@@ -114,28 +114,30 @@ test('displayed tier price drives annual contracts and invalid mixes are rejecte
   assert.throws(() => CostEngine.calculateMasterInstitutionCost({ participantsPerExam: 351 }), RangeError);
 });
 
-test('cloud infrastructure evaluates $346.67 monthly AWS bill amortized per student and per paper (250 Concurrent Users)', () => {
+test('cloud infrastructure evaluates Single-AZ $248.11 monthly AWS bill amortized per student (250 Concurrent Users)', () => {
   const result = CostEngine.calculateCloudInfrastructureCost({
     studentsCount: 350,
     examsPerStudentPerMonth: 6,
-    cloudArchitecture: 'multi_az',
+    cloudArchitecture: 'single_az',
   }, DEFAULT_PRICING);
 
-  assert.equal(result.fixedBill.monthlyUSD, 346.67);
-  nearlyEqual(result.fixedBill.monthlyINR, 346.67 * 86.50);
-  // 350 students: 346.67 / 350
-  nearlyEqual(result.fixedBill.perStudentMonthUSD, 346.67 / 350);
-  nearlyEqual(result.fixedBill.perStudentMonthINR, (346.67 / 350) * 86.50);
-  // 2,100 papers: 346.67 / 2100
-  nearlyEqual(result.fixedBill.perPaperUSD, 346.67 / 2100);
-  nearlyEqual(result.fixedBill.perPaperINR, (346.67 / 2100) * 86.50);
+  assert.equal(result.fixedBill.monthlyUSD, 248.11);
+  nearlyEqual(result.fixedBill.monthlyINR, 248.11 * 86.50);
+  // Capacity ratio (5,000 students for 250 concurrent users): 248.11 / 5000
+  assert.equal(result.fixedBill.capacityStudents, 5000);
+  nearlyEqual(result.fixedBill.capacityPerStudentUSD, 248.11 / 5000);
+  nearlyEqual(result.fixedBill.capacityPerStudentINR, (248.11 / 5000) * 86.50);
+  // 40,000 papers capacity: 248.11 / 40000
+  nearlyEqual(result.fixedBill.capacityPerPaperUSD, 248.11 / 40000);
+  nearlyEqual(result.fixedBill.capacityPerPaperINR, (248.11 / 40000) * 86.50);
 
-  // Components breakdown checks
+  // Components breakdown checks for Single-AZ
   const sumComponents = Object.values(result.fixedBill.components).reduce((s, c) => s + c.monthlyUSD, 0);
-  nearlyEqual(sumComponents, 346.67);
-  assert.equal(result.fixedBill.components.rdsPostgres.monthlyUSD, 115.28);
+  nearlyEqual(sumComponents, 248.11);
+  assert.equal(result.fixedBill.components.rdsPostgres.monthlyUSD, 61.14);
   assert.equal(result.fixedBill.components.ecsFargate.monthlyUSD, 72.08);
-  assert.equal(result.fixedBill.components.natGateways.monthlyUSD, 81.54);
+  assert.equal(result.fixedBill.components.natGateways.monthlyUSD, 40.77);
+  assert.equal(result.fixedBill.components.elasticIps.monthlyUSD, 3.65);
   assert.equal(result.fixedBill.components.alb.monthlyUSD, 22.27);
   assert.equal(result.fixedBill.components.rdsProxy.monthlyUSD, 21.90);
   assert.equal(result.fixedBill.components.waf.monthlyUSD, 10.80);
@@ -178,20 +180,31 @@ test('notification channels evaluate exact rates: SMS @ 60p, Email @ 30p, WhatsA
   nearlyEqual(emailOnly.notifications.perPaperINR, 0.30);
 });
 
-test('cost-optimized Single AZ architecture evaluates to $248.11 / month', () => {
-  const singleAz = CostEngine.calculateCloudInfrastructureCost({
-    studentsCount: 350,
-    examsPerStudentPerMonth: 6,
-    cloudArchitecture: 'single_az',
-  }, DEFAULT_PRICING);
+test('dynamic AWS concurrency calculator correctly models 50 and 250 concurrent users', () => {
+  // 50 Concurrent Users (1,000 Students)
+  const dyn50 = CostEngine.calculateDynamicConcurrencyAWS(50, DEFAULT_PRICING);
+  assert.equal(dyn50.concurrentUsers, 50);
+  assert.equal(dyn50.totalStudents, 1000);
+  assert.equal(dyn50.ecsConfig.monthlyUSD, 36.04);
+  assert.equal(dyn50.rdsConfig.instanceClass, 'db.t4g.small');
+  assert.equal(dyn50.rdsConfig.monthlyUSD, 30.57);
+  assert.equal(dyn50.totalMonthlyUSD, 178.58);
+  nearlyEqual(dyn50.perStudentMonthUSD, 178.58 / 1000);
+  nearlyEqual(dyn50.perStudentMonthINR, (178.58 / 1000) * 86.50);
 
-  assert.equal(singleAz.fixedBill.monthlyUSD, 248.11);
-  assert.equal(singleAz.fixedBill.components.natGateways.monthlyUSD, 40.77);
-  assert.equal(singleAz.fixedBill.components.rdsPostgres.monthlyUSD, 61.14);
-  assert.equal(singleAz.fixedBill.components.elasticIps.monthlyUSD, 3.65);
+  // 250 Concurrent Users (5,000 Students)
+  const dyn250 = CostEngine.calculateDynamicConcurrencyAWS(250, DEFAULT_PRICING);
+  assert.equal(dyn250.concurrentUsers, 250);
+  assert.equal(dyn250.totalStudents, 5000);
+  assert.equal(dyn250.ecsConfig.monthlyUSD, 72.08);
+  assert.equal(dyn250.rdsConfig.instanceClass, 'db.t4g.medium');
+  assert.equal(dyn250.rdsConfig.monthlyUSD, 61.14);
+  assert.equal(dyn250.totalMonthlyUSD, 248.11);
+  nearlyEqual(dyn250.perStudentMonthUSD, 248.11 / 5000);
+  nearlyEqual(dyn250.perStudentMonthINR, (248.11 / 5000) * 86.50);
 });
 
-test('including fixed cloud infra reconciles all cohort and step totals', () => {
+test('including fixed cloud infra reconciles all cohort and step totals with Single-AZ baseline', () => {
   const params = {
     studentsCount: 350,
     participantsPerExam: 40,
@@ -204,6 +217,6 @@ test('including fixed cloud infra reconciles all cohort and step totals', () => 
   nearlyEqual(result.perStudent.perPaperUSD * totalMonthlyPapers, result.cohortTotal.monthlyCostUSD);
   nearlyEqual(Object.values(result.stepsBreakdown).reduce((sum, step) => sum + step.totalMonthlyUSD, 0), result.cohortTotal.monthlyCostUSD);
   assert.ok(result.stepsBreakdown.fixedCloudInfra);
-  assert.equal(result.stepsBreakdown.fixedCloudInfra.totalMonthlyUSD, 346.67);
+  assert.equal(result.stepsBreakdown.fixedCloudInfra.totalMonthlyUSD, 248.11);
   assert.equal(result.cloudInfrastructure.notifications.perPaperINR, 1.00);
 });
