@@ -11,6 +11,22 @@ resource "aws_s3_bucket" "main" {
 }
 
 # ==========================================
+# 1b. S3 Bucket CORS Configuration (Browser Uploads)
+# ==========================================
+# Allows browsers (localhost:5173, paatam.in) to PUT pre-signed uploads directly to S3
+resource "aws_s3_bucket_cors_configuration" "main" {
+  bucket = aws_s3_bucket.main.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "POST", "GET", "HEAD"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag", "x-amz-request-id", "x-amz-id-2"]
+    max_age_seconds = 3600
+  }
+}
+
+# ==========================================
 # 2. S3 Bucket Security (Block Public Access)
 # ==========================================
 # By default, S3 blocks public access. We enforce this explicitly.

@@ -130,12 +130,13 @@ resource "aws_s3_object" "lambda_bundle" {
 resource "aws_lambda_function" "assignment_ocr" {
   function_name = "paatam-assignment-ocr-${var.environment}"
   role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "dist/lambdas/assignmentOcr.lambda.handler"
+  handler       = "dist/lambdas/assignmentOcr.handler"
   runtime       = "nodejs20.x"
   timeout       = 900 # 15 minutes
   memory_size   = 1024
-  s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = aws_s3_object.lambda_bundle.key
+  s3_bucket        = aws_s3_bucket.main.bucket
+  s3_key           = aws_s3_object.lambda_bundle.key
+  source_code_hash = fileexists("${path.module}/bundle.zip") ? filebase64sha256("${path.module}/bundle.zip") : null
 
   depends_on = [
     aws_s3_object.lambda_bundle,
@@ -150,10 +151,14 @@ resource "aws_lambda_function" "assignment_ocr" {
 
   environment {
     variables = {
-      NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
-      AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
-      AWS_REGION_NAME    = var.aws_region
+      NODE_ENV            = var.environment
+      DATABASE_URL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "DATABASE_URL", "postgresql://postgres:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/paatam?sslmode=require")
+      GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
+      SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
+      PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
+      AWS_REGION_NAME     = var.aws_region
     }
   }
 
@@ -171,12 +176,13 @@ resource "aws_lambda_function" "assignment_ocr" {
 resource "aws_lambda_function" "bulk_split" {
   function_name = "paatam-bulk-split-${var.environment}"
   role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "dist/lambdas/bulkSplit.lambda.handler"
+  handler       = "dist/lambdas/bulkSplit.handler"
   runtime       = "nodejs20.x"
   timeout       = 900
   memory_size   = 2048 # Slicing master PDFs benefits from higher RAM
-  s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = aws_s3_object.lambda_bundle.key
+  s3_bucket        = aws_s3_bucket.main.bucket
+  s3_key           = aws_s3_object.lambda_bundle.key
+  source_code_hash = fileexists("${path.module}/bundle.zip") ? filebase64sha256("${path.module}/bundle.zip") : null
 
   depends_on = [
     aws_s3_object.lambda_bundle,
@@ -191,10 +197,14 @@ resource "aws_lambda_function" "bulk_split" {
 
   environment {
     variables = {
-      NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
-      AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
-      AWS_REGION_NAME    = var.aws_region
+      NODE_ENV            = var.environment
+      DATABASE_URL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "DATABASE_URL", "postgresql://postgres:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/paatam?sslmode=require")
+      GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
+      SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
+      PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
+      AWS_REGION_NAME     = var.aws_region
     }
   }
 
@@ -212,12 +222,13 @@ resource "aws_lambda_function" "bulk_split" {
 resource "aws_lambda_function" "paper_ocr" {
   function_name = "paatam-paper-ocr-${var.environment}"
   role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "dist/lambdas/paperOcr.lambda.handler"
+  handler       = "dist/lambdas/paperOcr.handler"
   runtime       = "nodejs20.x"
   timeout       = 900
   memory_size   = 1024
-  s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = aws_s3_object.lambda_bundle.key
+  s3_bucket        = aws_s3_bucket.main.bucket
+  s3_key           = aws_s3_object.lambda_bundle.key
+  source_code_hash = fileexists("${path.module}/bundle.zip") ? filebase64sha256("${path.module}/bundle.zip") : null
 
   depends_on = [
     aws_s3_object.lambda_bundle,
@@ -232,10 +243,14 @@ resource "aws_lambda_function" "paper_ocr" {
 
   environment {
     variables = {
-      NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
-      AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
-      AWS_REGION_NAME    = var.aws_region
+      NODE_ENV            = var.environment
+      DATABASE_URL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "DATABASE_URL", "postgresql://postgres:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/paatam?sslmode=require")
+      GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
+      SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
+      PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
+      AWS_REGION_NAME     = var.aws_region
     }
   }
 
@@ -253,12 +268,13 @@ resource "aws_lambda_function" "paper_ocr" {
 resource "aws_lambda_function" "paper_evaluation" {
   function_name = "paatam-paper-evaluation-${var.environment}"
   role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "dist/lambdas/paperEvaluation.lambda.handler"
+  handler       = "dist/lambdas/paperEvaluation.handler"
   runtime       = "nodejs20.x"
   timeout       = 900
   memory_size   = 1024
-  s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = aws_s3_object.lambda_bundle.key
+  s3_bucket        = aws_s3_bucket.main.bucket
+  s3_key           = aws_s3_object.lambda_bundle.key
+  source_code_hash = fileexists("${path.module}/bundle.zip") ? filebase64sha256("${path.module}/bundle.zip") : null
 
   depends_on = [
     aws_s3_object.lambda_bundle,
@@ -273,10 +289,14 @@ resource "aws_lambda_function" "paper_evaluation" {
 
   environment {
     variables = {
-      NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
-      AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
-      AWS_REGION_NAME    = var.aws_region
+      NODE_ENV            = var.environment
+      DATABASE_URL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "DATABASE_URL", "postgresql://postgres:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/paatam?sslmode=require")
+      GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
+      SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
+      PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
+      AWS_REGION_NAME     = var.aws_region
     }
   }
 
@@ -294,12 +314,13 @@ resource "aws_lambda_function" "paper_evaluation" {
 resource "aws_lambda_function" "sweeper" {
   function_name = "paatam-sweeper-${var.environment}"
   role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "dist/lambdas/sweeper.lambda.handler"
+  handler       = "dist/lambdas/sweeper.handler"
   runtime       = "nodejs20.x"
   timeout       = 300 # 5 minutes
   memory_size   = 512
-  s3_bucket     = aws_s3_bucket.main.bucket
-  s3_key        = aws_s3_object.lambda_bundle.key
+  s3_bucket        = aws_s3_bucket.main.bucket
+  s3_key           = aws_s3_object.lambda_bundle.key
+  source_code_hash = fileexists("${path.module}/bundle.zip") ? filebase64sha256("${path.module}/bundle.zip") : null
 
   depends_on = [
     aws_s3_object.lambda_bundle,
@@ -314,10 +335,14 @@ resource "aws_lambda_function" "sweeper" {
 
   environment {
     variables = {
-      NODE_ENV           = var.environment
-      DATABASE_URL       = "postgresql://postgres:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/paatam?sslmode=require"
-      AWS_S3_BUCKET_NAME = aws_s3_bucket.main.bucket
-      AWS_REGION_NAME    = var.aws_region
+      NODE_ENV            = var.environment
+      DATABASE_URL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "DATABASE_URL", "postgresql://postgres:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/paatam?sslmode=require")
+      GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
+      SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
+      PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
+      AWS_REGION_NAME     = var.aws_region
     }
   }
 

@@ -101,8 +101,9 @@ resource "aws_db_parameter_group" "main" {
   description = "Parameter group for PostgreSQL 16 enabling native pgvector extension and optimizations"
 
   parameter {
-    name  = "rds.force_ssl"
-    value = "1"
+    name         = "rds.force_ssl"
+    value        = "1"
+    apply_method = "pending-reboot"
   }
 
   tags = {

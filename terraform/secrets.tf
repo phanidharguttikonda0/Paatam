@@ -35,6 +35,11 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
   }
 }
 
+data "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id  = aws_secretsmanager_secret.db_credentials.id
+  depends_on = [aws_secretsmanager_secret_version.db_credentials]
+}
+
 # ==========================================
 # 2. ECS Execution Role Permissions
 # ==========================================
