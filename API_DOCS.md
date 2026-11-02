@@ -308,6 +308,8 @@ Refreshes an expired short-lived Access Token using the `refreshToken` HttpOnly 
 ---
 
 ### `POST /api/auth/admin/forgot-password`
+*Aliases:* `POST /api/auth/branch-admin/forgot-password`, `POST /api/auth/branch/forgot-password`
+
 Initiates a password reset for a Branch Admin. Sends an OTP to their registered email/mobile.
 
 - **Authentication Required:** No
@@ -332,6 +334,7 @@ Initiates a password reset for a Branch Admin. Sends an OTP to their registered 
 ---
 
 ### `POST /api/auth/admin/reset-password`
+*Aliases:* `POST /api/auth/branch-admin/reset-password`, `POST /api/auth/branch/reset-password`
 Completes password reset by verifying the OTP and updating the bcrypt password hash.
 
 - **Authentication Required:** No
@@ -785,6 +788,8 @@ Fetches the current logged-in Branch Admin's own profile and total count of assi
 ---
 
 ### `POST /api/auth/admin/login`
+*Alias:* `POST /api/auth/branch-admin/login`
+
 Logs in a Branch Admin using their identifier (email or mobile) and their password.
 
 - **Authentication Required:** No
@@ -2088,10 +2093,12 @@ Searches for students across all sections within a branch by student name or adm
 ---
 
 ### `POST /api/sections/:sectionId/students`
-Enrolls a single student into a designated section. Automatically increments section `strength`.
+Enrolls a single student into a designated section (cohort). Automatically increments section `strength`.
+
+> **Frontend Note:** Students are always enrolled into a specific section/cohort using this endpoint (`POST /api/sections/:sectionId/students`). The backend does NOT have a generic `/api/students` endpoint because `section_id` is a required foreign key.
 
 - **Authentication Required:** Yes (Access Token)
-- **Role Required:** `BRANCH_ADMIN`, `TEACHER`
+- **Role Required:** `BRANCH_ADMIN` (including `DEAN`, `PRINCIPAL`, `VICE_PRINCIPAL`, `OTHER`), `TEACHER`, `CORPORATE_ADMIN`
 - **URL Params:** `sectionId` (string, required)
 - **Request Body:**
   ```json
@@ -2132,7 +2139,7 @@ Enrolls a single student into a designated section. Automatically increments sec
 Bulk enrolls multiple students into a section within an atomic transaction.
 
 - **Authentication Required:** Yes (Access Token)
-- **Role Required:** `BRANCH_ADMIN`, `TEACHER`
+- **Role Required:** `BRANCH_ADMIN` (including `DEAN`, `PRINCIPAL`, `VICE_PRINCIPAL`, `OTHER`), `TEACHER`, `CORPORATE_ADMIN`
 - **URL Params:** `sectionId` (string, required)
 - **Request Body:**
   ```json
@@ -2265,6 +2272,8 @@ Updates student demographic and parent contact information.
 ---
 
 ### `PUT /api/students/:studentId/password`
+*Alias:* `POST /api/students/:studentId/password`
+
 Allows an authorized Branch Admin, Corporate Admin, or the assigned Section Class Teacher to update/reset a student's password directly without requiring student mobile OTP. Essential for K-12 school environments where students do not possess personal mobile phones.
 
 - **Authentication Required:** Yes (Access Token)
