@@ -64,14 +64,14 @@
           "datasource": { "type": "cloudwatch", "uid": "cloudwatch" },
           "queryMode": "Metrics",
           "region": "ap-south-2",
-          "namespace": "AWS/ECS",
-          "metricName": "CPUUtilization",
+          "namespace": "ECS/ContainerInsights",
+          "metricName": "RunningTaskCount",
           "dimensions": {
             "ClusterName": "paatam-cluster-dev",
             "ServiceName": "paatam-service-dev"
           },
-          "statistic": "SampleCount",
-          "period": "60",
+          "statistic": "Average",
+          "period": "300",
           "refId": "A"
         }
       ]
@@ -117,7 +117,7 @@
             "ServiceName": "paatam-service-dev"
           },
           "statistic": "Average",
-          "period": "60",
+          "period": "300",
           "refId": "A"
         }
       ]
@@ -163,7 +163,7 @@
             "ServiceName": "paatam-service-dev"
           },
           "statistic": "Average",
-          "period": "60",
+          "period": "300",
           "refId": "A"
         }
       ]

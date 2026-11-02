@@ -96,15 +96,9 @@ export class BranchController {
       const { branchId } = req.params;
       const user = (req as any).user;
       
-      if (!user || !user.corporateId) {
-        throw new AppError('Unauthorized: Missing corporate identity', 401);
-      }
-
       const parsedBranchId = parseBigInt(branchId, 'branchId');
-      const corporateId = parseBigInt(user.corporateId, 'corporateId');
-
       const { cursor, limit } = parseCursorLimit(req.query.cursor, req.query.limit);
-      const teachers = await BranchService.getTeachersForBranch(parsedBranchId, corporateId, cursor, limit);
+      const teachers = await BranchService.getTeachersForBranch(parsedBranchId, user, cursor, limit);
       
       const serializedTeachers = teachers.map(t => ({
         ...t,

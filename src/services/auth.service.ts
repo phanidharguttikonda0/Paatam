@@ -69,9 +69,25 @@ export class AuthService {
     }
 
     // 4. Token is valid. Issue a new short-lived Access Token
+    let corporateId: bigint | undefined;
+    if (storedToken.user_type === 'CORPORATE_ADMIN') {
+      const corpAdmin = await prisma.corporateAdmin.findUnique({
+        where: { id: storedToken.user_id },
+        select: { corporate_id: true }
+      });
+      if (corpAdmin) corporateId = corpAdmin.corporate_id;
+    } else {
+      const admin = await prisma.admin.findUnique({
+        where: { id: storedToken.user_id },
+        select: { corporate_id: true }
+      });
+      if (admin) corporateId = admin.corporate_id;
+    }
+
     const newAccessToken = this.generateAccessToken(
       storedToken.user_id,
-      storedToken.user_type
+      storedToken.user_type,
+      corporateId
     );
 
     return newAccessToken;

@@ -451,7 +451,7 @@ Retrieves a list of Branch Admins who have access to this specific branch.
 Retrieves a paginated list of Teachers assigned to this specific branch.
 
 - **Authentication Required:** Yes (Access Token)
-- **Role Required:** `CORPORATE_ADMIN`
+- **Role Required:** `BRANCH_ADMIN` (including `DEAN`, `PRINCIPAL`, `VICE_PRINCIPAL`, `OTHER`), `CORPORATE_ADMIN`
 - **URL Params:** `branchId` (string, required)
 - **Query Params:** `cursor`, `limit`
 - **Success Response (200 OK):**

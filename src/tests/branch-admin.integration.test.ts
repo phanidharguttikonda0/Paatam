@@ -213,6 +213,103 @@ describe('Branch and Branch Admin Integration Tests', () => {
     });
   });
 
+  describe('5b. Branch Teachers Access for DEAN, PRINCIPAL and CORPORATE_ADMIN', () => {
+    let deanAccessToken = '';
+
+    beforeAll(async () => {
+      // 1. Create a DEAN Admin
+      const deanRes = await request(app)
+        .post('/api/admin/create')
+        .set('Authorization', `Bearer ${corporateAccessToken}`)
+        .send({
+          admin_name: 'Dean Winchester',
+          contact_email: 'dean@maincampus.com',
+          mobile: '9876543210',
+          role: 'DEAN',
+          password: 'DeanPassword123'
+        });
+      const deanId = deanRes.body.data.id;
+
+      // Assign DEAN to branchId
+      await request(app)
+        .post(`/api/admin/${deanId}/assign-branches`)
+        .set('Authorization', `Bearer ${corporateAccessToken}`)
+        .send({ branch_ids: [branchId] });
+
+      // Login as DEAN
+      const deanLoginRes = await request(app)
+        .post('/api/auth/admin/login')
+        .send({ identifier: 'dean@maincampus.com', password: 'DeanPassword123' });
+      deanAccessToken = deanLoginRes.body.data.accessToken;
+
+      // Onboard a teacher for branchId
+      await request(app)
+        .post(`/api/branch/${branchId}/teachers`)
+        .set('Authorization', `Bearer ${deanAccessToken}`)
+        .send({
+          name: 'Albert Einstein',
+          teacher_id: 'TCH-DEAN-001',
+          contact_email: 'einstein@maincampus.com',
+          contact_mobile: '9876543211',
+          password: 'PhysicsPassword123!'
+        });
+    });
+
+    it('GET /api/branch/:branchId/teachers - allows DEAN role to fetch teachers', async () => {
+      const res = await request(app)
+        .get(`/api/branch/${branchId}/teachers?limit=100`)
+        .set('Authorization', `Bearer ${deanAccessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data.some((t: any) => t.teacher_id === 'TCH-DEAN-001')).toBe(true);
+    });
+
+    it('GET /api/branch/:branchId/teachers - allows PRINCIPAL role to fetch teachers', async () => {
+      const res = await request(app)
+        .get(`/api/branch/${branchId}/teachers?limit=100`)
+        .set('Authorization', `Bearer ${adminAccessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThan(0);
+    });
+
+    it('GET /api/branch/:branchId/teachers - allows CORPORATE_ADMIN role to fetch teachers', async () => {
+      const res = await request(app)
+        .get(`/api/branch/${branchId}/teachers?limit=100`)
+        .set('Authorization', `Bearer ${corporateAccessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('GET /api/branch/:branchId/teachers - returns 403 Forbidden if admin is not assigned to branch', async () => {
+      // Create a second branch that dean is not assigned to
+      const b2Res = await request(app)
+        .post('/api/branch/create')
+        .set('Authorization', `Bearer ${corporateAccessToken}`)
+        .send({
+          name: 'Secondary Campus',
+          pincode: '500082',
+          address: 'North Wing',
+          branch_contact_mail: 'north@schoolcorp.com',
+          mobile_number: '8887776669'
+        });
+      const branch2Id = b2Res.body.data.id;
+
+      const res = await request(app)
+        .get(`/api/branch/${branch2Id}/teachers?limit=100`)
+        .set('Authorization', `Bearer ${deanAccessToken}`);
+
+      expect(res.status).toBe(403);
+    });
+  });
+
   describe('6. Update and Delete Admin', () => {
     it('should update admin details', async () => {
       const res = await request(app)

@@ -199,7 +199,7 @@ export class AuthController {
       }
 
       const userRole = admin.role; 
-      const accessToken = AuthService.generateAccessToken(admin.id, userRole);
+      const accessToken = AuthService.generateAccessToken(admin.id, userRole, admin.corporate_id);
       const refreshToken = await AuthService.generateAndStoreRefreshToken(admin.id, userRole);
 
       res.cookie('refreshToken', refreshToken, {

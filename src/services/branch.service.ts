@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma';
 import { AppError } from '../exceptions/AppError';
 import { idGenerator } from '../utils/idGenerator';
+import { AcademicYearService } from './academicYear.service';
 
 export class BranchService {
   public static async createBranch(corporateId: bigint, data: {
@@ -78,15 +79,9 @@ export class BranchService {
     return accesses.map(a => ({ ...a.Admin, _accessId: a.id }));
   }
 
-  public static async getTeachersForBranch(branchId: bigint, corporateId: bigint, cursor?: bigint, limit: number = 10) {
-    // Ensure the branch belongs to the corporate
-    const branch = await prisma.branch.findFirst({
-      where: { id: branchId, corporate_id: corporateId }
-    });
-
-    if (!branch) {
-      throw new AppError('Branch not found or does not belong to your corporate entity', 404);
-    }
+  public static async getTeachersForBranch(branchId: bigint, user: any, cursor?: bigint, limit: number = 10) {
+    // Assert user has access to this branch (supports CORPORATE_ADMIN and all BRANCH_ADMIN_ROLES like DEAN, PRINCIPAL, etc.)
+    await AcademicYearService.assertBranchAccess(user, branchId);
 
     const teachers = await prisma.teacher.findMany({
       where: { branch_id: branchId },
