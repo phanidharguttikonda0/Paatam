@@ -3761,6 +3761,845 @@ Triggers a live test SMS, WhatsApp, or Email notification to verify parent alert
   }
   ```
 
+---
 
+## 19. Complete Async AI Pipeline & Frontend Implementation Specification (Codex 5.3 Production Blueprint)
 
+This section provides the end-to-end architectural, state machine, and API integration specifications for the asynchronous AI processing pipeline. It is engineered specifically as a definitive implementation guide for frontend developers and AI coding agents (such as OpenAI Codex 5.3, Claude 3.7 Sonnet, and Cursor) to generate production-grade client applications without manual intervention.
 
+---
+
+### 19.1 Architecture Overview & AWS Serverless Topology
+
+Due to the compute requirements of Multimodal Vision OCR and deep LLM pedagogical evaluation (which can take between 5 to 45 seconds per paper), heavy AI tasks **never** block synchronous HTTP connections. Instead, Paatam utilizes an asynchronous decoupled architecture built on AWS S3, Amazon SQS, and AWS Lambda Serverless Workers.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Teacher as Teacher / Student Browser
+    participant API as Paatam Backend (api.paatam.in)
+    participant S3 as AWS S3 Bucket (paatam-uploads-dev)
+    participant SQS as AWS SQS Queues
+    participant Lambda as AWS Lambda AI Workers
+    participant DB as RDS PostgreSQL Database
+
+    %% Upload & Extraction Phase
+    Teacher->>API: 1. POST /api/assignments/upload-urls (file_name, purpose)
+    API-->>Teacher: 2. S3 Pre-signed PUT URL + File URL
+    Teacher->>S3: 3. Direct Binary PUT (application/pdf, No Auth Headers)
+    S3-->>Teacher: 4. HTTP 200 OK (S3 ETag)
+    Teacher->>API: 5. POST /api/assignments/process-async (question_paper_url)
+    API->>DB: 6. Insert Assignment (status: "ocr_processing")
+    API->>SQS: 7. Dispatch message to paatam-assignment-ocr-queue-dev
+    API-->>Teacher: 8. HTTP 202 Accepted (poll_url, assignment_id)
+    
+    %% Async OCR Worker
+    SQS->>Lambda: 9. Trigger paatam-assignment-ocr-dev
+    Lambda->>S3: 10. Fetch Question Paper PDF
+    Lambda->>Lambda: 11. Multimodal OCR & Question Structuring (Gemini 2.5 Flash / Sarvam)
+    Lambda->>DB: 12. Save questions_json, set status: "ready"
+    
+    %% Polling
+    loop Poll every 3 seconds
+        Teacher->>API: 13. GET /api/assignments/:id/pipeline-status
+        API->>DB: 14. Query status & questions_json
+        API-->>Teacher: 15. Return status: "ocr_processing" | "ready"
+    end
+
+    %% Phase 2: Review & Publish
+    Teacher->>API: 16. POST /api/assignments (bind answer_key, set mode, publish)
+    API->>DB: 17. Update status to "published"
+```
+
+#### AWS Production Resource Registry
+
+| Resource Purpose | AWS Resource Name | Trigger / Driver | Timeout / Concurrency | Underlying AI Model |
+| :--- | :--- | :--- | :--- | :--- |
+| **S3 Upload Bucket** | `paatam-uploads-dev` | Pre-signed PUT from client | Direct S3 Upload | N/A (CORS Enabled: `*`) |
+| **Assignment OCR Queue** | `paatam-assignment-ocr-queue-dev` | `POST /api/assignments/process-async` | Visibility: 300s (5m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
+| **Assignment OCR Lambda** | `paatam-assignment-ocr-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 2.5 Flash / Sarvam Vision DocAI |
+| **Bulk Splitter Queue** | `paatam-bulk-split-queue-dev` | `POST /api/submissions/bulk` | Visibility: 360s (6m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
+| **Bulk Splitter Lambda** | `paatam-bulk-split-dev` | SQS Event (`batchSize: 1`) | 360s / 1024 MB | `pdf-lib` + Student Cover Sheet OCR |
+| **Paper OCR Queue** | `paatam-paper-ocr-queue-dev` | Student Submit / Splitter Output | Visibility: 300s (5m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
+| **Paper OCR Lambda** | `paatam-paper-ocr-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 2.5 Flash / Sarvam Handwritten OCR |
+| **Paper Evaluation Queue** | `paatam-paper-evaluation-queue-dev` | Output of `paper-ocr` | Visibility: 300s (5m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
+| **Paper Evaluation Lambda** | `paatam-paper-evaluation-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 2.5 Flash Reasoning Engine |
+| **Sweeper & Watchdog** | `paatam-sweeper-dev` | CloudWatch Event (every 5 mins) | 120s / 512 MB | Prisma Database Recovery (Deadlock Sweeper) |
+
+---
+
+### 19.2 The Assignment & Submission State Machines
+
+Frontend developers and AI coding agents must strictly adhere to the following database status enumerations to render accurate progress indicators, loaders, and action buttons.
+
+#### Assignment Lifecycle States (`Assignment.status`)
+```
+[DRAFT] ──> [OCR_PROCESSING] ──> [READY] ──> [PUBLISHED] ──> [ARCHIVED]
+                   │
+                   └─── (OCR Error) ──> [FAILED] (Teacher re-triggers upload)
+```
+- `draft`: Initial record created; awaiting paper upload or AI generation.
+- `ocr_processing`: SQS worker is currently performing vision transcription on the Question Paper PDF.
+- `ready`: Vision OCR has completed; `questions_json` is populated. Teacher can now enter Phase 2 (editing questions and binding the Answer Key).
+- `published`: Assignment is finalized and published. Depending on `submission_mode`, it is now visible to students or ready for bulk stack upload.
+- `failed`: Extraction failed (corrupted file, illegible scan). Frontend prompts for re-upload.
+
+#### Submission Lifecycle States (`Submission.status` & `Submission.evaluation_status`)
+```
+[UPLOADED] ──> [PENDING_OCR] ──> [OCR_COMPLETED] ──> [EVALUATING] ──> [GRADED] ──> [APPROVED]
+                                                            │
+                                                            └── (Needs Review) ──> [PENDING_REVIEW]
+```
+- `submitted` / `pending_ocr`: Paper received; waiting for `paatam-paper-ocr-dev`.
+- `ocr_completed`: Handwritten student text transcribed; passed to `paatam-paper-evaluation-queue-dev`.
+- `evaluating`: Gemini reasoning engine is matching student answers against question rubrics and answer keys.
+- `graded`: AI evaluation finished. Itemized marks, step marks, feedback, and Socratic hints are populated.
+- `pending_review`: AI confidence flag or teacher configuration flagged paper for manual teacher verification.
+- `approved`: Subject teacher approved/overrode marks. Grades locked and released to student portal and parent alerts.
+
+---
+
+### 19.3 Flow A: Question Paper PDF Upload & Multi-Stage Async OCR (With Phase 2 Answer Key Binding)
+
+This is the primary workflow when a teacher has a physical or digital question paper PDF.
+
+#### Why the Answer Key is NOT Required During Initial Question Paper Extraction
+During Stage 1, the AI's sole task is extracting the structure of the examination: parsing question numbers, sub-questions, MCQ option arrays, assigned marks, and diagram references into structured JSON. Binding an answer key upfront is counterproductive because:
+1. Teachers frequently want to verify or edit the extracted questions before supplying answers.
+2. The teacher may prefer to type answers inline rather than upload a separate PDF.
+3. For AI-generated exams, questions are synthesized first before answer keys are generated.
+Therefore, the pipeline is divided into **Phase 1: Question Extraction** and **Phase 2: Question Review & Answer Key Binding**.
+
+```mermaid
+graph TD
+    A[Teacher Selects Class, Section & Subject] --> B[Upload Question Paper PDF to S3]
+    B --> C[Call POST /api/assignments/process-async]
+    C --> D[Poll GET /api/assignments/:id/pipeline-status every 3s]
+    D -->|Status: ready| E[Display Phase 2: Review Questions in UI]
+    E --> F{Answer Key Input Method}
+    F -->|Option A: Type/Paste| G[Input answer_key_text in Rich Text Editor]
+    F -->|Option B: Upload PDF| H[Upload Answer Key PDF to S3 -> Bind answer_key_url]
+    G --> I[Select Submission Mode: STUDENT_UPLOAD vs TEACHER_UPLOAD]
+    H --> I
+    I --> J[Call POST /api/assignments to Lock & Publish]
+    J --> K[Assignment Live on Dashboards]
+```
+
+#### Step 1: Request S3 Pre-signed Upload URL
+The frontend requests a signed S3 PUT URL for direct-to-S3 upload.
+
+- **Endpoint:** `POST /api/assignments/upload-urls`
+- **Headers:** `Authorization: Bearer <accessToken>`, `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "section_id": "701",
+    "files": [
+      {
+        "file_name": "Class10_Physics_Midterm_2026.pdf",
+        "file_type": "application/pdf",
+        "purpose": "question_paper"
+      }
+    ]
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "uploads": [
+        {
+          "purpose": "question_paper",
+          "upload_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/question_paper-9a1b-1792151000.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...",
+          "file_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/question_paper-9a1b-1792151000.pdf",
+          "key": "temp/question_paper-9a1b-1792151000.pdf"
+        }
+      ]
+    }
+  }
+  ```
+
+#### Step 2: Direct Binary Upload to S3
+The client browser sends a binary `PUT` request directly to the `upload_url`.
+
+- **HTTP Method:** `PUT`
+- **URL:** The exact `upload_url` string received in Step 1.
+- **Mandatory Headers:**
+  - `Content-Type: application/pdf` (Must match the `file_type` passed in Step 1).
+- **CRITICAL FRONTEND RULES FOR S3 UPLOAD:**
+  1. **DO NOT pass Authorization headers:** Do NOT include `Authorization: Bearer ...` in the S3 `PUT` request. Passing your app's JWT to AWS S3 will cause AWS to reject the request with `400 Bad Request` or `403 Forbidden` (`InvalidArgument: Only one auth mechanism allowed`).
+  2. **Track Progress:** Use `XMLHttpRequest.upload.onprogress` or Axios `onUploadProgress` to render a 0%–100% progress bar.
+  3. **Verification:** A successful S3 upload returns HTTP `200 OK` with an empty body and an `ETag` header.
+
+#### Step 3: Trigger Asynchronous Extraction
+Once the file is safely in S3, call the backend async ingestion endpoint.
+
+- **Endpoint:** `POST /api/assignments/process-async`
+- **Headers:** `Authorization: Bearer <accessToken>`, `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "section_id": "701",
+    "class_subject_id": "1101",
+    "teacher_subject_id": "1201",
+    "title": "Class 10 Physics Mid-Term Exam",
+    "difficulty": "Medium",
+    "duration_minutes": 90,
+    "submission_mode": "TEACHER_UPLOAD",
+    "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/question_paper-9a1b-1792151000.pdf"
+  }
+  ```
+  *(Note: `answer_key_url` is optional here. Omit it during Phase 1).*
+- **Success Response (202 Accepted):**
+  ```json
+  {
+    "status": "success",
+    "message": "Assignment queued for OCR and dynamic model routing",
+    "data": {
+      "assignment_id": "1501",
+      "status": "ocr_processing",
+      "poll_url": "/api/assignments/1501/pipeline-status"
+    }
+  }
+  ```
+
+#### Step 4: Frontend Polling Engine
+The frontend begins polling `GET /api/assignments/:id/pipeline-status` every **3000ms (3 seconds)**.
+
+- **Endpoint:** `GET /api/assignments/:id/pipeline-status`
+- **Headers:** `Authorization: Bearer <accessToken>`
+- **Response - In Progress (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "assignment_id": "1501",
+      "pipeline_status": "ocr_processing",
+      "progress_percent": 45,
+      "message": "Extracting questions from uploaded PDF..."
+    }
+  }
+  ```
+  *(Frontend Action: Display animated loader or progress bar locked at 45%).*
+
+- **Response - Completed & Ready (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "assignment_id": "1501",
+      "pipeline_status": "ready",
+      "reasoning_model_selected": "gemini-2.5-flash",
+      "routing_reason": "Standard single-choice and short numerical format detected",
+      "total_questions": 15,
+      "questions_json": [
+        {
+          "question_number": 1,
+          "question": "What is the SI unit of electric potential?",
+          "type": "mcq",
+          "marks": 1,
+          "options": ["Ampere", "Volt", "Ohm", "Joule"],
+          "correct_answer": "Volt",
+          "rubric": "1 mark for correct selection"
+        },
+        {
+          "question_number": 2,
+          "question": "State Ohm's Law and write its mathematical formula.",
+          "type": "short",
+          "marks": 3,
+          "rubric": "1 mark for statement: Current is proportional to potential difference. 1 mark for formula V = IR. 1 mark for defining terms."
+        }
+      ],
+      "answer_key_text": null
+    }
+  }
+  ```
+  *(Frontend Action: Halt polling. Transition UI to Phase 2: Question Editor & Answer Key Binding).*
+
+#### Step 5: Phase 2 - Teacher Question Review & Answer Key Binding
+In this phase, the UI displays the parsed questions in an editable list. The teacher can:
+1. Edit question text, change marks, or modify options.
+2. Provide the **Answer Key** via either:
+   - **Method A (Inline Text/Markdown):** Enter solution guidelines into the `answer_key_text` field.
+   - **Method B (PDF Upload):** Click "Upload Answer Key PDF", call `POST /api/assignments/upload-urls` with `purpose: "answer_key"`, upload to S3, and pass the resulting `file_url` as `answer_key_url`.
+3. Choose the **Submission Mode**:
+   - `STUDENT_UPLOAD`: For remote/digital tests. Each student logs into their student portal and submits their answer paper.
+   - `TEACHER_UPLOAD`: For physical in-class exams. The teacher collects all papers, scans them into one combined PDF stack, and uses bulk upload.
+
+#### Step 6: Finalize & Publish Assignment
+- **Endpoint:** `POST /api/assignments`
+- **Headers:** `Authorization: Bearer <accessToken>`, `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "assignment_id": "1501",
+    "section_id": "701",
+    "class_subject_id": "1101",
+    "teacher_subject_id": "1201",
+    "title": "Class 10 Physics Mid-Term Exam",
+    "difficulty": "Medium",
+    "duration_minutes": 90,
+    "submission_mode": "TEACHER_UPLOAD",
+    "due_date": "2026-11-10T18:00:00.000Z",
+    "status": "published",
+    "reasoning_model": "gemini-2.5-flash",
+    "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/question_paper-9a1b-1792151000.pdf",
+    "answer_key_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/answerkey-9a1b.pdf",
+    "answer_key_text": "Q1: Option B (Volt)\nQ2: Ohm's law states that current through a conductor between two points is directly proportional to voltage across the two points. V = I * R.",
+    "questions_json": [
+      {
+        "question_number": 1,
+        "question": "What is the SI unit of electric potential?",
+        "type": "mcq",
+        "marks": 1,
+        "options": ["Ampere", "Volt", "Ohm", "Joule"]
+      },
+      {
+        "question_number": 2,
+        "question": "State Ohm's Law and write its mathematical formula.",
+        "type": "short",
+        "marks": 3
+      }
+    ]
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "1501",
+      "title": "Class 10 Physics Mid-Term Exam",
+      "status": "published",
+      "created_at": "2026-11-03T10:00:00.000Z"
+    }
+  }
+  ```
+
+---
+
+### 19.4 Flow B: AI Curriculum Blueprint Generation (No S3 Upload)
+
+When a teacher wishes to generate an exam paper directly from the school curriculum/syllabus (e.g., CBSE/ICSE textbooks):
+
+1. **Generate Exam Blueprint:** Call `POST /api/assignments/generate` with syllabus topics, chapter titles, difficulty, and question count distribution. The AI returns a full question set with questions, options, marks, and model answers.
+2. **Interactive Question Regeneration:** If the teacher dislikes a specific question, call `POST /api/assignments/regenerate-question` passing the existing question and `avoid_texts` to obtain an alternative question.
+3. **Generate STEM Vector Diagrams:** For physics or geometry questions, call `POST /api/assignments/generate-diagram` to produce an educational SVG/PNG diagram.
+4. **Publish:** The generated `questions` array and synthesized answer key are sent directly to `POST /api/assignments` as in Step 6 of Flow A.
+
+---
+
+### 19.5 Flow C: Student Digital Submission Workflow (`STUDENT_UPLOAD`)
+
+Used for homework, online tests, or remote assessments where each student uploads their own answer booklet.
+
+```mermaid
+sequenceDiagram
+    actor Student
+    participant Portal as Student Portal
+    participant API as Paatam Backend
+    participant S3 as AWS S3 Bucket
+    participant SQS as Paper OCR Queue
+
+    Student->>Portal: 1. Navigate to /student/assignments
+    Portal->>API: 2. GET /api/student/assignments?status=pending
+    API-->>Portal: 3. Return active assignments list
+    Student->>Portal: 4. Select assignment & upload scanned answer booklet
+    Portal->>API: 5. POST /api/assignments/upload-urls (purpose: "submission")
+    API-->>Portal: 6. Return Pre-signed S3 URL
+    Portal->>S3: 7. Binary PUT answer paper PDF (No Auth Header)
+    S3-->>Portal: 8. HTTP 200 OK
+    Portal->>API: 9. POST /api/student/assignments/:id/submit (sample_paper_url)
+    API->>SQS: 10. Enqueue to paatam-paper-ocr-queue-dev
+    API-->>Portal: 11. Return submission_id & status: "submitted"
+    
+    loop Check Evaluation Progress
+        Portal->>API: 12. GET /api/student/submissions/:id
+        API-->>Portal: 13. Return status ("pending_ocr" -> "evaluating" -> "graded")
+    end
+```
+
+#### Step 1: Query Pending Assignments
+- **Endpoint:** `GET /api/student/assignments?status=pending`
+- **Headers:** `Authorization: Bearer <studentAccessToken>`
+- **Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "1501",
+        "title": "Class 10 Physics Mid-Term Exam",
+        "subject_name": "Physics",
+        "duration_minutes": 90,
+        "due_date": "2026-11-10T18:00:00.000Z",
+        "submission_mode": "STUDENT_UPLOAD",
+        "total_marks": 40
+      }
+    ]
+  }
+  ```
+
+#### Step 2: Upload Student Answer Paper to S3
+- Obtain upload URL via `POST /api/assignments/upload-urls` with `purpose: "student_submission"`.
+- Execute binary `PUT` to S3 with `Content-Type: application/pdf`.
+
+#### Step 3: Submit Paper
+- **Endpoint:** `POST /api/student/assignments/:id/submit`
+- **Headers:** `Authorization: Bearer <studentAccessToken>`, `Content-Type: application/json`
+- **URL Param:** `id` = Assignment ID (`1501`)
+- **Request Body:**
+  ```json
+  {
+    "sample_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/student-1401-paper.pdf"
+  }
+  ```
+- **Success Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Assignment submitted successfully and queued for grading",
+    "data": {
+      "submission_id": "3233756592734400",
+      "assignment_id": "1501",
+      "student_id": "1401",
+      "status": "submitted",
+      "evaluation_status": "pending_ocr",
+      "submitted_at": "2026-11-03T11:00:00.000Z"
+    }
+  }
+  ```
+
+#### Step 4: Poll Submission Grade & Feedback
+- **Endpoint:** `GET /api/student/submissions/:id`
+- **Headers:** `Authorization: Bearer <studentAccessToken>`
+- When `status: "graded"` or `"approved"`, the response contains the student's itemized marks, corrective feedback, and Socratic learning hints.
+
+---
+
+### 19.6 Flow D: Teacher Bulk Handwritten Exam Stack Splitting Workflow (`TEACHER_UPLOAD`)
+
+Used for in-class physical examinations. The teacher scans the entire section's handwritten answer sheets (e.g., 35 students × 3 pages = 105 pages) into one master PDF.
+
+```mermaid
+graph TD
+    A[Teacher Scans All Papers into One 100-page PDF] --> B[Request S3 Upload URL: purpose = bulk_submission]
+    B --> C[Execute S3 PUT of Master PDF Stack]
+    C --> D[Call POST /api/submissions/bulk]
+    D --> E[Backend creates BatchJob and enqueues to paatam-bulk-split-queue-dev]
+    E --> F[Lambda: paatam-bulk-split-dev slices master PDF per student]
+    F --> G[Creates child Submission records in DB]
+    F --> H[Enqueues each student paper to paatam-paper-ocr-queue-dev]
+    I[Frontend Polls GET /api/submissions/batch/:jobId every 4s] --> J{BatchJob Status}
+    J -->|splitting| K[Update Progress: processed_count / total_files]
+    J -->|completed| L[Display All Student Submissions in Review Queue]
+```
+
+#### Step 1: Upload Master Scanned PDF to S3
+- Call `POST /api/assignments/upload-urls` with `purpose: "bulk_submission"`.
+- Execute binary S3 `PUT` with the master PDF stack.
+
+#### Step 2: Trigger Bulk Splitting & Batch Ingestion
+- **Endpoint:** `POST /api/submissions/bulk`
+- **Headers:** `Authorization: Bearer <teacherAccessToken>`, `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "assignment_id": "1501",
+    "bulk_mode": "combined_pdf",
+    "total_files": 35,
+    "sample_paper_urls": [
+      "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/bulk-uploads/sectionA_physics_master_stack.pdf"
+    ]
+  }
+  ```
+- **Success Response (202 Accepted):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "job_id": "1701",
+      "status": "queued",
+      "stage": "splitting",
+      "total_files": 35,
+      "poll_url": "/api/submissions/batch/1701"
+    }
+  }
+  ```
+
+#### Step 3: Poll Batch Splitting Progress
+The frontend polls `GET /api/submissions/batch/:jobId` every **4000ms (4 seconds)**.
+
+- **Endpoint:** `GET /api/submissions/batch/:jobId`
+- **Headers:** `Authorization: Bearer <teacherAccessToken>`
+- **Response - Splitting in Progress (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "job_id": "1701",
+      "status": "processing",
+      "stage": "splitting",
+      "total_files": 35,
+      "processed_count": 14,
+      "successful_count": 14,
+      "failed_count": 0,
+      "created_submissions": [
+        { "submission_id": "3233756592734401", "student_name": "Aarav Sharma", "roll_no": "101" },
+        { "submission_id": "3233756592734402", "student_name": "Diya Patel", "roll_no": "102" }
+      ]
+    }
+  }
+  ```
+  *(Frontend Action: Render a progress bar showing `(14 / 35) * 100 = 40%`).*
+
+- **Response - Completed (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "job_id": "1701",
+      "status": "completed",
+      "stage": "completed",
+      "total_files": 35,
+      "processed_count": 35,
+      "successful_count": 35,
+      "failed_count": 0,
+      "created_submissions": [ ... ]
+    }
+  }
+  ```
+  *(Frontend Action: Halt batch polling. Redirect teacher to the Assignment Grading & Review Queue).*
+
+---
+
+### 19.7 Flow E: The Autonomous AI Evaluation Pipeline (Under The Hood)
+
+Once individual student papers are in the system (via Student Upload or Bulk Splitter), the automated AI evaluation pipeline processes each paper through two sequential AWS Lambda workers:
+
+```
+[Student Paper S3 PDF]
+         │
+         ▼
+[paatam-paper-ocr-queue-dev]
+         │
+         ▼
+[Lambda: paatam-paper-ocr-dev]
+   ├─ Vision OCR via Gemini 2.5 Flash / Sarvam DocAI
+   ├─ Transcribes handwritten student text per question
+   └─ Saves ocr_text to DB; sets evaluation_status: "ocr_completed"
+         │
+         ▼
+[paatam-paper-evaluation-queue-dev]
+         │
+         ▼
+[Lambda: paatam-paper-evaluation-dev]
+   ├─ Compares ocr_text against questions_json rubrics and answer_key
+   ├─ Calculates step marks, awarded score, and total score
+   ├─ Formulates pedagogical feedback and Socratic hints
+   └─ Updates DB: score = X, status = "graded", evaluation_status = "completed"
+```
+
+#### What If a Job Stalls or Fails? (The Sweeper Lambda)
+The watchdog worker `paatam-sweeper-dev` runs on an automated CloudWatch cron schedule every 5 minutes:
+1. It queries the database for any `Submission` in `ocr_processing` or `evaluating` with an update timestamp older than 15 minutes.
+2. It inspects the associated SQS Dead-Letter Queues (`*-dlq-dev`).
+3. If an unrecoverable failure occurred, it marks the submission as `failed` with an explicit diagnostic message (e.g., `"OCR failed: Illegible handwriting on page 2"`), enabling the frontend to highlight that specific paper with a "Re-scan / Re-evaluate" button.
+
+---
+
+### 19.8 Flow F: Teacher Grading Review, Overrides & Final Approval
+
+Once papers reach `graded` or `pending_review`, the teacher reviews them in the grading workbench.
+
+#### Step 1: Fetch Submissions Review Queue
+- **Endpoint:** `GET /api/submissions?assignment_id=1501&limit=10`
+- **Headers:** `Authorization: Bearer <teacherAccessToken>`
+- **Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "3233756592734401",
+        "assignment_id": "1501",
+        "assignment_title": "Class 10 Physics Mid-Term Exam",
+        "student_id": "1401",
+        "student_name": "Aarav Sharma",
+        "roll_no": "101",
+        "admission_no": "ADM-2026-001",
+        "score": 36,
+        "max_score": 40,
+        "status": "graded",
+        "evaluation_status": "completed",
+        "sample_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/student-1401.pdf"
+      }
+    ],
+    "meta": { "nextCursor": "3233756592734401", "hasNextPage": false }
+  }
+  ```
+
+#### Step 2: Inspect Single Submission (Split-Pane Workbench)
+- **Endpoint:** `GET /api/submissions/:id`
+- **Headers:** `Authorization: Bearer <teacherAccessToken>`
+- **Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "3233756592734401",
+      "assignment_id": "1501",
+      "student": {
+        "id": "1401",
+        "name": "Aarav Sharma",
+        "roll_no": "101"
+      },
+      "sample_paper_urls": [
+        "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/student-1401-page1.jpg",
+        "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/student-1401-page2.jpg"
+      ],
+      "ocr_text": "Q1: (B) Volt\nQ2: Ohm's law states that electric current is directly proportional to voltage across two points: V = I * R.",
+      "score": 36,
+      "max_score": 40,
+      "feedback": "Strong understanding of electrical units and Ohm's law. Minor calculation slip in question 4.",
+      "socratic_hint": "Remember that resistance in series is R1 + R2, whereas in parallel it is 1/R1 + 1/R2.",
+      "status": "graded",
+      "question_breakdown": [
+        {
+          "question_number": 1,
+          "marks_awarded": 1,
+          "max_marks": 1,
+          "verdict": "correct",
+          "student_answer": "Option B (Volt)",
+          "ai_explanation": "Correct option selected."
+        },
+        {
+          "question_number": 2,
+          "marks_awarded": 3,
+          "max_marks": 3,
+          "verdict": "correct",
+          "student_answer": "V = I * R",
+          "ai_explanation": "Full definition and formula provided."
+        }
+      ]
+    }
+  }
+  ```
+
+#### Step 3: Teacher Manual Score Override
+If the teacher chooses to modify awarded marks:
+- **Endpoint:** `POST /api/submissions/:id/override`
+- **Headers:** `Authorization: Bearer <teacherAccessToken>`, `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "score": 38,
+    "feedback": "Adjusted Q4 step marks after review.",
+    "question_breakdown": [
+      {
+        "question_number": 4,
+        "marks_awarded": 5,
+        "max_marks": 5,
+        "verdict": "correct"
+      }
+    ]
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "id": "3233756592734401",
+      "score": 38,
+      "status": "approved"
+    }
+  }
+  ```
+
+#### Step 4: Final Approval & Parent Alert Dispatch
+- **Endpoint:** `POST /api/submissions/:id/approve`
+- **Headers:** `Authorization: Bearer <teacherAccessToken>`, `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "final_score": 38,
+    "final_feedback": "Approved by Subject Teacher. Excellent work."
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Submission approved successfully",
+    "data": {
+      "id": "3233756592734401",
+      "status": "approved",
+      "final_score": 38
+    }
+  }
+  ```
+  *(Calling approve automatically queues parent SMS/WhatsApp notifications with the student's final marks).*
+
+---
+
+### 19.9 Frontend Production Implementation Blueprint for AI Coding Agents (Codex 5.3)
+
+This subsection contains explicit TypeScript code patterns and UI specifications for an AI agent to build the entire frontend.
+
+#### 1. Recommended Route Hierarchy & View Map
+```
+/
+├── /auth/login                             # Corporate / Branch / Teacher / Student selector
+├── /teacher/dashboard                      # Class / Section overview
+├── /teacher/assignments
+│   ├── /create                             # 3-Step Wizard:
+│   │   ├── Step 1: Upload QP / AI Generate
+│   │   ├── Step 2: Review Questions & Bind Answer Key
+│   │   └── Step 3: Set Submission Mode & Publish
+│   ├── /:id/pipeline-progress              # Full-page or modal polling progress indicator
+│   ├── /:id/bulk-upload                    # Dropzone for 100-page scanned master PDF stack
+│   └── /:id/submissions                   # Section roster table with live grading status
+├── /teacher/submissions/:id/review         # Dual-Pane Evaluation Workbench:
+│   ├── Left Pane:  PDF Page Viewer (zoom, pan, page jump)
+│   └── Right Pane: AI Rubric breakdown, score input, teacher remarks & Approve button
+└── /student
+    ├── /assignments                        # List of assignments with "Submit" CTAs
+    ├── /assignments/:id/submit             # File upload zone with progress bar
+    └── /submissions/:id/results            # Graded scorecard, question analysis & feedback
+```
+
+#### 2. Production S3 Direct Upload Helper (TypeScript)
+```typescript
+interface S3UploadProgressCallback {
+  (percentage: number): void;
+}
+
+export async function uploadFileDirectToS3(
+  presignedUrl: string,
+  file: File,
+  onProgress?: S3UploadProgressCallback
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', presignedUrl, true);
+
+    // CRITICAL: Set Content-Type strictly matching presigned URL registration
+    xhr.setRequestHeader('Content-Type', file.type || 'application/pdf');
+
+    // CRITICAL: DO NOT set Authorization Bearer headers for S3 PUT requests!
+
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent);
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`S3 Upload failed with HTTP status ${xhr.status}: ${xhr.statusText}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error during direct S3 binary upload'));
+    };
+
+    xhr.send(file);
+  });
+}
+```
+
+#### 3. Resilient Polling Hook with Jitter & Timeout (React / TypeScript)
+```typescript
+import { useEffect, useRef, useState } from 'react';
+
+interface UsePipelinePollingOptions<T> {
+  fetcher: () => Promise<T>;
+  isComplete: (data: T) => boolean;
+  intervalMs?: number;
+  timeoutMs?: number;
+}
+
+export function usePipelinePolling<T>({
+  fetcher,
+  isComplete,
+  intervalMs = 3000,
+  timeoutMs = 180000, // 3 minute maximum safety window
+}: UsePipelinePollingOptions<T>) {
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const startTime = useRef<number>(Date.now());
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function poll() {
+      if (Date.now() - startTime.current > timeoutMs) {
+        setError('Operation timed out. Please check the review dashboard.');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const result = await fetcher();
+        if (isCancelled) return;
+
+        setData(result);
+
+        if (isComplete(result)) {
+          setIsLoading(false);
+        } else {
+          // Add 10% jitter to prevent thundering herd
+          const jitter = Math.floor(Math.random() * 300);
+          timerRef.current = setTimeout(poll, intervalMs + jitter);
+        }
+      } catch (err: any) {
+        if (isCancelled) return;
+        setError(err.message || 'Error checking pipeline status');
+        setIsLoading(false);
+      }
+    }
+
+    poll();
+
+    return () => {
+      isCancelled = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [intervalMs, timeoutMs]);
+
+  return { data, isLoading, error };
+}
+```
+
+#### 4. UI Status Badges & CSS Palette Reference
+| Status Code | Badge Label | Background Color | Text Color | Meaning |
+| :--- | :--- | :--- | :--- | :--- |
+| `ocr_processing` | Extracting OCR | `#FEF3C7` (Amber 100) | `#92400E` (Amber 800) | PDF OCR in progress |
+| `ready` | Ready for Review | `#E0E7FF` (Indigo 100) | `#3730A3` (Indigo 800) | Questions extracted |
+| `published` | Active Exam | `#DBEAFE` (Blue 100) | `#1E40AF` (Blue 800) | Live on student portal |
+| `submitted` / `pending_ocr` | In Queue | `#F3F4F6` (Gray 100) | `#374151` (Gray 700) | Waiting for evaluation |
+| `evaluating` | AI Grading | `#EDE9FE` (Purple 100) | `#5B21B6` (Purple 800) | Gemini reasoning active |
+| `graded` | Graded (Pending) | `#FEF08A` (Yellow 200) | `#854D0E` (Yellow 900) | AI scored; awaiting approval |
+| `approved` | Approved & Released | `#D1FAE5` (Emerald 100) | `#065F46` (Emerald 800) | Locked and notified |
+| `failed` | Needs Re-scan | `#FEE2E2` (Red 100) | `#991B1B` (Red 800) | Extraction/scan error |
+
+#### 5. Error Handling & Edge Cases Matrix
+1. **S3 CORS Error (403 Forbidden on PUT):**
+   - *Cause:* The browser sent an unexpected header (such as `Authorization: Bearer ...`).
+   - *Fix:* Ensure the upload helper only sets `Content-Type: application/pdf` and excludes application auth tokens from S3 requests.
+2. **Corrupted or Illegible Scans:**
+   - *Handling:* When `pipeline-status` returns `failed`, display an alert banner: `"The uploaded PDF could not be processed. Please ensure the document is clear, correctly oriented, and under 50MB."` with a direct "Re-upload File" action.
+3. **Teacher Overrides on Evaluated Papers:**
+   - Always allow teachers to adjust both individual question marks and overall totals. When the teacher saves an override via `POST /api/submissions/:id/override`, update the local state immediately without requiring a full page refresh.
+4. **Network Interruption During Long Polling:**
+   - Implement exponential backoff if `GET /pipeline-status` returns network errors (502/504), retrying up to 5 times before presenting a retry prompt to the user.
