@@ -93,7 +93,13 @@ resource "aws_ecs_task_definition" "main" {
     
     # We pass the environment securely (maps prod to standard Node.js "production")
     environment = [
-      { name = "NODE_ENV", value = var.environment == "prod" ? "production" : var.environment }
+      { name = "NODE_ENV", value = var.environment == "prod" ? "production" : var.environment },
+      { name = "AWS_REGION", value = var.aws_region },
+      { name = "ASSIGNMENT_OCR_QUEUE_URL", value = aws_sqs_queue.assignment_ocr_queue.id },
+      { name = "BULK_SPLIT_QUEUE_URL", value = aws_sqs_queue.bulk_split_queue.id },
+      { name = "PAPER_OCR_QUEUE_URL", value = aws_sqs_queue.paper_ocr_queue.id },
+      { name = "PAPER_EVALUATION_QUEUE_URL", value = aws_sqs_queue.paper_evaluation_queue.id },
+      { name = "S3_BUCKET_NAME", value = aws_s3_bucket.main.id }
     ]
 
     # Pull secrets directly from AWS Secrets Manager and inject as container environment variables!

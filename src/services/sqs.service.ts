@@ -55,8 +55,10 @@ export class SqsService {
     const fromEnv = process.env[queueEnvVar];
     if (fromEnv) return fromEnv;
 
-    const accountId = process.env.AWS_ACCOUNT_ID || '123456789012';
-    return `https://sqs.${region}.amazonaws.com/${accountId}/${fallbackName}`;
+    const accountId = process.env.AWS_ACCOUNT_ID || '473671718844';
+    const env = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
+    const queueName = fallbackName.endsWith(`-${env}`) ? fallbackName : `${fallbackName}-${env}`;
+    return `https://sqs.${region}.amazonaws.com/${accountId}/${queueName}`;
   }
 
   public static async sendMessage(queueUrl: string, payload: any): Promise<string | null> {
