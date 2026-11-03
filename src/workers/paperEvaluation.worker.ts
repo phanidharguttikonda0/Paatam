@@ -40,7 +40,11 @@ export async function processPaperEvaluationJob(payload: PaperEvaluationMessageP
   const answerKeyText = assignment.answer_key_text || '';
   const ocrText = payload.ocr_text || submission.ocr_text || '';
   const reasoningModel =
-    payload.reasoning_model || assignment.reasoning_model || 'gemini-2.5-flash';
+    payload.reasoning_model && payload.reasoning_model !== 'gemini-2.5-flash'
+      ? payload.reasoning_model
+      : assignment.reasoning_model && assignment.reasoning_model !== 'gemini-2.5-flash'
+        ? assignment.reasoning_model
+        : process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 
   // 2. Execute rubric evaluation, scoring, and Socratic hint synthesis
   const result = await EvaluationService.evaluateStudentSubmission(

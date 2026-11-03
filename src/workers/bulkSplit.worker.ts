@@ -7,8 +7,6 @@ import { StudentBoundaryService, isSameStudent } from '../services/studentBounda
 
 export async function processBulkSplitJob(payload: BulkSplitMessagePayload) {
   const jobId = parseBigInt(payload.job_id, 'job_id');
-  const assignmentId = parseBigInt(payload.assignment_id, 'assignment_id');
-  const sectionId = parseBigInt(payload.section_id, 'section_id');
 
   const batchJob = await prisma.batchJob.findUnique({
     where: { id: jobId },
@@ -25,6 +23,18 @@ export async function processBulkSplitJob(payload: BulkSplitMessagePayload) {
 
   if (!batchJob) {
     throw new Error(`BatchJob ${payload.job_id} not found`);
+  }
+
+  const assignmentId = payload.assignment_id
+    ? parseBigInt(payload.assignment_id, 'assignment_id')
+    : batchJob.assignment_id;
+
+  const sectionId = payload.section_id
+    ? parseBigInt(payload.section_id, 'section_id')
+    : batchJob.Assignment?.section_id;
+
+  if (!sectionId) {
+    throw new Error(`Section ID not found for batch job ${payload.job_id}`);
   }
 
   // 1. Mark batch as processing
@@ -44,7 +54,10 @@ export async function processBulkSplitJob(payload: BulkSplitMessagePayload) {
   });
 
   // 3. Download master PDF buffer from S3
-  const masterBuffer = await S3Service.downloadBuffer(payload.master_pdf_url);
+  const masterPdfUrl =
+    payload.master_pdf_url ||
+    `https://${S3Service.getBucketName()}.s3.${S3Service.getRegion()}.amazonaws.com/bulk-uploads/${jobId.toString()}/master-stack.pdf`;
+  const masterBuffer = await S3Service.downloadBuffer(masterPdfUrl);
 
   // 4. Split PDF into individual student answer sheets
   const splitBatches = await StudentBoundaryService.detectAndSplitStudentSubmissions(masterBuffer, {
@@ -71,16 +84,41 @@ export async function processBulkSplitJob(payload: BulkSplitMessagePayload) {
     }
 
     // Fallback: take next unassigned student from roster or index
-    if (!matchedStudent) {
+    if (!matchedStudent && roster.length > 0) {
       matchedStudent = roster.find((s) => !assignedStudentIds.has(s.id.toString())) || roster[idx % roster.length];
     }
 
-    if (matchedStudent) {
-      assignedStudentIds.add(matchedStudent.id.toString());
+    // If still no student (e.g. empty roster), auto-provision student in this section
+    if (!matchedStudent) {
+      const newStudentId = idGenerator.nextId();
+      const rawName = batch.studentName && !/^student\s+\d+$/i.test(batch.studentName)
+        ? batch.studentName
+        : `Student ${idx + 1}`;
+      const rollNo = batch.rollNo || `R-${newStudentId.toString().slice(-4)}`;
+      const admissionNo = `ADM-${newStudentId.toString().slice(-6)}`;
+
+      matchedStudent = await prisma.student.create({
+        data: {
+          id: newStudentId,
+          section_id: sectionId,
+          name: rawName,
+          roll_no: rollNo,
+          admission_no: admissionNo,
+          password_hash: '$2b$10$placeholderpasswordhashforstudentportal',
+        },
+      });
+
+      await prisma.section.update({
+        where: { id: sectionId },
+        data: { strength: { increment: 1 } },
+      });
+
+      roster.push(matchedStudent);
     }
 
-    const studentId = matchedStudent ? matchedStudent.id : idGenerator.nextId();
-    const studentName = matchedStudent ? matchedStudent.name : batch.studentName;
+    assignedStudentIds.add(matchedStudent.id.toString());
+    const studentId = matchedStudent.id;
+    const studentName = matchedStudent.name;
 
     // Upload individual student PDF to S3
     const s3Key = S3Service.getStudentSubmissionKey(
@@ -122,17 +160,17 @@ export async function processBulkSplitJob(payload: BulkSplitMessagePayload) {
     });
   }
 
-  // 5. Update BatchJob stage to grading
+  // 5. Update BatchJob stage to completed
   await prisma.batchJob.update({
     where: { id: jobId },
     data: {
-      status: 'processing',
-      stage: 'grading',
+      status: 'completed',
+      stage: 'completed',
       total_files: splitBatches.length,
       processed_count: splitBatches.length,
       successful_count: createdSubmissions.length,
       split_progress_json: createdSubmissions as any,
-      status_message: `Successfully split into ${createdSubmissions.length} papers. Grading in progress.`,
+      status_message: `Successfully split and queued ${createdSubmissions.length} papers for grading.`,
     },
   });
 

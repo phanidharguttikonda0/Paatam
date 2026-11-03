@@ -77,6 +77,13 @@ resource "aws_iam_role_policy" "lambda_worker_policy" {
       },
       {
         Action = [
+          "s3:ListBucket"
+        ]
+        Effect   = "Allow"
+        Resource = aws_s3_bucket.main.arn
+      },
+      {
+        Action = [
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes",
@@ -205,6 +212,8 @@ resource "aws_lambda_function" "bulk_split" {
       GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
       AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
       AWS_REGION_NAME     = var.aws_region
+      AWS_ACCOUNT_ID      = "473671718844"
+      PAPER_OCR_QUEUE_URL = aws_sqs_queue.paper_ocr_queue.id
     }
   }
 
@@ -243,14 +252,16 @@ resource "aws_lambda_function" "paper_ocr" {
 
   environment {
     variables = {
-      NODE_ENV            = var.environment
-      DATABASE_URL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "DATABASE_URL", "postgresql://postgres:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/paatam?sslmode=require")
-      GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
-      SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
-      PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
-      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
-      AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
-      AWS_REGION_NAME     = var.aws_region
+      NODE_ENV                   = var.environment
+      DATABASE_URL               = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "DATABASE_URL", "postgresql://postgres:${urlencode(random_password.db_password.result)}@${aws_db_instance.main.endpoint}/paatam?sslmode=require")
+      GEMINI_API_KEY             = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
+      SARVAM_API_KEY             = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
+      PRIMARY_AI_PROVIDER        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
+      GEMINI_MODEL               = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      AWS_S3_BUCKET_NAME         = aws_s3_bucket.main.bucket
+      AWS_REGION_NAME            = var.aws_region
+      AWS_ACCOUNT_ID             = "473671718844"
+      PAPER_EVALUATION_QUEUE_URL = aws_sqs_queue.paper_evaluation_queue.id
     }
   }
 

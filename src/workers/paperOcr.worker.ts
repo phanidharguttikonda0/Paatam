@@ -59,7 +59,10 @@ export async function processPaperOcrJob(payload: PaperOcrMessagePayload) {
   });
 
   // 5. Forward dispatch to Queue 2: Rubric Evaluation Queue
-  const reasoningModel = submission.Assignment?.reasoning_model || 'gemini-2.5-flash';
+  const reasoningModel =
+    submission.Assignment?.reasoning_model && submission.Assignment?.reasoning_model !== 'gemini-2.5-flash'
+      ? submission.Assignment.reasoning_model
+      : process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 
   await SqsService.dispatchPaperEvaluation({
     submission_id: payload.submission_id,

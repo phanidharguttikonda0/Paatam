@@ -55,7 +55,7 @@ export class AiGatewayService {
     }
 
     // 3. Default High-Throughput Reasoning Engine
-    return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    return process.env.GEMINI_MODEL || 'gemini-3.8-flash';
   }
 
   /**
@@ -68,7 +68,8 @@ export class AiGatewayService {
     modelName?: string
   ): Promise<string> {
     const client = this.getGeminiClient();
-    const model = modelName || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    let model = modelName || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    if (model === 'gemini-2.5-flash') model = 'gemini-3.8-flash';
 
     const parts: any[] = [{ text: prompt }];
 
@@ -99,7 +100,8 @@ export class AiGatewayService {
    */
   public static async callGeminiText(prompt: string, modelName?: string): Promise<string> {
     const client = this.getGeminiClient();
-    const model = modelName || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    let model = modelName || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    if (model === 'gemini-2.5-flash') model = 'gemini-3.8-flash';
 
     try {
       const response = await client.models.generateContent({
