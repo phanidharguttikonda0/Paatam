@@ -5,6 +5,8 @@ import { validate } from '../middlewares/validate';
 import {
   ingestChapterSchema,
   listChaptersSchema,
+  updateChapterSchema,
+  deleteChapterSchema,
   ingestSyllabusSchema,
   listTopicsSchema,
 } from '../schemas/curriculum.schema';
@@ -27,6 +29,27 @@ router.get(
   ['/chapters', '/chapter'],
   validate(listChaptersSchema),
   CurriculumController.listChapters
+);
+
+// DELETE /api/curriculum/chapters/:id (aliases: /chapter/:id)
+router.delete(
+  ['/chapters/:id', '/chapter/:id'],
+  validate(deleteChapterSchema),
+  CurriculumController.deleteChapter
+);
+
+// PATCH /api/curriculum/chapters/:id (aliases: /chapter/:id)
+router.patch(
+  ['/chapters/:id', '/chapter/:id'],
+  validate(updateChapterSchema),
+  CurriculumController.updateChapter
+);
+
+// PUT /api/curriculum/chapters/:id (aliases: /chapter/:id)
+router.put(
+  ['/chapters/:id', '/chapter/:id'],
+  validate(updateChapterSchema),
+  CurriculumController.updateChapter
 );
 
 // POST /api/curriculum/syllabus/ingest (aliases: /ingest-syllabus)

@@ -93,31 +93,102 @@ export class RagService {
   }
 
   /**
-   * Slices full chapter text into overlapping semantic paragraph chunks
+   * Slices full chapter text into overlapping semantic paragraph chunks.
+   * Handles multiple paragraph formats (\n\n, \n, markdown blocks), enforces targetChunkSize
+   * even for oversized single paragraphs via sentence splitting, and adds rolling overlap.
    */
   public static createSemanticParagraphChunks(
-    fullText: string,
+    rawText: string,
     targetChunkSize = 700,
-    overlapSize = 250
+    overlapSize = 150,
+    maxChunks = 350
   ): string[] {
-    if (!fullText) return [];
-    const paragraphs = fullText.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
-    const chunks: string[] = [];
-    let currentChunk = '';
+    if (!rawText) return [];
 
-    for (const para of paragraphs) {
-      const cleanPara = para.trim();
-      if ((currentChunk + '\n\n' + cleanPara).length > targetChunkSize && currentChunk.length > 0) {
-        chunks.push(currentChunk.trim());
-        const overlap = currentChunk.slice(-overlapSize);
-        currentChunk = overlap + '\n\n' + cleanPara;
-      } else {
-        currentChunk = currentChunk ? `${currentChunk}\n\n${cleanPara}` : cleanPara;
+    const clean = rawText.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    if (clean.length === 0) return [];
+
+    // Step 1: Break into logical paragraphs (support both \n\n and \n when lines look like paragraphs)
+    let rawBlocks = clean.split(/\n\s*\n/).map((p) => p.trim()).filter((p) => p.length > 0);
+
+    // If there are very few double-newline blocks but multiple lines, split by single newlines
+    if (rawBlocks.length <= 2 && clean.includes('\n')) {
+      const singleLines = clean.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+      if (singleLines.length > rawBlocks.length) {
+        rawBlocks = singleLines;
       }
     }
 
-    if (currentChunk.trim().length > 0) {
+    // Step 2: Ensure any individual block larger than targetChunkSize is broken into sentence chunks
+    const normalizedBlocks: string[] = [];
+    for (const block of rawBlocks) {
+      if (block.length <= targetChunkSize) {
+        normalizedBlocks.push(block);
+      } else {
+        // Split large block into sentences
+        const sentences = block.split(/(?<=[.?!;])\s+/).filter((s) => s.trim().length > 0);
+        let sentenceBuf = '';
+        for (const sent of sentences) {
+          if ((sentenceBuf.length + sent.length + 1) <= targetChunkSize) {
+            sentenceBuf += (sentenceBuf ? ' ' : '') + sent;
+          } else {
+            if (sentenceBuf.trim().length > 0) {
+              normalizedBlocks.push(sentenceBuf.trim());
+            }
+            sentenceBuf = sent;
+          }
+        }
+        if (sentenceBuf.trim().length > 0) {
+          normalizedBlocks.push(sentenceBuf.trim());
+        }
+      }
+    }
+
+    // Step 3: Accumulate into overlapping semantic chunks
+    const chunks: string[] = [];
+    let currentChunk = '';
+
+    for (const block of normalizedBlocks) {
+      if ((currentChunk.length + block.length + 2) <= targetChunkSize) {
+        currentChunk += (currentChunk ? '\n\n' : '') + block;
+      } else {
+        if (currentChunk.trim().length > 20) {
+          chunks.push(currentChunk.trim());
+        }
+        // Calculate overlap from end of currentChunk
+        const words = currentChunk.split(/\s+/);
+        const overlapWords = words.slice(-Math.min(words.length, 25)).join(' ');
+        const overlapPrefix = overlapWords.length <= overlapSize ? overlapWords : overlapWords.slice(-overlapSize);
+        currentChunk = (overlapPrefix ? `${overlapPrefix}\n\n` : '') + block;
+      }
+
+      if (chunks.length >= maxChunks) break;
+    }
+
+    if (currentChunk.trim().length > 20 && chunks.length < maxChunks) {
       chunks.push(currentChunk.trim());
+    }
+
+    // Step 4: Fallback to sentence splitting if chunks count is still too small for a long text
+    if (chunks.length < 3 && clean.length > 500) {
+      const sentences = clean.split(/(?<=[.?!;])\s+/).map((s) => s.trim()).filter((s) => s.length > 10);
+      const fallbackChunks: string[] = [];
+      let buf = '';
+      for (const s of sentences) {
+        if ((buf.length + s.length + 1) < targetChunkSize) {
+          buf += (buf ? ' ' : '') + s;
+        } else {
+          if (buf.length > 20) fallbackChunks.push(buf.trim());
+          buf = s;
+        }
+        if (fallbackChunks.length >= maxChunks) break;
+      }
+      if (buf.length > 20 && fallbackChunks.length < maxChunks) {
+        fallbackChunks.push(buf.trim());
+      }
+      if (fallbackChunks.length > chunks.length) {
+        return fallbackChunks;
+      }
     }
 
     return chunks;
@@ -230,9 +301,10 @@ Return ONLY a valid JSON object with the exact schema below, and NO markdown cod
       try {
         console.log(`📥 [RAG INGESTION] Downloading chapter PDF from S3: ${pdfUrl}`);
         const pdfBuffer = await S3Service.downloadBuffer(pdfUrl);
-        const prompt = `You are a textbook curriculum transcription engine.
-Extract and transcribe all textbook chapter reading material, headings, subheadings, explanations, and core concepts from this document.
-Transcribe all text faithfully without hallucinating.`;
+        const prompt = `You are an expert textbook curriculum transcription engine.
+Extract and transcribe the complete textbook chapter reading material, headings, subheadings, explanations, key definitions, formulas, and examples from this document.
+Format the output into clear paragraphs separated by double line breaks (\n\n) so each concept forms its own distinct section.
+Do not omit substantive explanations. Transcribe faithfully.`;
 
         fullText = await AiGatewayService.callGeminiVision(prompt, [pdfBuffer], 'application/pdf');
         console.log(`✅ [RAG INGESTION] Extracted ${fullText.length} characters of textbook content from PDF.`);
@@ -351,6 +423,79 @@ Transcribe all text faithfully without hallucinating.`;
       subtopics: metadata.subtopics,
       chunks_count: insertedCount,
       message: `Successfully ingested Chapter ${chapter.chapter_number}: "${chapter.chapter_title}" (${insertedCount} vector chunks indexed).`,
+    };
+  }
+
+  /**
+   * Deletes a chapter and all its associated vector embeddings from the Knowledge Base
+   */
+  public static async deleteChapter(chapterIdStr: string) {
+    const chapterId = parseBigInt(chapterIdStr, 'chapter_id');
+
+    const chapter = await prisma.curriculumChapter.findUnique({
+      where: { id: chapterId },
+    });
+
+    if (!chapter) {
+      throw new Error(`Chapter ${chapterIdStr} not found`);
+    }
+
+    // Delete all vector embeddings for this chapter
+    try {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "TextbookEmbedding" WHERE "chapter_id" = $1`,
+        chapterId
+      );
+    } catch (e: any) {
+      console.warn('⚠️ [RAG DELETE] Notice deleting embeddings:', e.message);
+    }
+
+    // Delete curriculum chapter record
+    await prisma.curriculumChapter.delete({
+      where: { id: chapterId },
+    });
+
+    return {
+      success: true,
+      message: `Chapter ${chapter.chapter_number} ("${chapter.chapter_title}") and all associated vector chunks deleted successfully.`,
+    };
+  }
+
+  /**
+   * Updates / Renames a chapter title or number in the Knowledge Base
+   */
+  public static async updateChapter(
+    chapterIdStr: string,
+    params: { chapterTitle?: string; chapter_title?: string; chapterNumber?: number; chapter_number?: number }
+  ) {
+    const chapterId = parseBigInt(chapterIdStr, 'chapter_id');
+    const newTitle = (params.chapterTitle || params.chapter_title || '').trim();
+    const newNumber = params.chapterNumber || params.chapter_number;
+
+    const existing = await prisma.curriculumChapter.findUnique({
+      where: { id: chapterId },
+    });
+
+    if (!existing) {
+      throw new Error(`Chapter ${chapterIdStr} not found`);
+    }
+
+    const updated = await prisma.curriculumChapter.update({
+      where: { id: chapterId },
+      data: {
+        ...(newTitle ? { chapter_title: newTitle } : {}),
+        ...(newNumber ? { chapter_number: newNumber } : {}),
+      },
+    });
+
+    return {
+      success: true,
+      chapter_id: updated.id.toString(),
+      chapter_number: updated.chapter_number,
+      chapter_title: updated.chapter_title,
+      subtopics: updated.subtopics,
+      chunk_count: updated.chunk_count,
+      message: `Chapter updated successfully.`,
     };
   }
 

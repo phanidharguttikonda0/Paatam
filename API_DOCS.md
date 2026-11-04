@@ -3477,6 +3477,65 @@ Lists all indexed chapters, identified subtopics, and chunk counts for a given s
 
 ---
 
+### `DELETE /api/curriculum/chapters/:id`
+Deletes a chapter and cascades deletion of all its vector chunks from PostgreSQL pgvector.
+
+- **URL Aliases:**
+  - `DELETE /api/curriculum/chapters/:id`
+  - `DELETE /api/curriculum/chapter/:id`
+  - `DELETE /api/rag/chapters/:id`
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Parameters:**
+  - `id` (string, required): Chapter ID (e.g. `4863603232517122`)
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Chapter 1 (\"Chemical Reactions and Equations\") and all associated vector chunks deleted successfully."
+  }
+  ```
+- **Error Responses:**
+  - `404 Not Found`: "Chapter not found"
+
+---
+
+### `PATCH /api/curriculum/chapters/:id`
+Renames a chapter or updates its chapter number in the Knowledge Base.
+
+- **URL Aliases:**
+  - `PATCH /api/curriculum/chapters/:id`
+  - `PUT /api/curriculum/chapters/:id`
+  - `PATCH /api/rag/chapters/:id`
+  - `PUT /api/rag/chapters/:id`
+- **Authentication Required:** Yes (Access Token)
+- **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
+- **URL Parameters:**
+  - `id` (string, required): Chapter ID
+- **Request Body (Both camelCase & snake_case supported):**
+  ```json
+  {
+    "chapter_title": "Chemical Reactions & Equations",
+    "chapter_number": 1
+  }
+  ```
+- **Success Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "message": "Chapter updated successfully",
+    "data": {
+      "chapter_id": "4863603232517122",
+      "chapter_number": 1,
+      "chapter_title": "Chemical Reactions & Equations",
+      "subtopics": [ ... ],
+      "chunk_count": 18
+    }
+  }
+  ```
+
+---
+
 ### `POST /api/curriculum/syllabus/ingest`
 Ingests master syllabus documents, extracts units, topics, and exam marks weightages.
 

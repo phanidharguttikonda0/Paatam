@@ -57,6 +57,28 @@ describe('RAG & Asynchronous AI Pipeline Integration Tests', () => {
       expect(chunks[0]).toContain('Photosynthesis');
     });
 
+    it('should produce multiple chunks from text formatted with single newlines', () => {
+      const singleNewlineText = [
+        'Major nutrients in our food are named carbohydrates, proteins, fats, vitamins and minerals.',
+        'In addition, food contains dietary fibres and water which are also needed by our body.',
+        'Carbohydrates and fats mainly provide energy to our body.',
+        'Proteins and minerals are needed for the growth and the maintenance of our body.',
+        'Vitamins help in protecting our body against diseases.',
+        'Balanced diet provides all the nutrients that our body needs in right quantities.',
+        'Deficiency of one or more nutrients in our food for a long time may cause certain diseases.',
+      ].join('\n');
+
+      const chunks = RagService.createSemanticParagraphChunks(singleNewlineText, 180, 40);
+      expect(chunks.length).toBeGreaterThan(1);
+      expect(chunks.every((c) => c.length <= 220)).toBe(true);
+    });
+
+    it('should split an oversized single paragraph into multiple chunks via sentence boundaries', () => {
+      const longSentenceBlock = 'Chemical reactions involve breaking and making of bonds between atoms. '.repeat(20);
+      const chunks = RagService.createSemanticParagraphChunks(longSentenceBlock, 300, 50);
+      expect(chunks.length).toBeGreaterThan(2);
+    });
+
     it('should extract canonical chapter title and reject raw filenames or codes', async () => {
       vi.spyOn(AiGatewayService, 'callGeminiText').mockResolvedValueOnce(
         JSON.stringify({

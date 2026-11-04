@@ -92,6 +92,74 @@ export class CurriculumController {
     }
   }
 
+  public static async updateChapter(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const rawId = req.params.id;
+      const chapterIdStr = Array.isArray(rawId) ? rawId[0] : rawId;
+      const chapterTitle = req.body.chapter_title || req.body.chapterTitle;
+      const chapterNumber = req.body.chapter_number || req.body.chapterNumber;
+
+      const chapterId = parseBigInt(chapterIdStr, 'chapter_id');
+      const chapter = await prisma.curriculumChapter.findUnique({
+        where: { id: chapterId },
+        include: { ClassSubject: { include: { Class: true } } },
+      });
+
+      if (!chapter) {
+        throw new AppError('Chapter not found', 404);
+      }
+
+      if (chapter.ClassSubject?.Class?.branch_id) {
+        await AcademicYearService.assertBranchAccess(user, chapter.ClassSubject.Class.branch_id);
+      }
+
+      const result = await RagService.updateChapter(chapterIdStr, {
+        chapterTitle,
+        chapterNumber,
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Chapter updated successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public static async deleteChapter(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = (req as any).user;
+      const rawId = req.params.id;
+      const chapterIdStr = Array.isArray(rawId) ? rawId[0] : rawId;
+
+      const chapterId = parseBigInt(chapterIdStr, 'chapter_id');
+      const chapter = await prisma.curriculumChapter.findUnique({
+        where: { id: chapterId },
+        include: { ClassSubject: { include: { Class: true } } },
+      });
+
+      if (!chapter) {
+        throw new AppError('Chapter not found', 404);
+      }
+
+      if (chapter.ClassSubject?.Class?.branch_id) {
+        await AcademicYearService.assertBranchAccess(user, chapter.ClassSubject.Class.branch_id);
+      }
+
+      const result = await RagService.deleteChapter(chapterIdStr);
+
+      res.status(200).json({
+        status: 'success',
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public static async ingestSyllabus(req: Request, res: Response, next: NextFunction) {
     try {
       const user = (req as any).user;

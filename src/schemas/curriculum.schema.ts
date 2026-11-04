@@ -75,3 +75,21 @@ export const listTopicsSchema = z.object({
       message: 'class_subject_id or classSubjectId is required',
     }),
 });
+
+export const updateChapterSchema = z.object({
+  params: z.object({
+    id: z.string().min(1, 'Chapter ID is required'),
+  }),
+  body: z.object({
+    chapter_title: z.string().optional(),
+    chapterTitle: z.string().optional(),
+    chapter_number: z.coerce.number().int().positive().optional(),
+    chapterNumber: z.coerce.number().int().positive().optional(),
+  }),
+});
+
+export const deleteChapterSchema = z.object({
+  params: z.object({
+    id: z.string().min(1, 'Chapter ID is required'),
+  }),
+});
