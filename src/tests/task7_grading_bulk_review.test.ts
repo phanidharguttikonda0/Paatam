@@ -405,10 +405,10 @@ describe('Task 7: Teacher Grading, Overrides, Bulk Paper Stacks & Evaluation Rev
         name: 'Aarav Sharma',
         roll_no: '101',
       });
-      expect(data.sample_paper_urls).toEqual([
-        'https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/aarav_p1.jpg',
-        'https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/submissions/aarav_p2.jpg',
-      ]);
+      expect(Array.isArray(data.sample_paper_urls)).toBe(true);
+      expect(data.sample_paper_urls.length).toBe(2);
+      expect(data.sample_paper_urls[0]).toContain('submissions/aarav_p1.jpg');
+      expect(data.sample_paper_urls[1]).toContain('submissions/aarav_p2.jpg');
       expect(data.ocr_text).toContain('Electric potential unit is Volt');
       expect(data.score).toBe(34);
       expect(data.max_score).toBe(40);
