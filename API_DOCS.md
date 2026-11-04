@@ -2600,7 +2600,7 @@ Frontend polling endpoint to check the status of async OCR extraction and model 
     "data": {
       "assignment_id": "1501",
       "pipeline_status": "ready",
-      "reasoning_model_selected": "gemini-2.5-flash",
+      "reasoning_model_selected": "gemini-3.6-flash",
       "routing_reason": "Standard single-choice and short numerical format detected",
       "total_questions": 15,
       "questions_json": [
@@ -2645,7 +2645,7 @@ Synchronous fallback alternative. Immediately generates a draft assignment with 
       "id": "1501",
       "title": "Physics Quiz 1",
       "status": "draft",
-      "reasoning_model": "gemini-2.5-flash",
+      "reasoning_model": "gemini-3.6-flash",
       "questions_json": [
         {
           "question_number": 1,
@@ -2681,7 +2681,7 @@ Finalizes questions and publishes an assignment to the student roster in the sec
     "duration_minutes": 60,
     "due_date": "2026-10-25T18:00:00.000Z",
     "status": "published",
-    "reasoning_model": "gemini-2.5-flash",
+    "reasoning_model": "gemini-3.6-flash",
     "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/qpaper.pdf",
     "answer_key_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/anskey.pdf",
     "answer_key_text": "Q1: Option B (Volt)",
@@ -2769,7 +2769,7 @@ Retrieves a single assignment with full question breakdown, answer key, and atta
       "difficulty": "Medium",
       "duration_minutes": 60,
       "status": "published",
-      "reasoning_model": "gemini-2.5-flash",
+      "reasoning_model": "gemini-3.6-flash",
       "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/qpaper.pdf",
       "answer_key_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/anskey.pdf",
       "answer_key_text": "Q1: Option B (Volt)",
@@ -3383,19 +3383,31 @@ Generates educational STEM diagrams, science illustrations, or geometric vector 
 ---
 
 ### `POST /api/curriculum/chapters/ingest`
-Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.
+Ingests a textbook chapter document into the RAG Knowledge Base. The backend downloads the PDF from S3 (or uses provided raw chapter text), runs Gemini 3.6 Flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like `gecu101.pdf`), slices the text into 700-character overlapping semantic paragraphs, generates 1536-dimensional vector embeddings with `gemini-embedding-001`, tags each chunk with subject/class scope, and stores them in PostgreSQL pgvector.
 
+- **URL Aliases:**
+  - `POST /api/curriculum/chapters/ingest`
+  - `POST /api/curriculum/chapter/ingest`
+  - `POST /api/curriculum/ingest`
+  - `POST /api/rag/ingest`
+  - `POST /api/rag/chapter/ingest`
 - **Authentication Required:** Yes (Access Token)
 - **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
-- **Request Body:**
+- **Supported Payload Keys (Both camelCase & snake_case supported):**
+  - `class_subject_id` / `classSubjectId` (string, required): ClassSubject ID
+  - `pdf_url` / `pdfUrl` (string, optional): S3 URL of the uploaded chapter PDF (Required if `chapter_text` is omitted)
+  - `chapter_text` / `chapterText` (string, optional): Raw chapter text (minimum 10 characters)
+  - `chapter_title` / `chapterTitle` (string, optional): Preferred title. If left blank or contains raw file codes, Gemini 3.6 Flash auto-detects the official chapter heading
+  - `chapter_number` / `chapterNumber` (number, optional): Chapter number (auto-detected if omitted)
+  - `file_name` / `fileName` (string, optional): Original file name (e.g. `gecu101.pdf`)
+- **Request Body Example:**
   ```json
   {
-    "class_subject_id": "1001",
-    "chapter_title": "Acids, Bases and Salts",
-    "chapter_number": 2,
-    "chapter_text": "Detailed chapter textbook text or OCR extraction...",
-    "pdf_url": "https://s3.amazonaws.com/paatam/curriculum/ch2.pdf",
-    "file_name": "science_ch2.pdf"
+    "class_subject_id": "3233756592734400",
+    "pdf_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf",
+    "chapter_title": "",
+    "chapter_number": 1,
+    "file_name": "gecu101.pdf"
   }
   ```
 - **Success Response (201 Created):**
@@ -3404,40 +3416,60 @@ Ingests textbook chapter content, automatically extracts chapter title, number, 
     "status": "success",
     "message": "Chapter indexed into curriculum and vectorized into vector store",
     "data": {
-      "chapter_id": "102",
-      "chapter_number": 2,
-      "chapter_title": "Acids, Bases and Salts",
-      "subtopics": ["Properties of Acids", "Bases", "pH Scale", "Salts"],
-      "chunk_count": 14
+      "chapter_id": "4863603232517122",
+      "chapter_number": 1,
+      "chapter_title": "Chemical Reactions and Equations",
+      "subtopics": [
+        "Chemical Equations",
+        "Types of Chemical Reactions",
+        "Combination Reactions",
+        "Decomposition Reactions",
+        "Oxidation and Reduction",
+        "Corrosion and Rancidity"
+      ],
+      "chunks_count": 18
     }
   }
   ```
 - **Error Responses:**
-  - `400 Bad Request`: "class_subject_id and chapter_text are required"
+  - `400 Bad Request`: "Either chapter_text (minimum 10 characters) or a valid pdf_url is required"
   - `401 Unauthorized`: "Unauthorized: Missing or invalid token"
   - `404 Not Found`: "ClassSubject not found"
+- **Idempotency & Re-ingestion:**
+  Re-uploading an existing chapter for the same `class_subject_id` automatically updates the chapter title/subtopics and purges old chunks before inserting new ones. It **never** creates duplicate chapters or orphan chunks.
 
 ---
 
 ### `GET /api/curriculum/chapters`
-Lists indexed chapters and subtopics for a given subject.
+Lists all indexed chapters, identified subtopics, and chunk counts for a given subject.
 
+- **URL Aliases:**
+  - `GET /api/curriculum/chapters`
+  - `GET /api/curriculum/chapter`
+  - `GET /api/rag/chapters`
 - **Authentication Required:** Yes (Access Token)
 - **Role Required:** `TEACHER`, `BRANCH_ADMIN`, `CORPORATE_ADMIN`
 - **Query Parameters:**
-  - `class_subject_id` (string, required): ClassSubject ID
+  - `class_subject_id` or `classSubjectId` (string, required): ClassSubject ID
 - **Success Response (200 OK):**
   ```json
   {
     "status": "success",
     "data": [
       {
-        "id": "102",
-        "chapter_number": 2,
-        "chapter_title": "Acids, Bases and Salts",
-        "subtopics": ["Properties of Acids", "Bases", "pH Scale", "Salts"],
-        "chunk_count": 14,
-        "pdf_url": "https://s3.amazonaws.com/paatam/curriculum/ch2.pdf"
+        "id": "4863603232517122",
+        "chapter_number": 1,
+        "chapter_title": "Chemical Reactions and Equations",
+        "subtopics": [
+          "Chemical Equations",
+          "Types of Chemical Reactions",
+          "Combination Reactions",
+          "Decomposition Reactions",
+          "Oxidation and Reduction",
+          "Corrosion and Rancidity"
+        ],
+        "chunk_count": 18,
+        "pdf_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf"
       }
     ]
   }
@@ -3796,7 +3828,7 @@ sequenceDiagram
     %% Async OCR Worker
     SQS->>Lambda: 9. Trigger paatam-assignment-ocr-dev
     Lambda->>S3: 10. Fetch Question Paper PDF
-    Lambda->>Lambda: 11. Multimodal OCR & Question Structuring (Gemini 2.5 Flash / Sarvam)
+    Lambda->>Lambda: 11. Multimodal OCR & Question Structuring (Gemini 3.6 Flash / Sarvam 105b)
     Lambda->>DB: 12. Save questions_json, set status: "ready"
     
     %% Polling
@@ -3817,13 +3849,14 @@ sequenceDiagram
 | :--- | :--- | :--- | :--- | :--- |
 | **S3 Upload Bucket** | `paatam-uploads-dev` | Pre-signed PUT from client | Direct S3 Upload | N/A (CORS Enabled: `*`) |
 | **Assignment OCR Queue** | `paatam-assignment-ocr-queue-dev` | `POST /api/assignments/process-async` | Visibility: 300s (5m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
-| **Assignment OCR Lambda** | `paatam-assignment-ocr-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 2.5 Flash / Sarvam Vision DocAI |
+| **Assignment OCR Lambda** | `paatam-assignment-ocr-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 3.6 Flash / Sarvam 105b DocAI |
 | **Bulk Splitter Queue** | `paatam-bulk-split-queue-dev` | `POST /api/submissions/bulk` | Visibility: 360s (6m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
-| **Bulk Splitter Lambda** | `paatam-bulk-split-dev` | SQS Event (`batchSize: 1`) | 360s / 1024 MB | `pdf-lib` + Student Cover Sheet OCR |
+| **Bulk Splitter Lambda** | `paatam-bulk-split-dev` | SQS Event (`batchSize: 1`) | 360s / 1024 MB | `pdf-lib` + Gemini 3.6 Flash Boundary Vision |
 | **Paper OCR Queue** | `paatam-paper-ocr-queue-dev` | Student Submit / Splitter Output | Visibility: 300s (5m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
-| **Paper OCR Lambda** | `paatam-paper-ocr-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 2.5 Flash / Sarvam Handwritten OCR |
+| **Paper OCR Lambda** | `paatam-paper-ocr-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 3.6 Flash / Sarvam 105b OCR |
 | **Paper Evaluation Queue** | `paatam-paper-evaluation-queue-dev` | Output of `paper-ocr` | Visibility: 300s (5m) | Dead-Letter: `*-dlq-dev` (maxReceive: 3) |
-| **Paper Evaluation Lambda** | `paatam-paper-evaluation-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 2.5 Flash Reasoning Engine |
+| **Paper Evaluation Lambda** | `paatam-paper-evaluation-dev` | SQS Event (`batchSize: 1`) | 300s / 1024 MB | Gemini 3.6 Flash Pedagogical Reasoning Engine |
+| **RAG Embeddings Vectorizer** | Built-in Express / Worker | `POST /api/curriculum/chapters/ingest` | Synchronous / In-memory | `models/gemini-embedding-001` (1536-D) |
 | **Sweeper & Watchdog** | `paatam-sweeper-dev` | CloudWatch Event (every 5 mins) | 120s / 512 MB | Prisma Database Recovery (Deadlock Sweeper) |
 
 ---
@@ -3990,7 +4023,7 @@ The frontend begins polling `GET /api/assignments/:id/pipeline-status` every **3
     "data": {
       "assignment_id": "1501",
       "pipeline_status": "ready",
-      "reasoning_model_selected": "gemini-2.5-flash",
+      "reasoning_model_selected": "gemini-3.6-flash",
       "routing_reason": "Standard single-choice and short numerical format detected",
       "total_questions": 15,
       "questions_json": [
@@ -4043,7 +4076,7 @@ In this phase, the UI displays the parsed questions in an editable list. The tea
     "submission_mode": "TEACHER_UPLOAD",
     "due_date": "2026-11-10T18:00:00.000Z",
     "status": "published",
-    "reasoning_model": "gemini-2.5-flash",
+    "reasoning_model": "gemini-3.6-flash",
     "question_paper_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/question_paper-9a1b-1792151000.pdf",
     "answer_key_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/temp/answerkey-9a1b.pdf",
     "answer_key_text": "Q1: Option B (Volt)\nQ2: Ohm's law states that current through a conductor between two points is directly proportional to voltage across the two points. V = I * R.",
@@ -4286,7 +4319,7 @@ Once individual student papers are in the system (via Student Upload or Bulk Spl
          │
          ▼
 [Lambda: paatam-paper-ocr-dev]
-   ├─ Vision OCR via Gemini 2.5 Flash / Sarvam DocAI
+   ├─ Vision OCR via Gemini 3.6 Flash / Sarvam 105b DocAI
    ├─ Transcribes handwritten student text per question
    └─ Saves ocr_text to DB; sets evaluation_status: "ocr_completed"
          │
@@ -4603,3 +4636,391 @@ export function usePipelinePolling<T>({
    - Always allow teachers to adjust both individual question marks and overall totals. When the teacher saves an override via `POST /api/submissions/:id/override`, update the local state immediately without requiring a full page refresh.
 4. **Network Interruption During Long Polling:**
    - Implement exponential backoff if `GET /pipeline-status` returns network errors (502/504), retrying up to 5 times before presenting a retry prompt to the user.
+
+
+---
+
+### 19.10 Flow G: RAG Knowledge Base Chapter Ingestion & Indexing Workflow (For Knowledge Base / Textbook Uploader UI)
+
+Used in the Teacher / Admin Portal (`/knowledge` or `/curriculum/knowledge-base`) where educators upload individual chapter PDFs (e.g. `gecu101.pdf` for NCERT / CBSE Science Chapter 1) to build the subject's AI Knowledge Base for automated exam blueprint generation and semantic grading.
+
+#### Architecture & Ingestion Flow
+
+```mermaid
+sequenceDiagram
+    actor Teacher
+    participant UI as Frontend (/knowledge)
+    participant API as Paatam Backend
+    participant S3 as AWS S3 Bucket
+    participant AI as Gemini 3.6 Flash & Embedding-001
+    participant DB as PostgreSQL (pgvector)
+
+    Teacher->>UI: 1. Select Subject, drag & drop chapter PDF (e.g. gecu101.pdf)
+    UI->>API: 2. POST /api/assignments/upload-urls (purpose: "curriculum")
+    API-->>UI: 3. Return Pre-signed S3 PUT URL & file_url
+    UI->>S3: 4. Direct binary PUT PDF to S3 (Track upload progress 0-100%)
+    S3-->>UI: 5. HTTP 200 OK
+    UI->>UI: 6. Update UI: "Extracting text and identifying subtopics with AI..."
+    UI->>API: 7. POST /api/curriculum/chapters/ingest (class_subject_id, pdf_url, file_name)
+    API->>S3: 8. Download PDF buffer
+    API->>AI: 9. Gemini 3.6 Flash: Extract canonical Chapter Title, Chapter Number, Subtopics
+    API->>API: 10. Split text into 700-char overlapping semantic chunks with prefix tags
+    API->>AI: 11. gemini-embedding-001: Generate 1536-D vector embeddings
+    API->>DB: 12. Atomic upsert into CurriculumChapter & TextbookEmbedding (pgvector)
+    API-->>UI: 13. HTTP 201 Created (chapter_id, chapter_title, subtopics, chunks_count)
+    UI->>UI: 14. Add chapter to "Chapter Library for Subject" table & show success toast
+```
+
+#### Step 1: Request S3 Pre-signed Upload URL
+The frontend requests an upload URL with purpose `"curriculum"` (or `"question_paper"`).
+- **Endpoint:** `POST /api/assignments/upload-urls`
+- **Headers:** `Authorization: Bearer <accessToken>`, `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "section_id": "701",
+    "files": [
+      {
+        "file_name": "gecu101.pdf",
+        "file_type": "application/pdf",
+        "purpose": "curriculum"
+      }
+    ]
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "uploads": [
+        {
+          "purpose": "curriculum",
+          "upload_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101-1793784400.pdf?X-Amz-...",
+          "file_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101-1793784400.pdf",
+          "key": "curriculum/gecu101-1793784400.pdf"
+        }
+      ]
+    }
+  }
+  ```
+
+#### Step 2: Binary PUT to S3
+The browser sends the raw PDF file directly to AWS S3.
+- **Method:** `PUT`
+- **URL:** The exact `upload_url` string received in Step 1.
+- **Headers:** `Content-Type: application/pdf`
+- **CRITICAL:** Do NOT pass `Authorization: Bearer` header to S3.
+- **Progress:** Attach `xhr.upload.onprogress` to display the "Uploading PDF..." progress bar.
+
+#### Step 3: Trigger Chapter Ingestion & Vectorization
+Once the upload finishes, invoke the ingestion endpoint. The backend handles PDF parsing, Gemini 3.6 Flash metadata extraction, semantic chunking, and pgvector embeddings synchronously.
+- **Endpoints (All Aliases Supported):**
+  - `POST /api/curriculum/chapters/ingest` (Primary)
+  - `POST /api/curriculum/chapter/ingest`
+  - `POST /api/curriculum/ingest`
+  - `POST /api/rag/ingest`
+- **Headers:** `Authorization: Bearer <accessToken>`, `Content-Type: application/json`
+- **Request Body (Both camelCase & snake_case supported):**
+  ```json
+  {
+    "class_subject_id": "3233756592734400",
+    "pdf_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101-1793784400.pdf",
+    "file_name": "gecu101.pdf",
+    "chapter_number": 1,
+    "chapter_title": ""
+  }
+  ```
+  *(Note: `chapter_title` can be left blank or omitted. Gemini 3.6 Flash will automatically read the PDF and extract the official title, e.g. "Chemical Reactions and Equations", rejecting raw file codes like "gecu101.pdf").*
+- **Response (201 Created):**
+  ```json
+  {
+    "status": "success",
+    "message": "Chapter indexed into curriculum and vectorized into vector store",
+    "data": {
+      "chapter_id": "4863603232517122",
+      "chapter_number": 1,
+      "chapter_title": "Chemical Reactions and Equations",
+      "subtopics": [
+        "Chemical Equations",
+        "Types of Chemical Reactions",
+        "Combination Reactions",
+        "Decomposition Reactions",
+        "Oxidation and Reduction",
+        "Corrosion and Rancidity"
+      ],
+      "chunks_count": 18
+    }
+  }
+  ```
+
+#### Step 4: Display Ingested Chapters List
+Fetch the updated list of chapters for the current subject to populate the "Chapter Library" table.
+- **Endpoint:** `GET /api/curriculum/chapters?class_subject_id=3233756592734400`
+- **Aliases:** `GET /api/rag/chapters?class_subject_id=...`
+- **Headers:** `Authorization: Bearer <accessToken>`
+- **Response (200 OK):**
+  ```json
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "4863603232517122",
+        "chapter_number": 1,
+        "chapter_title": "Chemical Reactions and Equations",
+        "subtopics": [
+          "Chemical Equations",
+          "Types of Chemical Reactions",
+          "Combination Reactions",
+          "Decomposition Reactions",
+          "Oxidation and Reduction",
+          "Corrosion and Rancidity"
+        ],
+        "chunk_count": 18,
+        "pdf_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101-1793784400.pdf"
+      }
+    ]
+  }
+  ```
+
+---
+
+### 19.11 Master AI Agent Reference: Unified Frontend State Machine & Polling Cheat Sheet
+
+This section is engineered specifically for AI coding assistants (such as Claude, Codex, Cursor, or Gemini) and frontend developers building React / Vue / Next.js / Flutter clients against Paatam Backend.
+
+#### 1. Complete Async Pipeline State Matrix
+
+| Feature Workflow | Trigger Endpoint | Polling Endpoint | Polling Interval | Progress / In-Flight Status | Completed (Terminal) Status | Failed (Terminal) Status | Expected Duration |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Question Paper Extraction** | `POST /api/assignments/process-async` | `GET /api/assignments/:id/pipeline-status` | 3 seconds | `ocr_processing` (progress: 45%) | `ready` (returns `questions_json`) | `failed` | 5–15 seconds |
+| **Student Paper Evaluation** | `POST /api/student/assignments/:id/submit` | `GET /api/student/submissions/:id` | 3 seconds | `submitted` / `pending_ocr` ➔ `evaluating` | `graded` or `approved` | `failed` | 10–25 seconds |
+| **Bulk Exam Stack Splitting** | `POST /api/submissions/bulk` | `GET /api/submissions/batch/:jobId` | 4 seconds | `queued` ➔ `processing` (stage: `splitting`) | `completed` (returns `created_submissions`) | `failed` | 30–90 seconds (for 35 papers) |
+| **RAG Chapter Ingestion** | `POST /api/curriculum/chapters/ingest` | Synchronous HTTP call | Single request | N/A (HTTP in-flight) | HTTP `201 Created` | HTTP `400` / `500` | 5–12 seconds |
+
+#### 2. Submission Stage & Progress Indicator Mapping (For Progress Bars)
+
+Use this lookup dictionary in your UI components to map backend status codes to user-friendly messages and percentage progress:
+
+```typescript
+export interface SubmissionProgressStage {
+  label: string;
+  sublabel: string;
+  percent: number;
+  badgeVariant: 'warning' | 'info' | 'primary' | 'success' | 'destructive';
+}
+
+export const SUBMISSION_STATUS_MAP: Record<string, SubmissionProgressStage> = {
+  submitted: {
+    label: 'Uploaded',
+    sublabel: 'Paper received in queue',
+    percent: 15,
+    badgeVariant: 'info',
+  },
+  pending_ocr: {
+    label: 'Transcribing',
+    sublabel: 'Deciphering handwritten answers with AI vision',
+    percent: 35,
+    badgeVariant: 'warning',
+  },
+  ocr_completed: {
+    label: 'Transcription Complete',
+    sublabel: 'Queuing for pedagogical rubric evaluation',
+    percent: 65,
+    badgeVariant: 'info',
+  },
+  evaluating: {
+    label: 'Evaluating',
+    sublabel: 'Matching answers to rubrics & computing step marks',
+    percent: 85,
+    badgeVariant: 'primary',
+  },
+  graded: {
+    label: 'Evaluation Complete',
+    sublabel: 'Grades and Socratic hints ready for teacher review',
+    percent: 100,
+    badgeVariant: 'success',
+  },
+  approved: {
+    label: 'Approved & Released',
+    sublabel: 'Grades locked and visible on student portal',
+    percent: 100,
+    badgeVariant: 'success',
+  },
+  failed: {
+    label: 'Processing Failed',
+    sublabel: 'Scan illegible or corrupted; teacher retry required',
+    percent: 100,
+    badgeVariant: 'destructive',
+  },
+};
+```
+
+#### 3. Complete React / TypeScript Hook for RAG Chapter Upload (`useChapterIngest.ts`)
+
+```typescript
+import { useState } from 'react';
+import { uploadFileDirectToS3 } from './s3Upload';
+
+export interface IngestChapterParams {
+  classSubjectId: string;
+  file: File;
+  chapterNumber?: number;
+  chapterTitle?: string;
+  authToken: string;
+  baseUrl?: string;
+}
+
+export interface IngestedChapterResult {
+  chapter_id: string;
+  chapter_number: number;
+  chapter_title: string;
+  subtopics: string[];
+  chunks_count: number;
+}
+
+export type IngestPhase = 'idle' | 'requesting_url' | 'uploading_s3' | 'extracting_ai' | 'success' | 'error';
+
+export function useChapterIngest() {
+  const [phase, setPhase] = useState<IngestPhase>('idle');
+  const [uploadPercent, setUploadPercent] = useState<number>(0);
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [result, setResult] = useState<IngestedChapterResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function ingestChapter({
+    classSubjectId,
+    file,
+    chapterNumber,
+    chapterTitle,
+    authToken,
+    baseUrl = '',
+  }: IngestChapterParams): Promise<IngestedChapterResult> {
+    setError(null);
+    setResult(null);
+
+    try {
+      // Phase 1: Request S3 Pre-signed URL
+      setPhase('requesting_url');
+      setStatusMessage('Requesting secure upload authorization...');
+
+      const presignRes = await fetch(`${baseUrl}/api/assignments/upload-urls`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: [
+            {
+              file_name: file.name,
+              file_type: file.type || 'application/pdf',
+              purpose: 'curriculum',
+            },
+          ],
+        }),
+      });
+
+      if (!presignRes.ok) {
+        throw new Error(`Failed to get upload URL: ${presignRes.statusText}`);
+      }
+
+      const presignData = await presignRes.json();
+      const uploadItem = presignData.data.uploads[0];
+      const { upload_url, file_url } = uploadItem;
+
+      // Phase 2: Upload direct to S3 with progress
+      setPhase('uploading_s3');
+      setStatusMessage('Uploading chapter PDF to cloud storage...');
+      await uploadFileDirectToS3(upload_url, file, (percent) => {
+        setUploadPercent(percent);
+      });
+
+      // Phase 3: AI Vectorization & Knowledge Base Ingestion
+      setPhase('extracting_ai');
+      setStatusMessage('Extracting text and identifying subtopics with AI...');
+
+      const ingestRes = await fetch(`${baseUrl}/api/curriculum/chapters/ingest`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          class_subject_id: classSubjectId,
+          pdf_url: file_url,
+          file_name: file.name,
+          chapter_number: chapterNumber,
+          chapter_title: chapterTitle?.trim() || undefined,
+        }),
+      });
+
+      const ingestJson = await ingestRes.json();
+
+      if (!ingestRes.ok || ingestJson.status === 'error') {
+        throw new Error(ingestJson.message || 'Chapter ingestion failed on server');
+      }
+
+      setPhase('success');
+      setStatusMessage('Chapter successfully indexed into Knowledge Base!');
+      setResult(ingestJson.data);
+      return ingestJson.data;
+    } catch (err: any) {
+      setPhase('error');
+      setError(err.message || 'An unexpected error occurred during chapter ingestion');
+      setStatusMessage('');
+      throw err;
+    }
+  }
+
+  function reset() {
+    setPhase('idle');
+    setUploadPercent(0);
+    setStatusMessage('');
+    setResult(null);
+    setError(null);
+  }
+
+  return {
+    ingestChapter,
+    reset,
+    phase,
+    uploadPercent,
+    statusMessage,
+    result,
+    error,
+    isLoading: phase === 'requesting_url' || phase === 'uploading_s3' || phase === 'extracting_ai',
+  };
+}
+```
+
+#### 4. Frontend UI Component Blueprint for Knowledge Base (`/knowledge`)
+
+When building the Knowledge Base page shown in the application UI:
+1. **Subject Selector Header:** Dropdown fetching `GET /api/teacher/classes-subjects` to choose Class & Subject.
+2. **Uploader Card:**
+   - Drag & Drop zone supporting `.pdf` files.
+   - Badge: `"Cumulative Mode: Adds to library without deleting other chapters"`.
+   - Form Inputs:
+     - `Chapter No.` (number input, defaults to next sequential chapter number).
+     - `Chapter Title (or leave blank to auto-detect with AI)` (text input).
+   - Dynamic CTA Button:
+     - Default: `"Ingest Chapter"`.
+     - Loading: Disabled with animated spinner: `"Ingesting Chapter..."`.
+   - Live Status Indicator:
+     - Shows `phase === 'uploading_s3'` with progress bar `uploadPercent%`.
+     - Shows `phase === 'extracting_ai'` with green check and `"Extracting text and identifying subtopics with AI..."`.
+3. **Chapter Library Section:**
+   - Displays count: `"Chapter Library for [Subject Name] (X Chapters)"`.
+   - Table columns: `Chapter No`, `Chapter Title`, `Identified Subtopics` (render as chips/badges), `Indexed Chunks`, `Actions` (View PDF in new tab, Re-ingest).
+   - Empty State: `"No chapters uploaded yet for this subject. Upload your Chapter 1 PDF using the uploader above."`
+
+#### 5. Summary of Key Differences & Frontend Safety Checklist
+
+| Rule | Requirement | AI Coding Agent Warning |
+| :--- | :--- | :--- |
+| **S3 PUT Requests** | Binary payload without `Authorization` header | **Never** attach `Bearer ...` token to S3 presigned URLs. Doing so causes AWS S3 to return HTTP 403 Forbidden. |
+| **Payload Keys** | Both `camelCase` and `snake_case` are accepted | Pass either `class_subject_id` or `classSubjectId`, `pdf_url` or `pdfUrl`. The backend standardizes both. |
+| **Chapter Titles** | Auto-detection enabled | If teacher leaves title blank or file is `gecu101.pdf`, Gemini 3.6 Flash extracts the official chapter heading. |
+| **Polling Lifecycles** | Max timeout: 180 seconds | Always terminate polling on `ready`, `completed`, `graded`, `approved`, or `failed`. |
+| **Re-ingestion** | Scoped replacement | Re-uploading an existing chapter for the same subject purges old embeddings automatically, preventing duplicate tokens. |
