@@ -374,7 +374,7 @@ describe('Task 5: Assignment Pipeline Integration Tests', () => {
         where: { id: BigInt(asyncAssignmentId) },
         data: {
           status: 'ready',
-          reasoning_model: 'gemini-2.5-flash',
+          reasoning_model: 'gemini-3.6-flash',
           answer_key_text: 'Q1: Option B (Volt)',
           questions_json: [
             {
@@ -394,7 +394,7 @@ describe('Task 5: Assignment Pipeline Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.pipeline_status).toBe('ready');
-      expect(res.body.data.reasoning_model_selected).toBe('gemini-2.5-flash');
+      expect(res.body.data.reasoning_model_selected).toBe('gemini-3.6-flash');
       expect(res.body.data.total_questions).toBe(1);
       expect(res.body.data.questions_json[0].question).toContain('SI unit');
       expect(res.body.data.answer_key_text).toContain('Volt');
@@ -431,7 +431,7 @@ describe('Task 5: Assignment Pipeline Integration Tests', () => {
       expect(res.body.data).toHaveProperty('id');
       expect(res.body.data.title).toBe('Physics Sync Quiz 1');
       expect(res.body.data.status).toBe('draft');
-      expect(res.body.data.reasoning_model).toBe('gemini-2.5-flash');
+      expect(res.body.data.reasoning_model).toBe('gemini-3.6-flash');
       expect(Array.isArray(res.body.data.questions_json)).toBe(true);
 
       syncAssignmentId = res.body.data.id;

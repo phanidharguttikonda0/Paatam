@@ -67,7 +67,7 @@ export const publishAssignmentSchema = z.object({
     submission_mode: z.enum(['STUDENT_UPLOAD', 'TEACHER_UPLOAD']).optional().default('STUDENT_UPLOAD'),
     due_date: z.string().datetime({ offset: true }).optional(),
     status: z.string().optional().default('published'),
-    reasoning_model: z.string().optional().default('gemini-2.5-flash'),
+    reasoning_model: z.string().optional().default('gemini-3.6-flash'),
     question_paper_url: z.string().min(1, 'question_paper_url is required'),
     answer_key_url: z.string().optional(),
     answer_key_text: z.string().optional(),

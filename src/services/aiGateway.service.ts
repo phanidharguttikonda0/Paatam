@@ -55,7 +55,9 @@ export class AiGatewayService {
     }
 
     // 3. Default High-Throughput Reasoning Engine
-    return process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    return (process.env.GEMINI_MODEL && !process.env.GEMINI_MODEL.includes('3.8'))
+      ? process.env.GEMINI_MODEL
+      : 'gemini-3.6-flash';
   }
 
   /**
@@ -68,8 +70,17 @@ export class AiGatewayService {
     modelName?: string
   ): Promise<string> {
     const client = this.getGeminiClient();
-    let model = modelName || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-    if (model === 'gemini-2.5-flash') model = 'gemini-3.8-flash';
+    const rawCandidates = [
+      modelName,
+      process.env.GEMINI_MODEL,
+      'gemini-3.6-flash',
+      'gemini-2.5-flash',
+      'gemini-1.5-flash',
+    ];
+    // Deduplicate while preserving order, and filter out invalid/empty models
+    const candidateModels = Array.from(new Set(rawCandidates.filter(Boolean) as string[])).filter(
+      (m) => !m.includes('3.8-flash')
+    );
 
     const parts: any[] = [{ text: prompt }];
 
@@ -82,17 +93,29 @@ export class AiGatewayService {
       });
     });
 
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: parts,
-      });
+    let lastError: any = null;
+    for (const model of candidateModels) {
+      try {
+        const response = await client.models.generateContent({
+          model,
+          contents: parts,
+          config: {
+            temperature: 0.2,
+            thinkingConfig: {
+              thinkingBudget: 0,
+            },
+          },
+        });
 
-      return response.text || '';
-    } catch (err: any) {
-      console.error(`⚠️ [AI GATEWAY] Gemini Vision call failed (${model}):`, err.message);
-      throw err;
+        return response.text || '';
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`⚠️ [AI GATEWAY] Gemini Vision call failed (${model}):`, err.message);
+      }
     }
+
+    console.error(`❌ [AI GATEWAY] All Gemini Vision candidates failed.`);
+    throw lastError || new Error('All Gemini Vision model candidates failed');
   }
 
   /**
@@ -100,26 +123,46 @@ export class AiGatewayService {
    */
   public static async callGeminiText(prompt: string, modelName?: string): Promise<string> {
     const client = this.getGeminiClient();
-    let model = modelName || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-    if (model === 'gemini-2.5-flash') model = 'gemini-3.8-flash';
+    const rawCandidates = [
+      modelName,
+      process.env.GEMINI_MODEL,
+      'gemini-3.6-flash',
+      'gemini-2.5-flash',
+      'gemini-1.5-flash',
+    ];
+    const candidateModels = Array.from(new Set(rawCandidates.filter(Boolean) as string[])).filter(
+      (m) => !m.includes('3.8-flash')
+    );
 
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: [{ text: prompt }],
-      });
+    let lastError: any = null;
+    for (const model of candidateModels) {
+      try {
+        const response = await client.models.generateContent({
+          model,
+          contents: [{ text: prompt }],
+          config: {
+            temperature: 0.2,
+            thinkingConfig: {
+              thinkingBudget: 0,
+            },
+          },
+        });
 
-      return response.text || '';
-    } catch (err: any) {
-      console.error(`⚠️ [AI GATEWAY] Gemini Text call failed (${model}):`, err.message);
-      throw err;
+        return response.text || '';
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`⚠️ [AI GATEWAY] Gemini Text call failed (${model}):`, err.message);
+      }
     }
+
+    console.error(`❌ [AI GATEWAY] All Gemini Text candidates failed.`);
+    throw lastError || new Error('All Gemini Text model candidates failed');
   }
 
   /**
    * Calls Sarvam AI API for Indic languages (with automatic fallback to Gemini)
    */
-  public static async callSarvamOrFallback(prompt: string, fallbackModel = 'gemini-2.5-flash'): Promise<string> {
+  public static async callSarvamOrFallback(prompt: string, fallbackModel = 'gemini-3.6-flash'): Promise<string> {
     const sarvamApiKey = process.env.SARVAM_API_KEY;
     if (!sarvamApiKey) {
       return await this.callGeminiText(prompt, fallbackModel);

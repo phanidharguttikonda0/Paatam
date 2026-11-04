@@ -15,30 +15,30 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole([UserRole.TEACHER, UserRole.BRANCH_ADMIN, UserRole.CORPORATE_ADMIN]));
 
-// POST /api/curriculum/chapters/ingest - Ingest & vectorize a textbook chapter
+// POST /api/curriculum/chapters/ingest (aliases: /chapter/ingest, /ingest)
 router.post(
-  '/chapters/ingest',
+  ['/chapters/ingest', '/chapter/ingest', '/ingest'],
   validate(ingestChapterSchema),
   CurriculumController.ingestChapter
 );
 
-// GET /api/curriculum/chapters - List indexed chapters & subtopics for a subject
+// GET /api/curriculum/chapters (aliases: /chapter)
 router.get(
-  '/chapters',
+  ['/chapters', '/chapter'],
   validate(listChaptersSchema),
   CurriculumController.listChapters
 );
 
-// POST /api/curriculum/syllabus/ingest - Ingest syllabus and extract topic breakdown
+// POST /api/curriculum/syllabus/ingest (aliases: /ingest-syllabus)
 router.post(
-  '/syllabus/ingest',
+  ['/syllabus/ingest', '/ingest-syllabus'],
   validate(ingestSyllabusSchema),
   CurriculumController.ingestSyllabus
 );
 
-// GET /api/curriculum/topics - List syllabus topics & weightages for a subject
+// GET /api/curriculum/topics (aliases: /topic)
 router.get(
-  '/topics',
+  ['/topics', '/topic'],
   validate(listTopicsSchema),
   CurriculumController.listTopics
 );

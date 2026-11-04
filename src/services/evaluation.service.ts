@@ -99,7 +99,7 @@ export class EvaluationService {
     assignedQuestions: any[],
     answerKeyText: string,
     studentOcrText: string,
-    reasoningModel: string = 'gemini-2.5-flash',
+    reasoningModel: string = process.env.GEMINI_MODEL || 'gemini-3.6-flash',
     language: string = 'English'
   ): Promise<VisionEvaluationResult> {
     const questionsBlock = assignedQuestions

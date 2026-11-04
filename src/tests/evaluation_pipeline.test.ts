@@ -44,10 +44,10 @@ describe('Evaluation & AI Ingestion Pipeline Tests', () => {
       expect(model).toBe('gemini-1.5-pro');
     });
 
-    it('should select high-throughput gemini-2.5-flash for standard humanities/general questions', () => {
+    it('should select high-throughput gemini-3.6-flash for standard humanities/general questions', () => {
       const generalQuestions = 'Explain the main causes of the French Revolution.';
       const model = AiGatewayService.determineReasoningModel('History', generalQuestions, 'English');
-      expect(model).toBe('gemini-2.5-flash');
+      expect(model).toBe('gemini-3.6-flash');
     });
   });
 

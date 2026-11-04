@@ -163,7 +163,7 @@ resource "aws_lambda_function" "assignment_ocr" {
       GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
       SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
       PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
-      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-3.6-flash")
       AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
       AWS_REGION_NAME     = var.aws_region
     }
@@ -209,7 +209,7 @@ resource "aws_lambda_function" "bulk_split" {
       GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
       SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
       PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
-      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-3.6-flash")
       AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
       AWS_REGION_NAME     = var.aws_region
       AWS_ACCOUNT_ID      = "473671718844"
@@ -257,7 +257,7 @@ resource "aws_lambda_function" "paper_ocr" {
       GEMINI_API_KEY             = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
       SARVAM_API_KEY             = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
       PRIMARY_AI_PROVIDER        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
-      GEMINI_MODEL               = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      GEMINI_MODEL               = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-3.6-flash")
       AWS_S3_BUCKET_NAME         = aws_s3_bucket.main.bucket
       AWS_REGION_NAME            = var.aws_region
       AWS_ACCOUNT_ID             = "473671718844"
@@ -305,7 +305,7 @@ resource "aws_lambda_function" "paper_evaluation" {
       GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
       SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
       PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
-      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-3.6-flash")
       AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
       AWS_REGION_NAME     = var.aws_region
     }
@@ -351,7 +351,7 @@ resource "aws_lambda_function" "sweeper" {
       GEMINI_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_API_KEY", "")
       SARVAM_API_KEY      = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "SARVAM_API_KEY", "")
       PRIMARY_AI_PROVIDER = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "PRIMARY_AI_PROVIDER", "gemini")
-      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-2.5-flash")
+      GEMINI_MODEL        = lookup(jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string), "GEMINI_MODEL", "gemini-3.6-flash")
       AWS_S3_BUCKET_NAME  = aws_s3_bucket.main.bucket
       AWS_REGION_NAME     = var.aws_region
     }

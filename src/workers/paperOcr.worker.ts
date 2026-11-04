@@ -27,56 +27,66 @@ export async function processPaperOcrJob(payload: PaperOcrMessagePayload) {
     },
   });
 
-  // 2. Download paper pages from S3
-  const urls =
-    payload.paper_urls && payload.paper_urls.length > 0
-      ? payload.paper_urls
-      : submission.sample_paper_url
-        ? [submission.sample_paper_url]
-        : [];
+  try {
+    // 2. Download paper pages from S3 in parallel
+    const urls =
+      payload.paper_urls && payload.paper_urls.length > 0
+        ? payload.paper_urls
+        : submission.sample_paper_url
+          ? [submission.sample_paper_url]
+          : [];
 
-  const buffers: Buffer[] = [];
-  for (const url of urls) {
-    const buf = await S3Service.downloadBuffer(url);
-    buffers.push(buf);
-  }
+    const buffers = await Promise.all(urls.map((url) => S3Service.downloadBuffer(url)));
 
-  // 3. Execute Handwriting OCR extraction
-  const { ocrText } = await OcrService.performOcrPages(
-    buffers,
-    payload.language || 'English',
-    payload.subject_name || 'General'
-  );
+    // 3. Execute Handwriting OCR extraction
+    const { ocrText } = await OcrService.performOcrPages(
+      buffers,
+      payload.language || 'English',
+      payload.subject_name || 'General'
+    );
 
-  // 4. Update Submission with transcribed text
-  await prisma.submission.update({
-    where: { id: submissionId },
-    data: {
+    // 4. Update Submission with transcribed text
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        ocr_text: ocrText,
+        status: 'ocr_completed',
+        evaluation_status: 'ready_for_evaluation',
+      },
+    });
+
+    // 5. Forward dispatch to Queue 2: Rubric Evaluation Queue
+    const reasoningModel =
+      submission.Assignment?.reasoning_model && !submission.Assignment.reasoning_model.includes('3.8')
+        ? submission.Assignment.reasoning_model
+        : (process.env.GEMINI_MODEL && !process.env.GEMINI_MODEL.includes('3.8'))
+          ? process.env.GEMINI_MODEL
+          : 'gemini-3.6-flash';
+
+    await SqsService.dispatchPaperEvaluation({
+      submission_id: payload.submission_id,
+      assignment_id: payload.assignment_id,
+      student_id: payload.student_id,
+      reasoning_model: reasoningModel,
       ocr_text: ocrText,
+      language: payload.language || 'English',
+      timestamp: Date.now(),
+    });
+
+    return {
+      submission_id: payload.submission_id,
+      ocr_length: ocrText.length,
       status: 'ocr_completed',
-      evaluation_status: 'ready_for_evaluation',
-    },
-  });
-
-  // 5. Forward dispatch to Queue 2: Rubric Evaluation Queue
-  const reasoningModel =
-    submission.Assignment?.reasoning_model && submission.Assignment?.reasoning_model !== 'gemini-2.5-flash'
-      ? submission.Assignment.reasoning_model
-      : process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-
-  await SqsService.dispatchPaperEvaluation({
-    submission_id: payload.submission_id,
-    assignment_id: payload.assignment_id,
-    student_id: payload.student_id,
-    reasoning_model: reasoningModel,
-    ocr_text: ocrText,
-    language: payload.language || 'English',
-    timestamp: Date.now(),
-  });
-
-  return {
-    submission_id: payload.submission_id,
-    ocr_length: ocrText.length,
-    status: 'ocr_completed',
-  };
+    };
+  } catch (ocrErr: any) {
+    console.error(`❌ [PAPER OCR WORKER] OCR job failed for submission ${payload.submission_id}:`, ocrErr.message);
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        status: 'failed',
+        evaluation_status: 'failed',
+      },
+    });
+    throw ocrErr;
+  }
 }

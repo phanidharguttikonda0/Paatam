@@ -53,10 +53,16 @@ app.get("/metrics", async (_req: Request, res: Response) => {
 app.use("/api", apiRoutes);
 
 // Health Endpoint
-app.get(["/health", "/api/health"], (req: Request, res: Response) => {
+app.get(["/health", "/api/health"], (_req: Request, res: Response) => {
   res.status(200).json({
     status: "ok",
-    timestamp: new Date().toISOString()
+    message: "PAATAM.AI Backend Active",
+    primaryProvider: process.env.PRIMARY_AI_PROVIDER || "gemini",
+    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    geminiModel: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+    sarvamConfigured: Boolean(process.env.SARVAM_API_KEY),
+    sarvamChatModel: process.env.SARVAM_CHAT_MODEL || "sarvam-105b",
+    timestamp: new Date().toISOString(),
   });
 });
 

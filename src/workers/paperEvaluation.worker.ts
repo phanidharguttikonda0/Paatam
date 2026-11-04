@@ -40,52 +40,66 @@ export async function processPaperEvaluationJob(payload: PaperEvaluationMessageP
   const answerKeyText = assignment.answer_key_text || '';
   const ocrText = payload.ocr_text || submission.ocr_text || '';
   const reasoningModel =
-    payload.reasoning_model && payload.reasoning_model !== 'gemini-2.5-flash'
+    payload.reasoning_model && !payload.reasoning_model.includes('3.8')
       ? payload.reasoning_model
-      : assignment.reasoning_model && assignment.reasoning_model !== 'gemini-2.5-flash'
+      : assignment.reasoning_model && !assignment.reasoning_model.includes('3.8')
         ? assignment.reasoning_model
-        : process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+        : (process.env.GEMINI_MODEL && !process.env.GEMINI_MODEL.includes('3.8'))
+          ? process.env.GEMINI_MODEL
+          : 'gemini-3.6-flash';
 
-  // 2. Execute rubric evaluation, scoring, and Socratic hint synthesis
-  const result = await EvaluationService.evaluateStudentSubmission(
-    questions,
-    answerKeyText,
-    ocrText,
-    reasoningModel,
-    payload.language || 'English'
-  );
+  try {
+    // 2. Execute rubric evaluation, scoring, and Socratic hint synthesis
+    const result = await EvaluationService.evaluateStudentSubmission(
+      questions,
+      answerKeyText,
+      ocrText,
+      reasoningModel,
+      payload.language || 'English'
+    );
 
-  // 3. Persist evaluation results into PostgreSQL
-  const updatedSubmission = await prisma.submission.update({
-    where: { id: submissionId },
-    data: {
-      score: result.score,
-      max_score: result.maxScore,
-      feedback: result.feedback,
-      socratic_hint: result.socraticHint,
-      ai_evaluation_json: result.questionEvaluations as any,
-      status: 'graded',
-      evaluation_status: 'completed',
-    },
-  });
+    // 3. Persist evaluation results into PostgreSQL
+    const updatedSubmission = await prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        score: result.score,
+        max_score: result.maxScore,
+        feedback: result.feedback,
+        socratic_hint: result.socraticHint,
+        ai_evaluation_json: result.questionEvaluations as any,
+        status: 'graded',
+        evaluation_status: 'completed',
+      },
+    });
 
-  // 4. Trigger student notification
-  const notificationId = idGenerator.nextId();
-  await prisma.notification.create({
-    data: {
-      id: notificationId,
-      type: 'GRADE_RELEASED',
-      title: 'Scorecard Available',
-      message: `Your exam "${assignment.title}" has been evaluated with a score of ${result.score}/${result.maxScore}.`,
-      submission_id: updatedSubmission.id,
-      delivery_status: 'delivered',
-    },
-  });
+    // 4. Trigger student notification
+    const notificationId = idGenerator.nextId();
+    await prisma.notification.create({
+      data: {
+        id: notificationId,
+        type: 'GRADE_RELEASED',
+        title: 'Scorecard Available',
+        message: `Your exam "${assignment.title}" has been evaluated with a score of ${result.score}/${result.maxScore}.`,
+        submission_id: updatedSubmission.id,
+        delivery_status: 'delivered',
+      },
+    });
 
-  return {
-    submission_id: updatedSubmission.id.toString(),
-    score: Number(updatedSubmission.score),
-    max_score: Number(updatedSubmission.max_score),
-    status: updatedSubmission.status,
-  };
+    return {
+      submission_id: updatedSubmission.id.toString(),
+      score: Number(updatedSubmission.score),
+      max_score: Number(updatedSubmission.max_score),
+      status: updatedSubmission.status,
+    };
+  } catch (evalErr: any) {
+    console.error(`❌ [PAPER EVALUATION WORKER] Evaluation failed for submission ${payload.submission_id}:`, evalErr.message);
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: {
+        status: 'failed',
+        evaluation_status: 'failed',
+      },
+    });
+    throw evalErr;
+  }
 }

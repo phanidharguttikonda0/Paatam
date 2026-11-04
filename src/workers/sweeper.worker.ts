@@ -75,7 +75,7 @@ export async function runSweeperJob(): Promise<SweeperRunResult> {
           submission_id: sub.id.toString(),
           assignment_id: sub.assignment_id ? sub.assignment_id.toString() : '',
           student_id: sub.student_id.toString(),
-          reasoning_model: sub.Assignment?.reasoning_model || 'gemini-2.5-flash',
+          reasoning_model: sub.Assignment?.reasoning_model || 'gemini-3.6-flash',
           ocr_text: sub.ocr_text,
           language: 'English',
           timestamp: Date.now(),

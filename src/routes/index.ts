@@ -36,6 +36,7 @@ router.use('/student', studentPortalRoutes);
 router.use('/assignments', assignmentRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/curriculum', curriculumRoutes);
+router.use('/rag', curriculumRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/notifications', notificationRoutes);
 

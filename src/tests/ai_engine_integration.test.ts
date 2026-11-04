@@ -193,5 +193,22 @@ Paragraph 4: Relative velocity in one dimension with practical real-world proble
       const vector = await RagService.generateEmbedding('Force is mass times acceleration.');
       expect(vector).toHaveLength(1536);
     });
+
+    it('should gracefully fall back to heuristics when AI call fails during metadata extraction', async () => {
+      vi.spyOn(AiGatewayService, 'callGeminiText').mockRejectedValueOnce(
+        new Error('Gemini API 404: model not found')
+      );
+
+      const metadata = await RagService.extractChapterMetadataWithAI(
+        'Brief chapter text...',
+        'gecu101.pdf',
+        'Chemical Reactions',
+        1
+      );
+
+      expect(metadata.chapterNumber).toBe(1);
+      expect(metadata.chapterTitle).toBe('Chemical Reactions');
+      expect(metadata.subtopics).toEqual(['Core Concepts']);
+    });
   });
 });
