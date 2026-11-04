@@ -4968,7 +4968,7 @@ const apiCatalog = [
   },
   {
     "id": "curriculum-chapter-ingest",
-    "title": "Ingest Textbook Chapter Document (RAG)",
+    "title": "Ingest Textbook Chapter Document (RAG Knowledge Base)",
     "method": "POST",
     "url": "/api/curriculum/chapters/ingest",
     "roles": [
@@ -4977,49 +4977,65 @@ const apiCatalog = [
       "CORPORATE_ADMIN"
     ],
     "category": "AI Question Generator & Curriculum RAG",
-    "description": "Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.",
-    "frontendNotes": "Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.",
+    "description": "Ingests a textbook chapter document into PostgreSQL with pgvector embeddings. The backend downloads the PDF from S3 (or uses raw chapter text), runs Gemini 3.6 Flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like 'gecu101'), chunks the text into 700-char semantic paragraphs, generates 1536-dimensional embeddings with gemini-embedding-001, and tags each vector with subject and class scope.",
+    "frontendNotes": "Two-step workflow: 1. Call POST /api/assignments/upload-urls to obtain an S3 presigned URL, and PUT the chapter PDF directly to S3. 2. Call this endpoint (or aliases POST /api/curriculum/ingest, POST /api/rag/ingest, POST /api/rag/chapter/ingest) passing class_subject_id and pdf_url. Supports both camelCase (classSubjectId, pdfUrl) and snake_case (class_subject_id, pdf_url). Re-uploading a chapter safely replaces old embeddings without creating duplicates.",
     "headers": [
       {
         "key": "Authorization",
         "value": "Bearer <token>",
         "required": true,
         "desc": "Bearer JWT token"
+      },
+      {
+        "key": "Content-Type",
+        "value": "application/json",
+        "required": true,
+        "desc": "application/json"
       }
     ],
     "urlParams": [],
     "queryParams": [],
     "requestBody": {
-      "class_subject_id": "1001",
-      "chapter_title": "Acids, Bases and Salts",
-      "chapter_number": 2,
-      "chapter_text": "Acids have sour taste and turn blue litmus red...",
-      "pdf_url": "https://s3.amazonaws.com/paatam/curriculum/ch2.pdf",
-      "file_name": "science_ch2.pdf"
+      "class_subject_id": "3233756592734400",
+      "pdf_url": "https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf",
+      "chapter_title": "Chemical Reactions and Equations",
+      "chapter_number": 1,
+      "file_name": "gecu101.pdf"
     },
     "responses": {
       "success": {
         "code": 201,
         "status": "Created",
-        "desc": "Chapter indexed and vectorized.",
+        "desc": "Chapter indexed into curriculum and vectorized into vector store.",
         "body": {
           "status": "success",
           "message": "Chapter indexed into curriculum and vectorized into vector store",
           "data": {
-            "chapter_id": "102",
-            "chapter_number": 2,
-            "chapter_title": "Acids, Bases and Salts",
+            "chapter_id": "4863603232517122",
+            "chapter_number": 1,
+            "chapter_title": "Chemical Reactions and Equations",
             "subtopics": [
-              "Properties of Acids",
-              "Bases",
-              "pH Scale",
-              "Salts"
+              "Chemical Equations",
+              "Types of Chemical Reactions",
+              "Combination Reactions",
+              "Decomposition Reactions",
+              "Oxidation and Reduction",
+              "Corrosion and Rancidity"
             ],
-            "chunk_count": 14
+            "chunks_count": 18
           }
         }
       },
       "errors": [
+        {
+          "code": 400,
+          "status": "Bad Request",
+          "desc": "Missing class_subject_id or neither chapter_text nor pdf_url provided.",
+          "body": {
+            "status": "error",
+            "message": "Either chapter_text (minimum 10 characters) or a valid pdf_url is required"
+          }
+        },
         {
           "code": 404,
           "status": "Not Found",
@@ -8515,36 +8531,52 @@ function generateHtml() {
       <div class="async-flow-grid">
         <!-- Flow 1 -->
         <div class="async-flow-box">
-          <h4><span>📄</span> Assignment Paper &amp; Key Ingestion</h4>
+          <h4><span>📄</span> Flow 1: Exam Question Paper &amp; Rubric Ingestion</h4>
           <ul class="async-step-list">
             <li><strong>Trigger:</strong> <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/assignments/process-async</code></li>
-            <li><strong>State 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda runs Vision OCR (Sarvam/Gemini) to extract hierarchical questions &amp; rubric keys. Render a progress bar at 45%.</li>
-            <li><strong>State 2:</strong> <span class="async-step-badge badge-ready">ready</span> &mdash; Extraction complete. Questions &amp; answer key text are populated. Progress hits 100%.</li>
-            <li><strong>Polling:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/assignments/:id/pipeline-status</code> every <strong>3 seconds</strong> until ready.</li>
+            <li><strong>Stage 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda runs Vision OCR (Sarvam 105b for Indic, Gemini 3.6 Flash for English/STEM) to extract questions &amp; marking schemes. Render progress at 45%.</li>
+            <li><strong>Stage 2 (Complete):</strong> <span class="async-step-badge badge-ready">ready</span> &mdash; Questions &amp; answer key text populated in database. Progress reaches 100%.</li>
+            <li><strong>Stage (Error):</strong> <span class="async-step-badge" style="background:#fee2e2; color:#991b1b;">failed</span> &mdash; Paper unreadable or corrupt. Display retry prompt.</li>
+            <li><strong>Polling Endpoint:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/assignments/:id/pipeline-status</code> every <strong>3 seconds</strong>.</li>
           </ul>
         </div>
 
         <!-- Flow 2 -->
         <div class="async-flow-box">
-          <h4><span>📦</span> Bulk Class Stack Splitting</h4>
+          <h4><span>📦</span> Flow 2: Bulk Class Stack Splitting (Batch Job)</h4>
           <ul class="async-step-list">
-            <li><strong>Trigger:</strong> <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/submissions/bulk</code> (35-student PDF)</li>
-            <li><strong>State 1:</strong> <span class="async-step-badge badge-queued">queued</span> &rarr; <span class="async-step-badge badge-processing">splitting</span> &mdash; Lambda scans page headers, names, and QR codes to slice the multi-page stack into individual student PDFs.</li>
-            <li><strong>State 2:</strong> <span class="async-step-badge badge-evaluating">grading</span> &mdash; Sliced papers are enqueued to the OCR and Evaluation workers. Submissions start appearing in the review table.</li>
-            <li><strong>State 3:</strong> <span class="async-step-badge badge-ready">completed</span> &mdash; All student submissions generated.</li>
-            <li><strong>Polling:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/batch/:jobId</code> every <strong>5 seconds</strong>.</li>
+            <li><strong>Trigger:</strong> <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/submissions/bulk</code> (Uploads multi-student combined PDF stack)</li>
+            <li><strong>State 1:</strong> <span class="async-step-badge badge-queued">queued</span> &rarr; <span class="async-step-badge badge-processing">splitting</span> &mdash; Lambda detects student roll numbers/cover pages via Gemini 3.6 Flash and slices into individual student PDFs.</li>
+            <li><strong>State 2:</strong> <span class="async-step-badge badge-evaluating">processing</span> &mdash; Individual student answer sheets uploaded to S3 and enqueued to OCR queue.</li>
+            <li><strong>State 3 (Complete):</strong> <span class="async-step-badge badge-ready">completed</span> &mdash; All student submissions created. Returns <code style="font-family:var(--font-mono);">created_submissions</code> array.</li>
+            <li><strong>State (Error):</strong> <span class="async-step-badge" style="background:#fee2e2; color:#991b1b;">failed</span> &mdash; Master PDF could not be sliced.</li>
+            <li><strong>Polling Endpoint:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/batch/:jobId</code> every <strong>4-5 seconds</strong>.</li>
           </ul>
         </div>
 
         <!-- Flow 3 -->
         <div class="async-flow-box">
-          <h4><span>✍️</span> Student Paper Evaluation &amp; Grading</h4>
+          <h4><span>✍️</span> Flow 3: Student Paper OCR &amp; Rubric Evaluation</h4>
           <ul class="async-step-list">
-            <li><strong>Trigger:</strong> Student upload or Bulk Stack slice</li>
-            <li><strong>Stage 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda transcribes handwritten answers line-by-line (Indic via Sarvam DocAI, STEM via Gemini).</li>
-            <li><strong>Stage 2:</strong> <span class="async-step-badge badge-evaluating">evaluating</span> &mdash; Rubric scoring, ground truth comparison, and Socratic hint synthesis via LLM reasoning.</li>
-            <li><strong>Terminal:</strong> <span class="async-step-badge badge-ready">graded</span> / <code>pending_review</code> &mdash; Marks &amp; feedback published. Student receives scorecard notification.</li>
-            <li><strong>Polling:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/:id</code> every <strong>4 seconds</strong>.</li>
+            <li><strong>Trigger:</strong> Student upload or Bulk Stack Slice (<code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/submissions</code>)</li>
+            <li><strong>Initial:</strong> <span class="async-step-badge badge-queued">pending_ocr</span> &mdash; Queued for transcription.</li>
+            <li><strong>Stage 1 (OCR):</strong> <span class="async-step-badge badge-processing">ocr_processing</span> (<code style="font-size:11px;">transcribing_handwriting</code>) &mdash; Lambda transcribes handwritten pages.</li>
+            <li><strong>Stage 1 Complete:</strong> <span class="async-step-badge badge-ready">ocr_completed</span> (<code style="font-size:11px;">ready_for_evaluation</code>) &mdash; Automatically forwarded to Queue 2.</li>
+            <li><strong>Stage 2 (Rubric):</strong> <span class="async-step-badge badge-evaluating">evaluating</span> (<code style="font-size:11px;">running_rubric_evaluation</code>) &mdash; Gemini 3.6 Flash / Sarvam 105b scores against rubric &amp; generates Socratic feedback.</li>
+            <li><strong>Terminal Success:</strong> <span class="async-step-badge badge-ready">graded</span> (<code style="font-size:11px;">completed</code>) &mdash; Final score, marks breakdown, and feedback available.</li>
+            <li><strong>Terminal Failure:</strong> <span class="async-step-badge" style="background:#fee2e2; color:#991b1b;">failed</span> &mdash; Flagged for manual teacher evaluation.</li>
+            <li><strong>Polling Endpoint:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/:id</code> every <strong>3-4 seconds</strong>.</li>
+          </ul>
+        </div>
+
+        <!-- Flow 4 -->
+        <div class="async-flow-box">
+          <h4><span>📚</span> Flow 4: Knowledge Base &amp; Chapter Ingestion (RAG)</h4>
+          <ul class="async-step-list">
+            <li><strong>Step 1 (Upload to S3):</strong> Call <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/assignments/upload-urls</code> with file name &amp; MIME type to get a presigned S3 URL. Execute a binary <code style="color:var(--color-primary); font-family:var(--font-mono);">PUT</code> request directly to S3.</li>
+            <li><strong>Step 2 (Ingest Chapter):</strong> Call <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/curriculum/chapters/ingest</code> (or aliases <code style="font-family:var(--font-mono);">/api/rag/ingest</code>, <code style="font-family:var(--font-mono);">/api/curriculum/ingest</code>) passing <code style="font-family:var(--font-mono);">{ class_subject_id, pdf_url }</code>.</li>
+            <li><strong>Step 3 (AI Processing):</strong> Backend downloads PDF from S3, analyzes chapter metadata &amp; subtopics via Gemini 3.6 Flash (filtering raw codes like <code style="font-family:var(--font-mono);">gecu101</code>), creates 700-char overlapping semantic chunks, tags chunks with chapter/subject context, and indexes 1536-D embeddings into PostgreSQL pgvector using <code style="font-family:var(--font-mono);">gemini-embedding-001</code>.</li>
+            <li><strong>Idempotency:</strong> Re-uploading a chapter safely updates the chapter title and replaces old embeddings without creating duplicates.</li>
           </ul>
         </div>
       </div>

@@ -969,36 +969,52 @@
       <div class="async-flow-grid">
         <!-- Flow 1 -->
         <div class="async-flow-box">
-          <h4><span>📄</span> Assignment Paper &amp; Key Ingestion</h4>
+          <h4><span>📄</span> Flow 1: Exam Question Paper &amp; Rubric Ingestion</h4>
           <ul class="async-step-list">
             <li><strong>Trigger:</strong> <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/assignments/process-async</code></li>
-            <li><strong>State 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda runs Vision OCR (Sarvam/Gemini) to extract hierarchical questions &amp; rubric keys. Render a progress bar at 45%.</li>
-            <li><strong>State 2:</strong> <span class="async-step-badge badge-ready">ready</span> &mdash; Extraction complete. Questions &amp; answer key text are populated. Progress hits 100%.</li>
-            <li><strong>Polling:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/assignments/:id/pipeline-status</code> every <strong>3 seconds</strong> until ready.</li>
+            <li><strong>Stage 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda runs Vision OCR (Sarvam 105b for Indic, Gemini 3.6 Flash for English/STEM) to extract questions &amp; marking schemes. Render progress at 45%.</li>
+            <li><strong>Stage 2 (Complete):</strong> <span class="async-step-badge badge-ready">ready</span> &mdash; Questions &amp; answer key text populated in database. Progress reaches 100%.</li>
+            <li><strong>Stage (Error):</strong> <span class="async-step-badge" style="background:#fee2e2; color:#991b1b;">failed</span> &mdash; Paper unreadable or corrupt. Display retry prompt.</li>
+            <li><strong>Polling Endpoint:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/assignments/:id/pipeline-status</code> every <strong>3 seconds</strong>.</li>
           </ul>
         </div>
 
         <!-- Flow 2 -->
         <div class="async-flow-box">
-          <h4><span>📦</span> Bulk Class Stack Splitting</h4>
+          <h4><span>📦</span> Flow 2: Bulk Class Stack Splitting (Batch Job)</h4>
           <ul class="async-step-list">
-            <li><strong>Trigger:</strong> <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/submissions/bulk</code> (35-student PDF)</li>
-            <li><strong>State 1:</strong> <span class="async-step-badge badge-queued">queued</span> &rarr; <span class="async-step-badge badge-processing">splitting</span> &mdash; Lambda scans page headers, names, and QR codes to slice the multi-page stack into individual student PDFs.</li>
-            <li><strong>State 2:</strong> <span class="async-step-badge badge-evaluating">grading</span> &mdash; Sliced papers are enqueued to the OCR and Evaluation workers. Submissions start appearing in the review table.</li>
-            <li><strong>State 3:</strong> <span class="async-step-badge badge-ready">completed</span> &mdash; All student submissions generated.</li>
-            <li><strong>Polling:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/batch/:jobId</code> every <strong>5 seconds</strong>.</li>
+            <li><strong>Trigger:</strong> <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/submissions/bulk</code> (Uploads multi-student combined PDF stack)</li>
+            <li><strong>State 1:</strong> <span class="async-step-badge badge-queued">queued</span> &rarr; <span class="async-step-badge badge-processing">splitting</span> &mdash; Lambda detects student roll numbers/cover pages via Gemini 3.6 Flash and slices into individual student PDFs.</li>
+            <li><strong>State 2:</strong> <span class="async-step-badge badge-evaluating">processing</span> &mdash; Individual student answer sheets uploaded to S3 and enqueued to OCR queue.</li>
+            <li><strong>State 3 (Complete):</strong> <span class="async-step-badge badge-ready">completed</span> &mdash; All student submissions created. Returns <code style="font-family:var(--font-mono);">created_submissions</code> array.</li>
+            <li><strong>State (Error):</strong> <span class="async-step-badge" style="background:#fee2e2; color:#991b1b;">failed</span> &mdash; Master PDF could not be sliced.</li>
+            <li><strong>Polling Endpoint:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/batch/:jobId</code> every <strong>4-5 seconds</strong>.</li>
           </ul>
         </div>
 
         <!-- Flow 3 -->
         <div class="async-flow-box">
-          <h4><span>✍️</span> Student Paper Evaluation &amp; Grading</h4>
+          <h4><span>✍️</span> Flow 3: Student Paper OCR &amp; Rubric Evaluation</h4>
           <ul class="async-step-list">
-            <li><strong>Trigger:</strong> Student upload or Bulk Stack slice</li>
-            <li><strong>Stage 1:</strong> <span class="async-step-badge badge-processing">ocr_processing</span> &mdash; Lambda transcribes handwritten answers line-by-line (Indic via Sarvam DocAI, STEM via Gemini).</li>
-            <li><strong>Stage 2:</strong> <span class="async-step-badge badge-evaluating">evaluating</span> &mdash; Rubric scoring, ground truth comparison, and Socratic hint synthesis via LLM reasoning.</li>
-            <li><strong>Terminal:</strong> <span class="async-step-badge badge-ready">graded</span> / <code>pending_review</code> &mdash; Marks &amp; feedback published. Student receives scorecard notification.</li>
-            <li><strong>Polling:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/:id</code> every <strong>4 seconds</strong>.</li>
+            <li><strong>Trigger:</strong> Student upload or Bulk Stack Slice (<code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/submissions</code>)</li>
+            <li><strong>Initial:</strong> <span class="async-step-badge badge-queued">pending_ocr</span> &mdash; Queued for transcription.</li>
+            <li><strong>Stage 1 (OCR):</strong> <span class="async-step-badge badge-processing">ocr_processing</span> (<code style="font-size:11px;">transcribing_handwriting</code>) &mdash; Lambda transcribes handwritten pages.</li>
+            <li><strong>Stage 1 Complete:</strong> <span class="async-step-badge badge-ready">ocr_completed</span> (<code style="font-size:11px;">ready_for_evaluation</code>) &mdash; Automatically forwarded to Queue 2.</li>
+            <li><strong>Stage 2 (Rubric):</strong> <span class="async-step-badge badge-evaluating">evaluating</span> (<code style="font-size:11px;">running_rubric_evaluation</code>) &mdash; Gemini 3.6 Flash / Sarvam 105b scores against rubric &amp; generates Socratic feedback.</li>
+            <li><strong>Terminal Success:</strong> <span class="async-step-badge badge-ready">graded</span> (<code style="font-size:11px;">completed</code>) &mdash; Final score, marks breakdown, and feedback available.</li>
+            <li><strong>Terminal Failure:</strong> <span class="async-step-badge" style="background:#fee2e2; color:#991b1b;">failed</span> &mdash; Flagged for manual teacher evaluation.</li>
+            <li><strong>Polling Endpoint:</strong> Poll <code style="color:var(--color-primary); font-family:var(--font-mono);">GET /api/submissions/:id</code> every <strong>3-4 seconds</strong>.</li>
+          </ul>
+        </div>
+
+        <!-- Flow 4 -->
+        <div class="async-flow-box">
+          <h4><span>📚</span> Flow 4: Knowledge Base &amp; Chapter Ingestion (RAG)</h4>
+          <ul class="async-step-list">
+            <li><strong>Step 1 (Upload to S3):</strong> Call <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/assignments/upload-urls</code> with file name &amp; MIME type to get a presigned S3 URL. Execute a binary <code style="color:var(--color-primary); font-family:var(--font-mono);">PUT</code> request directly to S3.</li>
+            <li><strong>Step 2 (Ingest Chapter):</strong> Call <code style="color:var(--color-primary); font-family:var(--font-mono);">POST /api/curriculum/chapters/ingest</code> (or aliases <code style="font-family:var(--font-mono);">/api/rag/ingest</code>, <code style="font-family:var(--font-mono);">/api/curriculum/ingest</code>) passing <code style="font-family:var(--font-mono);">{ class_subject_id, pdf_url }</code>.</li>
+            <li><strong>Step 3 (AI Processing):</strong> Backend downloads PDF from S3, analyzes chapter metadata &amp; subtopics via Gemini 3.6 Flash (filtering raw codes like <code style="font-family:var(--font-mono);">gecu101</code>), creates 700-char overlapping semantic chunks, tags chunks with chapter/subject context, and indexes 1536-D embeddings into PostgreSQL pgvector using <code style="font-family:var(--font-mono);">gemini-embedding-001</code>.</li>
+            <li><strong>Idempotency:</strong> Re-uploading a chapter safely updates the chapter title and replaces old embeddings without creating duplicates.</li>
           </ul>
         </div>
       </div>
@@ -8467,12 +8483,12 @@
             <span class="category-count">4 APIs</span>
           </div>
           
-    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag) ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in postgresql pgvector. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag knowledge base) ingests a textbook chapter document into postgresql with pgvector embeddings. the backend downloads the pdf from s3 (or uses raw chapter text), runs gemini 3.6 flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like &#039;gecu101&#039;), chunks the text into 700-char semantic paragraphs, generates 1536-dimensional embeddings with gemini-embedding-001, and tags each vector with subject and class scope. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
       <div class="api-card-header">
         <div class="api-card-left">
           <span class="badge-method method-POST">POST</span>
           <span class="api-endpoint-url">/api/curriculum/chapters/ingest</span>
-          <span class="api-title">• Ingest Textbook Chapter Document (RAG)</span>
+          <span class="api-title">• Ingest Textbook Chapter Document (RAG Knowledge Base)</span>
         </div>
         <div class="api-card-right">
           <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
@@ -8484,8 +8500,8 @@
       <div class="api-card-body">
         <div class="section-block">
           <div class="section-heading">Detailed Description &amp; Business Logic</div>
-          <div class="desc-text">Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.</div>
-          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.</div>
+          <div class="desc-text">Ingests a textbook chapter document into PostgreSQL with pgvector embeddings. The backend downloads the PDF from S3 (or uses raw chapter text), runs Gemini 3.6 Flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like &#039;gecu101&#039;), chunks the text into 700-char semantic paragraphs, generates 1536-dimensional embeddings with gemini-embedding-001, and tags each vector with subject and class scope.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Two-step workflow: 1. Call POST /api/assignments/upload-urls to obtain an S3 presigned URL, and PUT the chapter PDF directly to S3. 2. Call this endpoint (or aliases POST /api/curriculum/ingest, POST /api/rag/ingest, POST /api/rag/chapter/ingest) passing class_subject_id and pdf_url. Supports both camelCase (classSubjectId, pdfUrl) and snake_case (class_subject_id, pdf_url). Re-uploading a chapter safely replaces old embeddings without creating duplicates.</div>
         </div>
 
         
@@ -8504,6 +8520,13 @@
               <td>Bearer JWT token</td>
             </tr>
           
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>application/json</td>
+            </tr>
+          
         </tbody>
       </table>
     </div>
@@ -8517,21 +8540,19 @@
         <div class="code-header">
           <span>application/json</span>
           <button class="btn-copy" onclick="copyJson(this, '{
-  &quot;class_subject_id&quot;: &quot;1001&quot;,
-  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
-  &quot;chapter_number&quot;: 2,
-  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
-  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
-  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+  &quot;class_subject_id&quot;: &quot;3233756592734400&quot;,
+  &quot;pdf_url&quot;: &quot;https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf&quot;,
+  &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
+  &quot;chapter_number&quot;: 1,
+  &quot;file_name&quot;: &quot;gecu101.pdf&quot;
 }')">Copy JSON</button>
         </div>
         <pre><code>{
-  &quot;class_subject_id&quot;: &quot;1001&quot;,
-  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
-  &quot;chapter_number&quot;: 2,
-  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
-  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
-  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+  &quot;class_subject_id&quot;: &quot;3233756592734400&quot;,
+  &quot;pdf_url&quot;: &quot;https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf&quot;,
+  &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
+  &quot;chapter_number&quot;: 1,
+  &quot;file_name&quot;: &quot;gecu101.pdf&quot;
 }</code></pre>
       </div>
     </div>
@@ -8544,21 +8565,23 @@
         <div class="resp-card">
           <div class="resp-card-header">
             <span class="resp-code-badge code-201">201 Created</span>
-            <span class="resp-title">Chapter indexed and vectorized.</span>
+            <span class="resp-title">Chapter indexed into curriculum and vectorized into vector store.</span>
             <button class="btn-copy" onclick="copyJson(this, '{
   &quot;status&quot;: &quot;success&quot;,
   &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
   &quot;data&quot;: {
-    &quot;chapter_id&quot;: &quot;102&quot;,
-    &quot;chapter_number&quot;: 2,
-    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;chapter_id&quot;: &quot;4863603232517122&quot;,
+    &quot;chapter_number&quot;: 1,
+    &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
     &quot;subtopics&quot;: [
-      &quot;Properties of Acids&quot;,
-      &quot;Bases&quot;,
-      &quot;pH Scale&quot;,
-      &quot;Salts&quot;
+      &quot;Chemical Equations&quot;,
+      &quot;Types of Chemical Reactions&quot;,
+      &quot;Combination Reactions&quot;,
+      &quot;Decomposition Reactions&quot;,
+      &quot;Oxidation and Reduction&quot;,
+      &quot;Corrosion and Rancidity&quot;
     ],
-    &quot;chunk_count&quot;: 14
+    &quot;chunks_count&quot;: 18
   }
 }')">Copy</button>
           </div>
@@ -8566,21 +8589,38 @@
   &quot;status&quot;: &quot;success&quot;,
   &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
   &quot;data&quot;: {
-    &quot;chapter_id&quot;: &quot;102&quot;,
-    &quot;chapter_number&quot;: 2,
-    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;chapter_id&quot;: &quot;4863603232517122&quot;,
+    &quot;chapter_number&quot;: 1,
+    &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
     &quot;subtopics&quot;: [
-      &quot;Properties of Acids&quot;,
-      &quot;Bases&quot;,
-      &quot;pH Scale&quot;,
-      &quot;Salts&quot;
+      &quot;Chemical Equations&quot;,
+      &quot;Types of Chemical Reactions&quot;,
+      &quot;Combination Reactions&quot;,
+      &quot;Decomposition Reactions&quot;,
+      &quot;Oxidation and Reduction&quot;,
+      &quot;Corrosion and Rancidity&quot;
     ],
-    &quot;chunk_count&quot;: 14
+    &quot;chunks_count&quot;: 18
   }
 }</code></pre>
         </div>
 
         <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Missing class_subject_id or neither chapter_text nor pdf_url provided.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Either chapter_text (minimum 10 characters) or a valid pdf_url is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Either chapter_text (minimum 10 characters) or a valid pdf_url is required&quot;
+}</code></pre>
+          </div>
         
           <div class="resp-card">
             <div class="resp-card-header">
@@ -20831,12 +20871,12 @@
     </div>
   
 
-    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag) ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in postgresql pgvector. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag knowledge base) ingests a textbook chapter document into postgresql with pgvector embeddings. the backend downloads the pdf from s3 (or uses raw chapter text), runs gemini 3.6 flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like &#039;gecu101&#039;), chunks the text into 700-char semantic paragraphs, generates 1536-dimensional embeddings with gemini-embedding-001, and tags each vector with subject and class scope. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
       <div class="api-card-header">
         <div class="api-card-left">
           <span class="badge-method method-POST">POST</span>
           <span class="api-endpoint-url">/api/curriculum/chapters/ingest</span>
-          <span class="api-title">• Ingest Textbook Chapter Document (RAG)</span>
+          <span class="api-title">• Ingest Textbook Chapter Document (RAG Knowledge Base)</span>
         </div>
         <div class="api-card-right">
           <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
@@ -20848,8 +20888,8 @@
       <div class="api-card-body">
         <div class="section-block">
           <div class="section-heading">Detailed Description &amp; Business Logic</div>
-          <div class="desc-text">Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.</div>
-          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.</div>
+          <div class="desc-text">Ingests a textbook chapter document into PostgreSQL with pgvector embeddings. The backend downloads the PDF from S3 (or uses raw chapter text), runs Gemini 3.6 Flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like &#039;gecu101&#039;), chunks the text into 700-char semantic paragraphs, generates 1536-dimensional embeddings with gemini-embedding-001, and tags each vector with subject and class scope.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Two-step workflow: 1. Call POST /api/assignments/upload-urls to obtain an S3 presigned URL, and PUT the chapter PDF directly to S3. 2. Call this endpoint (or aliases POST /api/curriculum/ingest, POST /api/rag/ingest, POST /api/rag/chapter/ingest) passing class_subject_id and pdf_url. Supports both camelCase (classSubjectId, pdfUrl) and snake_case (class_subject_id, pdf_url). Re-uploading a chapter safely replaces old embeddings without creating duplicates.</div>
         </div>
 
         
@@ -20868,6 +20908,13 @@
               <td>Bearer JWT token</td>
             </tr>
           
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>application/json</td>
+            </tr>
+          
         </tbody>
       </table>
     </div>
@@ -20881,21 +20928,19 @@
         <div class="code-header">
           <span>application/json</span>
           <button class="btn-copy" onclick="copyJson(this, '{
-  &quot;class_subject_id&quot;: &quot;1001&quot;,
-  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
-  &quot;chapter_number&quot;: 2,
-  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
-  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
-  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+  &quot;class_subject_id&quot;: &quot;3233756592734400&quot;,
+  &quot;pdf_url&quot;: &quot;https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf&quot;,
+  &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
+  &quot;chapter_number&quot;: 1,
+  &quot;file_name&quot;: &quot;gecu101.pdf&quot;
 }')">Copy JSON</button>
         </div>
         <pre><code>{
-  &quot;class_subject_id&quot;: &quot;1001&quot;,
-  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
-  &quot;chapter_number&quot;: 2,
-  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
-  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
-  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+  &quot;class_subject_id&quot;: &quot;3233756592734400&quot;,
+  &quot;pdf_url&quot;: &quot;https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf&quot;,
+  &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
+  &quot;chapter_number&quot;: 1,
+  &quot;file_name&quot;: &quot;gecu101.pdf&quot;
 }</code></pre>
       </div>
     </div>
@@ -20908,21 +20953,23 @@
         <div class="resp-card">
           <div class="resp-card-header">
             <span class="resp-code-badge code-201">201 Created</span>
-            <span class="resp-title">Chapter indexed and vectorized.</span>
+            <span class="resp-title">Chapter indexed into curriculum and vectorized into vector store.</span>
             <button class="btn-copy" onclick="copyJson(this, '{
   &quot;status&quot;: &quot;success&quot;,
   &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
   &quot;data&quot;: {
-    &quot;chapter_id&quot;: &quot;102&quot;,
-    &quot;chapter_number&quot;: 2,
-    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;chapter_id&quot;: &quot;4863603232517122&quot;,
+    &quot;chapter_number&quot;: 1,
+    &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
     &quot;subtopics&quot;: [
-      &quot;Properties of Acids&quot;,
-      &quot;Bases&quot;,
-      &quot;pH Scale&quot;,
-      &quot;Salts&quot;
+      &quot;Chemical Equations&quot;,
+      &quot;Types of Chemical Reactions&quot;,
+      &quot;Combination Reactions&quot;,
+      &quot;Decomposition Reactions&quot;,
+      &quot;Oxidation and Reduction&quot;,
+      &quot;Corrosion and Rancidity&quot;
     ],
-    &quot;chunk_count&quot;: 14
+    &quot;chunks_count&quot;: 18
   }
 }')">Copy</button>
           </div>
@@ -20930,21 +20977,38 @@
   &quot;status&quot;: &quot;success&quot;,
   &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
   &quot;data&quot;: {
-    &quot;chapter_id&quot;: &quot;102&quot;,
-    &quot;chapter_number&quot;: 2,
-    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;chapter_id&quot;: &quot;4863603232517122&quot;,
+    &quot;chapter_number&quot;: 1,
+    &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
     &quot;subtopics&quot;: [
-      &quot;Properties of Acids&quot;,
-      &quot;Bases&quot;,
-      &quot;pH Scale&quot;,
-      &quot;Salts&quot;
+      &quot;Chemical Equations&quot;,
+      &quot;Types of Chemical Reactions&quot;,
+      &quot;Combination Reactions&quot;,
+      &quot;Decomposition Reactions&quot;,
+      &quot;Oxidation and Reduction&quot;,
+      &quot;Corrosion and Rancidity&quot;
     ],
-    &quot;chunk_count&quot;: 14
+    &quot;chunks_count&quot;: 18
   }
 }</code></pre>
         </div>
 
         <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Missing class_subject_id or neither chapter_text nor pdf_url provided.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Either chapter_text (minimum 10 characters) or a valid pdf_url is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Either chapter_text (minimum 10 characters) or a valid pdf_url is required&quot;
+}</code></pre>
+          </div>
         
           <div class="resp-card">
             <div class="resp-card-header">
@@ -28997,12 +29061,12 @@
     </div>
   
 
-    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag) ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in postgresql pgvector. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
+    <div class="api-card" data-roles="TEACHER BRANCH_ADMIN CORPORATE_ADMIN" data-search="post /api/curriculum/chapters/ingest ingest textbook chapter document (rag knowledge base) ingests a textbook chapter document into postgresql with pgvector embeddings. the backend downloads the pdf from s3 (or uses raw chapter text), runs gemini 3.6 flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like &#039;gecu101&#039;), chunks the text into 700-char semantic paragraphs, generates 1536-dimensional embeddings with gemini-embedding-001, and tags each vector with subject and class scope. ai question generator &amp; curriculum rag teacher branch_admin corporate_admin">
       <div class="api-card-header">
         <div class="api-card-left">
           <span class="badge-method method-POST">POST</span>
           <span class="api-endpoint-url">/api/curriculum/chapters/ingest</span>
-          <span class="api-title">• Ingest Textbook Chapter Document (RAG)</span>
+          <span class="api-title">• Ingest Textbook Chapter Document (RAG Knowledge Base)</span>
         </div>
         <div class="api-card-right">
           <span class="badge-role role-TEACHER">TEACHER</span> <span class="badge-role role-BRANCH_ADMIN">BRANCH ADMIN</span> <span class="badge-role role-CORPORATE_ADMIN">CORPORATE ADMIN</span>
@@ -29014,8 +29078,8 @@
       <div class="api-card-body">
         <div class="section-block">
           <div class="section-heading">Detailed Description &amp; Business Logic</div>
-          <div class="desc-text">Ingests textbook chapter content, automatically extracts chapter title, number, subtopics, and prerequisites, generates 1536-dimensional vector embeddings, and stores them in PostgreSQL pgvector.</div>
-          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Teachers upload PDF chapters or paste chapter text to populate the school knowledge base.</div>
+          <div class="desc-text">Ingests a textbook chapter document into PostgreSQL with pgvector embeddings. The backend downloads the PDF from S3 (or uses raw chapter text), runs Gemini 3.6 Flash to identify canonical chapter title, number, and core subtopics (rejecting raw codes like &#039;gecu101&#039;), chunks the text into 700-char semantic paragraphs, generates 1536-dimensional embeddings with gemini-embedding-001, and tags each vector with subject and class scope.</div>
+          <div class="frontend-tip-box"><strong>Frontend Developer Note:</strong> Two-step workflow: 1. Call POST /api/assignments/upload-urls to obtain an S3 presigned URL, and PUT the chapter PDF directly to S3. 2. Call this endpoint (or aliases POST /api/curriculum/ingest, POST /api/rag/ingest, POST /api/rag/chapter/ingest) passing class_subject_id and pdf_url. Supports both camelCase (classSubjectId, pdfUrl) and snake_case (class_subject_id, pdf_url). Re-uploading a chapter safely replaces old embeddings without creating duplicates.</div>
         </div>
 
         
@@ -29034,6 +29098,13 @@
               <td>Bearer JWT token</td>
             </tr>
           
+            <tr>
+              <td class="param-name">Content-Type</td>
+              <td class="param-type">application/json</td>
+              <td><span class="param-req req-yes">Required</span></td>
+              <td>application/json</td>
+            </tr>
+          
         </tbody>
       </table>
     </div>
@@ -29047,21 +29118,19 @@
         <div class="code-header">
           <span>application/json</span>
           <button class="btn-copy" onclick="copyJson(this, '{
-  &quot;class_subject_id&quot;: &quot;1001&quot;,
-  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
-  &quot;chapter_number&quot;: 2,
-  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
-  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
-  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+  &quot;class_subject_id&quot;: &quot;3233756592734400&quot;,
+  &quot;pdf_url&quot;: &quot;https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf&quot;,
+  &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
+  &quot;chapter_number&quot;: 1,
+  &quot;file_name&quot;: &quot;gecu101.pdf&quot;
 }')">Copy JSON</button>
         </div>
         <pre><code>{
-  &quot;class_subject_id&quot;: &quot;1001&quot;,
-  &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
-  &quot;chapter_number&quot;: 2,
-  &quot;chapter_text&quot;: &quot;Acids have sour taste and turn blue litmus red...&quot;,
-  &quot;pdf_url&quot;: &quot;https://s3.amazonaws.com/paatam/curriculum/ch2.pdf&quot;,
-  &quot;file_name&quot;: &quot;science_ch2.pdf&quot;
+  &quot;class_subject_id&quot;: &quot;3233756592734400&quot;,
+  &quot;pdf_url&quot;: &quot;https://paatam-uploads-dev.s3.ap-south-2.amazonaws.com/curriculum/gecu101.pdf&quot;,
+  &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
+  &quot;chapter_number&quot;: 1,
+  &quot;file_name&quot;: &quot;gecu101.pdf&quot;
 }</code></pre>
       </div>
     </div>
@@ -29074,21 +29143,23 @@
         <div class="resp-card">
           <div class="resp-card-header">
             <span class="resp-code-badge code-201">201 Created</span>
-            <span class="resp-title">Chapter indexed and vectorized.</span>
+            <span class="resp-title">Chapter indexed into curriculum and vectorized into vector store.</span>
             <button class="btn-copy" onclick="copyJson(this, '{
   &quot;status&quot;: &quot;success&quot;,
   &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
   &quot;data&quot;: {
-    &quot;chapter_id&quot;: &quot;102&quot;,
-    &quot;chapter_number&quot;: 2,
-    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;chapter_id&quot;: &quot;4863603232517122&quot;,
+    &quot;chapter_number&quot;: 1,
+    &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
     &quot;subtopics&quot;: [
-      &quot;Properties of Acids&quot;,
-      &quot;Bases&quot;,
-      &quot;pH Scale&quot;,
-      &quot;Salts&quot;
+      &quot;Chemical Equations&quot;,
+      &quot;Types of Chemical Reactions&quot;,
+      &quot;Combination Reactions&quot;,
+      &quot;Decomposition Reactions&quot;,
+      &quot;Oxidation and Reduction&quot;,
+      &quot;Corrosion and Rancidity&quot;
     ],
-    &quot;chunk_count&quot;: 14
+    &quot;chunks_count&quot;: 18
   }
 }')">Copy</button>
           </div>
@@ -29096,21 +29167,38 @@
   &quot;status&quot;: &quot;success&quot;,
   &quot;message&quot;: &quot;Chapter indexed into curriculum and vectorized into vector store&quot;,
   &quot;data&quot;: {
-    &quot;chapter_id&quot;: &quot;102&quot;,
-    &quot;chapter_number&quot;: 2,
-    &quot;chapter_title&quot;: &quot;Acids, Bases and Salts&quot;,
+    &quot;chapter_id&quot;: &quot;4863603232517122&quot;,
+    &quot;chapter_number&quot;: 1,
+    &quot;chapter_title&quot;: &quot;Chemical Reactions and Equations&quot;,
     &quot;subtopics&quot;: [
-      &quot;Properties of Acids&quot;,
-      &quot;Bases&quot;,
-      &quot;pH Scale&quot;,
-      &quot;Salts&quot;
+      &quot;Chemical Equations&quot;,
+      &quot;Types of Chemical Reactions&quot;,
+      &quot;Combination Reactions&quot;,
+      &quot;Decomposition Reactions&quot;,
+      &quot;Oxidation and Reduction&quot;,
+      &quot;Corrosion and Rancidity&quot;
     ],
-    &quot;chunk_count&quot;: 14
+    &quot;chunks_count&quot;: 18
   }
 }</code></pre>
         </div>
 
         <!-- Error Responses -->
+        
+          <div class="resp-card">
+            <div class="resp-card-header">
+              <span class="resp-code-badge code-400">400 Bad Request</span>
+              <span class="resp-title">Missing class_subject_id or neither chapter_text nor pdf_url provided.</span>
+              <button class="btn-copy" onclick="copyJson(this, '{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Either chapter_text (minimum 10 characters) or a valid pdf_url is required&quot;
+}')">Copy</button>
+            </div>
+            <pre><code>{
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;message&quot;: &quot;Either chapter_text (minimum 10 characters) or a valid pdf_url is required&quot;
+}</code></pre>
+          </div>
         
           <div class="resp-card">
             <div class="resp-card-header">
