@@ -4,6 +4,7 @@ import { prisma } from '../config/prisma';
 import { parseBigInt } from '../utils/bigint';
 import { AcademicYearService } from '../services/academicYear.service';
 import { AppError } from '../exceptions/AppError';
+import { S3Service } from '../services/s3.service';
 
 export class CurriculumController {
   public static async ingestChapter(req: Request, res: Response, next: NextFunction) {
@@ -76,16 +77,28 @@ export class CurriculumController {
         orderBy: { chapter_number: 'asc' },
       });
 
+      const signedChapters = await Promise.all(
+        chapters.map(async (c) => {
+          let pdfUrl = c.pdf_url;
+          if (pdfUrl) {
+            try {
+              pdfUrl = await S3Service.generatePresignedDownloadUrl(pdfUrl, 7200);
+            } catch {}
+          }
+          return {
+            id: c.id.toString(),
+            chapter_number: c.chapter_number,
+            chapter_title: c.chapter_title,
+            subtopics: c.subtopics,
+            chunk_count: c.chunk_count,
+            pdf_url: pdfUrl,
+          };
+        })
+      );
+
       res.status(200).json({
         status: 'success',
-        data: chapters.map((c) => ({
-          id: c.id.toString(),
-          chapter_number: c.chapter_number,
-          chapter_title: c.chapter_title,
-          subtopics: c.subtopics,
-          chunk_count: c.chunk_count,
-          pdf_url: c.pdf_url,
-        })),
+        data: signedChapters,
       });
     } catch (error) {
       next(error);

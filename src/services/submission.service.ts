@@ -147,13 +147,31 @@ export class SubmissionService {
       );
     }
 
-    const samplePaperUrls =
+    const rawSampleUrls =
       Array.isArray(submission.sample_paper_urls) &&
       (submission.sample_paper_urls as any[]).length > 0
         ? (submission.sample_paper_urls as string[])
         : submission.sample_paper_url
           ? [submission.sample_paper_url]
           : [];
+
+    // Pre-sign all student answer sheet URLs (valid for 2 hours) so the browser can display them without S3 AccessDenied
+    const signedSamplePaperUrls = await Promise.all(
+      rawSampleUrls.map((u) => S3Service.generatePresignedDownloadUrl(u, 7200))
+    );
+
+    const primarySamplePaperUrl = signedSamplePaperUrls[0] || null;
+
+    // Pre-sign the Answer Key URL and Question Paper URL from the parent assignment
+    let signedAnswerKeyUrl = submission.Assignment?.answer_key_url || null;
+    let signedQuestionPaperUrl = submission.Assignment?.question_paper_url || null;
+
+    if (signedAnswerKeyUrl) {
+      signedAnswerKeyUrl = await S3Service.generatePresignedDownloadUrl(signedAnswerKeyUrl, 7200);
+    }
+    if (signedQuestionPaperUrl) {
+      signedQuestionPaperUrl = await S3Service.generatePresignedDownloadUrl(signedQuestionPaperUrl, 7200);
+    }
 
     const questionBreakdown =
       (submission.final_evaluation_json as any) ||
@@ -175,7 +193,19 @@ export class SubmissionService {
         name: submission.Student.name,
         roll_no: submission.Student.roll_no,
       },
-      sample_paper_urls: samplePaperUrls,
+      sample_paper_url: primarySamplePaperUrl,
+      sample_paper_urls: signedSamplePaperUrls,
+      answer_key_url: signedAnswerKeyUrl,
+      question_paper_url: signedQuestionPaperUrl,
+      assignment: submission.Assignment
+        ? {
+            id: submission.Assignment.id.toString(),
+            title: submission.Assignment.title,
+            answer_key_url: signedAnswerKeyUrl,
+            question_paper_url: signedQuestionPaperUrl,
+            answer_key_text: submission.Assignment.answer_key_text,
+          }
+        : null,
       ocr_text: submission.ocr_text || 'Sample answer sheet text extracted.',
       score:
         submission.final_score !== null
@@ -183,10 +213,12 @@ export class SubmissionService {
           : submission.score !== null
             ? Number(submission.score)
             : 0,
+      final_score: submission.final_score !== null ? Number(submission.final_score) : null,
       max_score: submission.max_score !== null ? Number(submission.max_score) : 40,
       feedback: submission.final_feedback || submission.feedback || '',
       socratic_hint: submission.final_hint || submission.socratic_hint || '',
       status: submission.status,
+      evaluation_status: submission.evaluation_status,
       question_breakdown: questionBreakdown,
     };
   }

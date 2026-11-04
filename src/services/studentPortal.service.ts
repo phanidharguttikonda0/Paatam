@@ -4,6 +4,7 @@ import { parseBigInt } from '../utils/bigint';
 import { formatPaginatedResponse } from '../utils/pagination';
 import { AppError } from '../exceptions/AppError';
 import { SqsService } from './sqs.service';
+import { S3Service } from './s3.service';
 
 export class StudentPortalService {
   /**
@@ -205,13 +206,18 @@ export class StudentPortalService {
       throw new AppError('Assignment not found', 404);
     }
 
+    let questionPaperUrl = assignment.question_paper_url;
+    if (questionPaperUrl) {
+      questionPaperUrl = await S3Service.generatePresignedDownloadUrl(questionPaperUrl, 7200);
+    }
+
     return {
       id: assignment.id.toString(),
       title: assignment.title,
       subject: assignment.ClassSubject?.Subject?.name || 'Subject',
       duration_minutes: assignment.duration_minutes,
       submission_mode: assignment.submission_mode,
-      question_paper_url: assignment.question_paper_url,
+      question_paper_url: questionPaperUrl,
       due_date: assignment.due_date,
       questions: assignment.questions_json,
     };
@@ -355,12 +361,18 @@ export class StudentPortalService {
     const maxScore =
       submission.max_score !== null ? Number(submission.max_score) : null;
 
+    let samplePaperUrl = submission.sample_paper_url;
+    if (samplePaperUrl) {
+      samplePaperUrl = await S3Service.generatePresignedDownloadUrl(samplePaperUrl, 7200);
+    }
+
     return {
       id: submission.id.toString(),
       assignment_title: submission.Assignment?.title || 'Assignment',
       status: submission.status,
       score,
       max_score: maxScore,
+      sample_paper_url: samplePaperUrl,
       feedback: submission.final_feedback || submission.feedback || null,
       socratic_hint: submission.final_hint || submission.socratic_hint || null,
       submitted_at: submission.submitted_at,

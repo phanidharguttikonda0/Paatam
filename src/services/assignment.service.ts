@@ -455,6 +455,16 @@ export class AssignmentService {
 
     await AcademicYearService.assertBranchAccess(user, assignment.Section.Class.branch_id);
 
+    let signedQuestionPaperUrl = assignment.question_paper_url;
+    let signedAnswerKeyUrl = assignment.answer_key_url;
+
+    if (signedQuestionPaperUrl) {
+      signedQuestionPaperUrl = await S3Service.generatePresignedDownloadUrl(signedQuestionPaperUrl, 7200);
+    }
+    if (signedAnswerKeyUrl) {
+      signedAnswerKeyUrl = await S3Service.generatePresignedDownloadUrl(signedAnswerKeyUrl, 7200);
+    }
+
     return {
       id: assignment.id.toString(),
       section_id: assignment.section_id.toString(),
@@ -466,8 +476,8 @@ export class AssignmentService {
       submission_mode: assignment.submission_mode,
       status: assignment.status,
       reasoning_model: assignment.reasoning_model,
-      question_paper_url: assignment.question_paper_url,
-      answer_key_url: assignment.answer_key_url,
+      question_paper_url: signedQuestionPaperUrl,
+      answer_key_url: signedAnswerKeyUrl,
       answer_key_text: assignment.answer_key_text,
       questions_json: assignment.questions_json,
       due_date: assignment.due_date,

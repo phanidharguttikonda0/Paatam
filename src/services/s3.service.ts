@@ -46,15 +46,33 @@ export class S3Service {
    */
   public static async generatePresignedDownloadUrl(
     keyOrUrl: string,
-    expiresIn = 3600
+    expiresIn = 7200
   ): Promise<string> {
-    const key = this.extractKeyFromUrl(keyOrUrl);
-    const command = new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    });
+    if (!keyOrUrl) return '';
 
-    return await getSignedUrl(s3Client, command, { expiresIn });
+    // If it's an external non-S3 URL, return as is
+    if (
+      (keyOrUrl.startsWith('http://') || keyOrUrl.startsWith('https://')) &&
+      !keyOrUrl.includes('s3.') &&
+      !keyOrUrl.includes('.amazonaws.com')
+    ) {
+      return keyOrUrl;
+    }
+
+    try {
+      const key = this.extractKeyFromUrl(keyOrUrl);
+      if (!key) return keyOrUrl;
+
+      const command = new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      });
+
+      return await getSignedUrl(s3Client, command, { expiresIn });
+    } catch (err: any) {
+      console.warn('⚠️ [S3 PRESIGN] Failed to generate presigned GET URL:', err.message);
+      return keyOrUrl;
+    }
   }
 
   /**
