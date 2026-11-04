@@ -2,6 +2,11 @@
 
 This repository contains the backend service for the Paatam application.
 
+> [!TIP]
+> **Complete Architecture, Security & DevOps Master Handbook**:
+> For an exhaustive, end-to-end guide covering JWT/Refresh token security, Bcrypt salting, Sonyflake distributed IDs, OTP lifecycle, Terraform HCL, CI/CD pipelines, AWS HLD (VPC, WAF, ALB, ECS, S3 SigV4, SQS/Lambda, RDS Proxy, CloudWatch), and async pipeline debugging with hands-on practice labs, read:
+> 👉 **[MASTER_SYSTEM_ARCHITECTURE_AND_DEVOPS_GUIDE.md](./MASTER_SYSTEM_ARCHITECTURE_AND_DEVOPS_GUIDE.md)**
+
 ## Getting Started (Initial Setup)
 
 When you clone this project for the first time, follow these steps to get your local development environment up and running:
