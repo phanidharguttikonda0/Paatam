@@ -59,7 +59,7 @@ sequenceDiagram
     Auth->>DB: Verify credentials & salt hash
     Auth->>Auth: Generate 15-min JWT (Access Token)
     Auth->>DB: Store 40-char random hex (Refresh Token) with 30-day expiry
-    Auth-->>FE: 200 OK (Body: accessToken, Set-Cookie: refreshToken; HttpOnly; Secure; SameSite=Strict)
+    Auth-->>FE: 200 OK (Body: accessToken, Set-Cookie: refreshToken, HttpOnly, Secure, SameSite=Strict)
     FE->>FE: Store accessToken in Memory / LocalStorage
 
     Note over FE,Protected: Authenticated Requests
@@ -120,12 +120,12 @@ Let's understand this fundamental browser security distinction:
 
 ```mermaid
 graph TD
-    subgraph Browser Storage Landscape
+    subgraph Browser_Storage ["Browser Storage Landscape"]
         LS["LocalStorage / SessionStorage<br/>(Accessible to any JavaScript running on page)"]
-        HOC["HttpOnly Cookie Storage<br/>(C-level browser network layer; hidden from JS)"]
+        HOC["HttpOnly Cookie Storage<br/>(C-level browser network layer, hidden from JS)"]
     end
 
-    subgraph Attack Vectors
+    subgraph Attack_Vectors ["Attack Vectors"]
         XSS["XSS Attack (Cross-Site Scripting)<br/>Malicious NPM package, injected &lt;script&gt;, compromised browser extension"]
     end
 
@@ -210,11 +210,11 @@ Many developers believe hashing is encryption. **It is not.** Encryption is a tw
 
 ```mermaid
 flowchart LR
-    A["Plaintext: 'Secret123'"] --> B["Bcrypt Algorithm<br/>+ Random 128-bit Salt<br/>+ 10 Work Factor Rounds ($2^{10}$)"]
+    A["Plaintext: Secret123"] --> B["Bcrypt Algorithm<br/>+ Random 128-bit Salt<br/>+ 10 Work Factor Rounds (2^10 = 1024 rounds)"]
     B --> C["Stored Hash: $2b$10$wK...9x"]
 
     D["Attacker intercepts database"] --> C
-    C -.->|"Mathematically Impossible to Reverse"| E["Plaintext: 'Secret123'"]
+    C -.->|"Mathematically Impossible to Reverse"| E["Plaintext: Secret123"]
 ```
 
 ### The Fatal Flaw of Plain Hashing (SHA-256 / MD5)
@@ -246,13 +246,15 @@ When you call `bcrypt.hash("TeacherPass123!", 10)`, the resulting string looks l
 $$\underbrace{\$2b\$}_{\text{Algorithm}} \underbrace{10\$}_{\text{Cost Factor}} \underbrace{\text{N9qo8uLOickgx2ZMRZoMye}}_{\text{22-char Salt}} \underbrace{\text{IjZAgcfl7p92ldGxad68LJZdL17lhWy}}_{\text{31-char Hash Output}}$$
 
 ```mermaid
-classDiagram
-    class BcryptModularFormat {
-        +$2b$ : Algorithm Version (Bcrypt)
-        +10$ : Cost Factor (2^10 = 1024 Key Expansions)
-        +N9qo8uLOickgx2ZMRZoMye : 22 Characters of Base64 Salt
-        +IjZAgcfl7p92ldGxad68LJZdL17lhWy : 31 Characters of Final Ciphertext
-    }
+flowchart LR
+    subgraph Bcrypt_Format ["Bcrypt Modular Crypt Format Anatomy"]
+        direction LR
+        B1["<b>$2b$</b><br/>Algorithm Version"]
+        B2["<b>10$</b><br/>Cost Factor (2^10 = 1024 Rounds)"]
+        B3["<b>N9qo8uLOickgx2ZMRZoMye</b><br/>22-Char Base64 Salt"]
+        B4["<b>IjZAgcfl7p92ldGxad68LJZdL17lhWy</b><br/>31-Char Ciphertext Hash"]
+        B1 --- B2 --- B3 --- B4
+    end
 ```
 
 #### Step-by-Step Verification (`bcrypt.compare`):
@@ -275,7 +277,7 @@ In Paatam, every entity—Submissions, Assignments, Users, Notifications—uses 
 
 ```mermaid
 flowchart TD
-    subgraph Sonyflake 64-Bit Integer Layout
+    subgraph Sonyflake_Layout ["Sonyflake 64-Bit Integer Layout"]
         direction LR
         S["1 Bit<br/>Sign (0)"] --- T["39 Bits<br/>Elapsed Time (10ms units)<br/>~174 Years of IDs"] --- M["16 Bits<br/>Machine ID (derived from IP)"] --- Q["8 Bits<br/>Sequence Number (0 to 255)"]
     end
@@ -344,7 +346,7 @@ sequenceDiagram
     API->>DB: INSERT INTO otp (id, email, otp, expires_at: NOW() + 5 mins)
     par Email Dispatch
         API->>SES: SendTemplatedEmail(to: teacher@school.in, otp: 592814)
-    and SMS Dispatch (if mobile provided)
+    and SMS Dispatch (Mobile)
         API->>Twilio: SendSMS(to: +919876543210, body: "Your Paatam OTP is 592814")
     end
     API-->>User: 200 OK { message: "OTP sent successfully" }
@@ -502,7 +504,7 @@ Paatam employs a multi-tiered automated testing suite powered by **Vitest**:
 
 ```mermaid
 graph TD
-    subgraph Testing Pyramid
+    subgraph Testing_Pyramid ["Testing Pyramid"]
         Unit["Unit Tests (Pure Functions, Formulae, Math)"]
         Integration["Integration Tests (Routes + Prisma + SQS + S3)"]
         E2E["End-to-End Tests (Async Flow: Upload -> Queue -> Lambda -> DB)"]
@@ -547,7 +549,7 @@ Paatam utilizes two tightly integrated workflows: **Validation (`ci.yml`)** and 
 flowchart TD
     A["Developer Runs: git push origin main"] --> B["GitHub Actions Triggered"]
     
-    subgraph CI Validation Pipeline (ci.yml)
+    subgraph CI_Pipeline ["CI Validation Pipeline (ci.yml)"]
         B --> C["1. Setup Node.js & npm ci"]
         C --> D["2. TypeScript Compilation Check (tsc --noEmit)"]
         D --> E["3. Terraform Validate (terraform validate)"]
@@ -557,7 +559,7 @@ flowchart TD
         H --> I["7. Execute Vitest Test Suite (259 Tests)"]
     end
 
-    subgraph CD Deployment Pipeline (deploy.yml)
+    subgraph CD_Pipeline ["CD Deployment Pipeline (deploy.yml)"]
         I -->|"Tests Pass 100%"| J["8. Login to Amazon ECR"]
         J --> K["9. Build Production Docker Image"]
         K --> L["10. Tag & Push to ECR (:latest)"]
@@ -585,7 +587,7 @@ In beginner tutorials, deploying with `docker build -t app:latest` is common. **
 
 ```mermaid
 flowchart TD
-    subgraph The Danger of ':latest' in Production
+    subgraph Latest_Danger ["The Danger of :latest in Production"]
         Build1["Commit A: Builds & Pushes :latest (Version 1.0)"] --> ECR["Amazon ECR Repo (:latest)"]
         ECS1["ECS Task 1 running on Fargate (Runs Version 1.0)"]
         
@@ -641,30 +643,30 @@ Here is the master architectural map of Paatam's AWS cloud deployment:
 
 ```mermaid
 flowchart TD
-    subgraph Public Internet
+    subgraph Public_Internet ["Public Internet"]
         Browser["User Browser / Mobile App<br/>(Teacher / Student / Admin)"]
     end
 
-    subgraph AWS Cloud - ap-south-2 Hyderabad
-        subgraph Perimeter Security
+    subgraph AWS_Cloud ["AWS Cloud - ap-south-2 Hyderabad"]
+        subgraph Perimeter_Security ["Perimeter Security"]
             WAF["AWS WAF (Web App Firewall)<br/>SQLi, XSS, Rate Limiting"]
         end
 
-        subgraph Public Subnets - AZ1 & AZ2
+        subgraph Public_Subnets ["Public Subnets (AZ1 and AZ2)"]
             ALB["Application Load Balancer (ALB)<br/>Port 80/443 -> SSL Termination"]
             NAT["NAT Gateway / NAT Instance<br/>Outbound Egress for Private Subnets"]
         end
 
-        subgraph Private Subnets - AZ1 & AZ2
+        subgraph Private_Subnets ["Private Subnets (AZ1 and AZ2)"]
             ECS["ECS Fargate Tasks (Node.js API)<br/>Port 4545 (Internal Only)"]
             LambdaWorkers["AWS Lambda AI Workers<br/>(OCR, Evaluation, Splitting, Sweeper)"]
         end
 
-        subgraph Isolated Subnets - AZ1 & AZ2
+        subgraph Isolated_Subnets ["Isolated Subnets (AZ1 and AZ2)"]
             RDS["Amazon RDS PostgreSQL 16<br/>(pgvector extension, Port 5432)"]
         end
 
-        subgraph Fully Managed Regional AWS Services
+        subgraph Managed_Services ["Fully Managed Regional AWS Services"]
             S3["Amazon S3 (paatam-uploads-dev)<br/>Private Bucket (SigV4 Pre-signed URLs)"]
             SQS["Amazon SQS Queues & DLQs<br/>(Decoupled Asynchronous Buffers)"]
             CW["Amazon CloudWatch & X-Ray<br/>(Centralized Logs, Metrics & Alarms)"]
@@ -672,7 +674,7 @@ flowchart TD
         end
     end
 
-    subgraph External AI Foundation Models
+    subgraph External_AI ["External AI Foundation Models"]
         Gemini["Google Gemini API<br/>(gemini-3.6-flash, gemini-embedding-001)"]
         Sarvam["Sarvam AI API<br/>(sarvam-105b)"]
     end
@@ -704,16 +706,16 @@ To achieve maximum defense-in-depth, we divide the network into **Three Discrete
 
 ```mermaid
 graph TD
-    subgraph VPC: 10.0.0.0/16
-        subgraph Tier 1: Public Subnets
+    subgraph VPC_Network ["VPC: 10.0.0.0/16"]
+        subgraph Tier1_Public ["Tier 1: Public Subnets"]
             P1["Public Subnet AZ-A<br/>10.0.1.0/24"]
             P2["Public Subnet AZ-B<br/>10.0.2.0/24"]
         end
-        subgraph Tier 2: Private Subnets
+        subgraph Tier2_Private ["Tier 2: Private Subnets"]
             PR1["Private Subnet AZ-A<br/>10.0.11.0/24"]
             PR2["Private Subnet AZ-B<br/>10.0.12.0/24"]
         end
-        subgraph Tier 3: Isolated Subnets
+        subgraph Tier3_Isolated ["Tier 3: Isolated Subnets"]
             ISO1["Isolated Subnet AZ-A<br/>10.0.21.0/24"]
             ISO2["Isolated Subnet AZ-B<br/>10.0.22.0/24"]
         end
@@ -739,16 +741,16 @@ A **VPC Endpoint** keeps all traffic inside AWS's private high-speed fiber backb
 
 ```mermaid
 graph TD
-    subgraph VPC Private Subnet
+    subgraph VPC_Subnet ["VPC Private Subnet"]
         ECS["ECS Task / Lambda Worker"]
     end
 
-    subgraph AWS Network Backbone
+    subgraph AWS_Backbone ["AWS Network Backbone"]
         GW["Gateway Endpoint (Route Table Entry)<br/>- Supported ONLY for S3 & DynamoDB<br/>- Cost: $0.00 (100% FREE!)"]
         IF["Interface Endpoint / PrivateLink (ENI)<br/>- Supported for ECR, SQS, Secrets Manager<br/>- Cost: ~$0.01/hr + $0.01/GB"]
     end
 
-    subgraph AWS Target Services
+    subgraph AWS_Targets ["AWS Target Services"]
         S3[("Amazon S3")]
         SQS[("Amazon SQS / Secrets Manager")]
     end
@@ -788,7 +790,7 @@ flowchart LR
     A["Lambda in Private Subnet"] -->|"Downloads 1 TB PDF from S3 via NAT Gateway"| B["AWS NAT Gateway"]
     B -->|"Internet Route"| C[("Amazon S3")]
     
-    Fee["💸 NAT Data Processing Fee:<br/>$0.045 per GB x 1,000 GB = $45.00!<br/>Plus $32.40/mo per AZ idle fee!"]
+    Fee["💸 NAT Data Processing Fee:<br/>USD 0.045 per GB x 1,000 GB = USD 45.00!<br/>Plus USD 32.40/mo per AZ idle fee!"]
     B --- Fee
 
     style Fee fill:#ffcccc,stroke:#ff0000
@@ -919,7 +921,7 @@ One of the most confusing concepts for backend developers on AWS is why ECS requ
 
 ```mermaid
 graph TD
-    subgraph AWS ECS Infrastructure Layer
+    subgraph Infra_Layer ["AWS ECS Infrastructure Layer"]
         Agent["AWS ECS Agent (Host Daemon)"]
         AgentRole["Task Execution Role<br/>(aws_iam_role.ecs_execution_role)"]
         Agent --> AgentRole
@@ -928,7 +930,7 @@ graph TD
         AgentRole -->|"3. Fetch DB Secrets on Boot"| SM["Secrets Manager"]
     end
 
-    subgraph Application Runtime Layer (Inside Container)
+    subgraph App_Layer ["Application Runtime Layer (Inside Container)"]
         NodeApp["Node.js Application (Express API)"]
         TaskRole["Task Role<br/>(aws_iam_role.ecs_task_role)"]
         NodeApp --> TaskRole
@@ -958,7 +960,7 @@ In production systems, workloads are split by execution characteristics:
 
 ```mermaid
 graph LR
-    subgraph ECS Cluster Architecture
+    subgraph ECS_Cluster ["ECS Cluster Architecture"]
         API["ecs.api (Web API Service)<br/>- Attached to ALB Target Group<br/>- Listens on Port 4545<br/>- Scales on HTTP Request Count & CPU"]
         Worker["ecs.worker / ecs.djr (Distributed Job Runner)<br/>- NOT attached to ALB<br/>- Polls SQS Queues Continuously<br/>- Scales on Queue Depth (ApproximateNumberOfMessages)"]
     end
@@ -1005,7 +1007,7 @@ Many engineers confuse Security Groups with IAM Roles. Here is the easiest way t
 
 ```mermaid
 flowchart TD
-    subgraph The Building Analogy
+    subgraph Building_Analogy ["The Building Analogy"]
         Gate["Physical Security Guard at Gate 4545<br/>(SECURITY GROUP)<br/>Checks: 'Are you coming from the ALB IP over TCP?'<br/>Allows entry into the building."]
         Badge["Electronic RFID Security Badge<br/>(IAM ROLE)<br/>Checks: 'Does this person have permission to open Cabinet S3 or DropBox SQS?'<br/>Authorizes API operations."]
     end
@@ -1142,7 +1144,7 @@ PostgreSQL uses a **process-per-connection architecture**. Every time a client c
 
 ```mermaid
 graph TD
-    subgraph The Danger of Direct Lambda Connections
+    subgraph Direct_Lambda ["The Danger of Direct Lambda Connections"]
         L1["Lambda 1"] -->|Conn 1| PG[("PostgreSQL DB<br/>max_connections = 100")]
         L2["Lambda 2"] -->|Conn 2| PG
         L3["Lambda 300"] -->|Conn 300| PG
@@ -1158,7 +1160,7 @@ If 500 Lambdas spin up to evaluate exams, they attempt to open 500 database conn
 
 ```mermaid
 graph TD
-    subgraph Connection Pooling with RDS Proxy
+    subgraph RDS_Proxy_Pool ["Connection Pooling with RDS Proxy"]
         L1["Lambda 1"] --> Proxy["AWS RDS Proxy<br/>(Multiplexes 500 client connections into 20 warm DB pools)"]
         L2["Lambda 2"] --> Proxy
         L3["Lambda 500"] --> Proxy
@@ -1191,9 +1193,9 @@ Managing API keys, database credentials, and certificates securely is mandatory 
 
 ```mermaid
 graph TD
-    subgraph Secret Management Landscape
-        SSM["AWS Systems Manager (SSM) Parameter Store<br/>- Best for flat config strings & flags<br/>- Standard Tier: $0.00 (100% FREE!)<br/>- Up to 10,000 parameters per account"]
-        SM["AWS Secrets Manager<br/>- Best for Database Passwords & AI API Keys<br/>- Automatic Lambda credential rotation<br/>- Cost: $0.40/secret/month + $0.05/10k API calls"]
+    subgraph Secret_Landscape ["Secret Management Landscape"]
+        SSM["AWS Systems Manager (SSM) Parameter Store<br/>- Best for flat config strings & flags<br/>- Standard Tier: USD 0.00 (100% FREE!)<br/>- Up to 10,000 parameters per account"]
+        SM["AWS Secrets Manager<br/>- Best for Database Passwords & AI API Keys<br/>- Automatic Lambda credential rotation<br/>- Cost: USD 0.40/secret/month + USD 0.05/10k API calls"]
     end
 ```
 
@@ -1228,7 +1230,7 @@ sequenceDiagram
     participant S3 as Amazon S3 Storage
 
     Note over App,KMS: Step 1: Request Data Encryption Key (DEK)
-    App->>KMS: GenerateDataKey(KeyId: "alias/paatam-kms-key")
+    App->>KMS: GenerateDataKey(KeyId: alias/paatam-kms-key)
     KMS-->>App: Returns: [Plaintext DEK (256-bit)] + [Encrypted DEK]
 
     Note over App: Step 2: Encrypt Data Locally
@@ -1298,29 +1300,29 @@ sequenceDiagram
     ALB->>ECS: Forward to Target Group on port 4545
     ECS->>DB: Assert student is enrolled in assignment class
     ECS->>S3: Generate SigV4 Pre-signed PUT URL
-    ECS-->>S: 200 OK { uploadUrl: "https://paatam-uploads-dev.s3.../sheet.pdf?sig=..." }
+    ECS-->>S: 200 OK (Returns Presigned S3 Upload URL)
     
     Note over S,S3: Direct Browser-to-S3 Upload (Bypasses backend server!)
     S->>S3: HTTP PUT sheet.pdf
     S3-->>S: 200 OK (Upload Complete)
 
-    S->>ECS: POST /api/student/assignments/101/confirm { s3_key: "..." }
+    S->>ECS: POST /api/student/assignments/101/confirm (s3_key: sheet.pdf)
     ECS->>DB: INSERT INTO submission (status: 'queued', evaluation_status: 'pending')
-    ECS->>SQS: SendMessage { submissionId: "4996775437952006" }
-    ECS-->>S: 202 Accepted { message: "Submission queued for evaluation", poll_url: "..." }
+    ECS->>SQS: SendMessage (submissionId: 4996775437952006)
+    ECS-->>S: 202 Accepted (Queued for Evaluation)
 
     Note over SQS,AI: Asynchronous Background Processing
     SQS->>Lambda: Trigger Event Source Mapping (Batch Size: 1)
     Lambda->>S3: Download sheet.pdf & answer_key.pdf buffers
     Lambda->>AI: GenerateContentStream (Handwriting OCR + Rubric Grading)
-    AI-->>Lambda: Returns structured JSON { score: 16, feedback: "Great work...", breakdown: [...] }
+    AI-->>Lambda: Returns structured JSON (Score: 16, Feedback, Breakdown)
     Lambda->>DB: UPDATE submission SET score=16, status='pending_review', final_evaluation_json=...
-    Lambda->>DB: INSERT INTO notification ("Your paper has been graded!")
+    Lambda->>DB: INSERT INTO notification (Paper Graded Notice)
 
     Note over S,ECS: Teacher Review & Student View
     S->>ECS: GET /api/submissions/4996775437952006
     ECS->>S3: Generate SigV4 Pre-signed GET URLs (Answer Key + Student Paper)
-    ECS-->>S: 200 OK (Displays score: 16/20, feedback, and renders papers without AccessDenied!)
+    ECS-->>S: 200 OK (Displays score: 16/20 and renders papers)
 ```
 
 ---
